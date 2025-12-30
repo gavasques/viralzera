@@ -1,6 +1,7 @@
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { lazy, Suspense } from 'react';
 import { Copy, Check, User, Bot, FileText } from 'lucide-react';
+
+const ReactMarkdown = lazy(() => import('react-markdown'));
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCanvas } from '@/components/canvas/CanvasProvider';
 
@@ -124,7 +125,9 @@ export default function MessageBubble({ role, content, metrics, modelName, chatT
                         : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm shadow-sm hover:shadow-md hover:border-indigo-100/50'}
                 `}>
                     <div className={isUser ? 'text-slate-100 marker:text-slate-400' : 'text-slate-700'}>
-                        <ReactMarkdown components={components}>{displayContent}</ReactMarkdown>
+                        <Suspense fallback={<div className="whitespace-pre-wrap">{displayContent}</div>}>
+                            <ReactMarkdown components={components}>{displayContent}</ReactMarkdown>
+                        </Suspense>
                     </div>
 
                     {!isUser && (
