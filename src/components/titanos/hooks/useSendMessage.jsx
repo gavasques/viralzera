@@ -3,30 +3,66 @@
  * Chamada direta à OpenRouter do frontend (sem backend)
  */
 
-import { useState, useCallback } from 'react';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { validateOpenRouterResponse } from '../utils/sanitize';
+
+// Cache de API Key com TTL
+const apiKeyCache = {
+  key: null,
+  timestamp: 0,
+  TTL: 5 * 60 * 1000, // 5 minutos
+};
 
 /**
- * Busca API Key do usuário (com cache)
+ * Busca API Key do usuário (com cache e TTL)
  */
-let cachedApiKey = null;
 async function getUserApiKey() {
-  if (cachedApiKey) return cachedApiKey;
+  const now = Date.now();
+  
+  // Retorna do cache se ainda válido
+  if (apiKeyCache.key && (now - apiKeyCache.timestamp) < apiKeyCache.TTL) {
+    return apiKeyCache.key;
+  }
+  
   const configs = await base44.entities.UserConfig.list();
   const config = configs?.[0];
-  cachedApiKey = config?.openrouter_api_key;
-  return cachedApiKey;
+  
+  // Atualiza cache
+  apiKeyCache.key = config?.openrouter_api_key || null;
+  apiKeyCache.timestamp = now;
+  
+  return apiKeyCache.key;
 }
 
 /**
- * Chama OpenRouter diretamente
+ * Invalida o cache da API Key (útil quando usuário atualiza configurações)
+ */
+export function invalidateApiKeyCache() {
+  apiKeyCache.key = null;
+  apiKeyCache.timestamp = 0;
+}
+
+/**
+ * Chama OpenRouter diretamente com retry e validação
  */
 async function callOpenRouter(apiKey, model, messages, options = {}) {
+  if (!apiKey) {
+    throw new Error('API Key não configurada');
+  }
+
+  if (!model) {
+    throw new Error('Modelo não especificado');
+  }
+
   const body = {
     model,
-    messages: messages.map(m => ({ role: m.role, content: m.content })),
+    messages: messages.map(m => ({ 
+      role: m.role, 
+      content: typeof m.content === 'string' ? m.content : String(m.content) 
+    })),
   };
   
   // Adiciona reasoning se habilitado e modelo suporta
@@ -41,30 +77,59 @@ async function callOpenRouter(apiKey, model, messages, options = {}) {
 
   const startTime = Date.now();
   
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      'HTTP-Referer': window.location.origin,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `OpenRouter error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const duration = Date.now() - startTime;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
   
-  return {
-    content: data.choices?.[0]?.message?.content || '',
-    usage: data.usage,
-    duration,
-    rawResponse: data,
-  };
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Multi Chat',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error?.message || `OpenRouter error: ${response.status}`;
+      
+      // Log para debug (sem expor dados sensíveis)
+      console.error('[OpenRouter] Request failed:', {
+        status: response.status,
+        model,
+        errorMessage,
+      });
+      
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    const duration = Date.now() - startTime;
+    
+    // Valida resposta
+    const validated = validateOpenRouterResponse(data);
+    
+    return {
+      content: validated.content,
+      usage: validated.usage,
+      duration,
+      rawResponse: data,
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Timeout: A requisição demorou muito');
+    }
+    
+    throw error;
+  }
 }
 
 
