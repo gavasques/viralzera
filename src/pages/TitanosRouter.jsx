@@ -40,7 +40,7 @@ import {
   useTitanosMessages 
 } from '@/components/titanos/hooks/useTitanosData';
 import { useConversationMutations } from '@/components/titanos/hooks/useTitanosMutations';
-import { useSendMessage, useRegenerateResponse } from '@/components/titanos/hooks/useSendMessage';
+import { useRegenerateResponse } from '@/components/titanos/hooks/useSendMessage';
 
 // Utils
 import { getMessagesForModel, getModelAlias } from '@/components/titanos/utils';
@@ -65,14 +65,8 @@ export default function TitanosRouter() {
   const { data: conversations = [] } = useTitanosConversations(limit);
   const { data: activeConversation } = useTitanosConversation(activeConversationId);
   
-  // Message hooks with loading state
-  const { sendMessage, isLoading } = useSendMessage(
-    activeConversationId, 
-    activeConversation, 
-    [], // Will be populated by messages query
-    groups
-  );
-  
+  // Messages query
+  const [isLoading, setIsLoading] = useState(false);
   const { data: messages = [] } = useTitanosMessages(activeConversationId, isLoading);
   const { regenerate, regeneratingModel } = useRegenerateResponse(activeConversationId);
 
@@ -131,14 +125,15 @@ export default function TitanosRouter() {
     
     const currentInput = input;
     setInput('');
+    setIsLoading(true);
     
-    // Recria hook com mensagens atuais
     const result = await sendMessageWithMessages(currentInput, selectedModels, messages);
     
+    setIsLoading(false);
     if (!result.success) {
-      setInput(currentInput); // Restaura input em caso de erro
+      setInput(currentInput);
     }
-  }, [input, activeConversationId, selectedModels, messages]);
+  }, [input, activeConversationId, selectedModels, messages, sendMessageWithMessages]);
 
   // Função auxiliar para enviar com mensagens atuais
   const sendMessageWithMessages = useCallback(async (messageText, models, currentMessages) => {
