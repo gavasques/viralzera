@@ -20,15 +20,16 @@ import PostTypes from './pages/PostTypes';
 import ProductAnalyzer from './pages/ProductAnalyzer';
 import Products from './pages/Products';
 import Prompts from './pages/Prompts';
+import ScriptGenerator from './pages/ScriptGenerator';
 import ThemeMatrix from './pages/ThemeMatrix';
 import TitanosDocumentation from './pages/TitanosDocumentation';
-import TitanosRouter from './pages/TitanosRouter';
 import Trends from './pages/Trends';
 import TwitterGenerator from './pages/TwitterGenerator';
 import TwitterProjects from './pages/TwitterProjects';
 import UsageAnalytics from './pages/UsageAnalytics';
 import UserSettings from './pages/UserSettings';
 import index from './pages/index';
+import TitanosRouter from './pages/TitanosRouter';
 import __Layout from './Layout.jsx';
 
 
@@ -55,15 +56,16 @@ export const PAGES = {
     "ProductAnalyzer": ProductAnalyzer,
     "Products": Products,
     "Prompts": Prompts,
+    "ScriptGenerator": ScriptGenerator,
     "ThemeMatrix": ThemeMatrix,
     "TitanosDocumentation": TitanosDocumentation,
-    "TitanosRouter": TitanosRouter,
     "Trends": Trends,
     "TwitterGenerator": TwitterGenerator,
     "TwitterProjects": TwitterProjects,
     "UsageAnalytics": UsageAnalytics,
     "UserSettings": UserSettings,
     "index": index,
+    "TitanosRouter": TitanosRouter,
 }
 
 export const pagesConfig = {
