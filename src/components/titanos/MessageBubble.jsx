@@ -41,17 +41,17 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
     [isInitialPrompt, content]
   );
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(content);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [content]);
 
-    const handleSendToCanvas = () => {
-        sendToCanvas(content, chatTitle || modelName || 'Multi Chat', 'chat');
-        setSentToCanvas(true);
-        setTimeout(() => setSentToCanvas(false), 2000);
-    };
+  const handleSendToCanvas = useCallback(() => {
+    sendToCanvas(content, chatTitle || modelName || 'Multi Chat', 'chat');
+    setSentToCanvas(true);
+    setTimeout(() => setSentToCanvas(false), 2000);
+  }, [content, chatTitle, modelName, sendToCanvas]);
 
     if (isSystem) {
         return (
