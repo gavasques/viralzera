@@ -2,6 +2,7 @@ import React from 'react';
 import { Copy, Check, User, Bot, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCanvas } from '@/components/canvas/CanvasProvider';
+import ReactMarkdown from 'react-markdown';
 
 export default function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitialPrompt }) {
     const [copied, setCopied] = React.useState(false);
