@@ -133,20 +133,32 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
         setGenerationStatus('Coletando informações...');
 
         try {
-            // 1. Fetch all required data
-            const [postType, persona, audience, materials] = await Promise.all([
+            // 1. Fetch API Key
+            const configs = await base44.entities.UserConfig.list();
+            const apiKey = configs?.[0]?.openrouter_api_key;
+            
+            if (!apiKey) {
+                toast.error('Configure sua API Key do OpenRouter em Configurações');
+                setIsGenerating(false);
+                setGenerationStatus('');
+                return;
+            }
+
+            // 2. Fetch all required data
+            const [postType, persona, audience, materials, approvedModels] = await Promise.all([
                 formData.postTypeId ? base44.entities.PostType.get(formData.postTypeId) : null,
                 formData.personaId ? base44.entities.Persona.get(formData.personaId) : null,
                 formData.audienceId ? base44.entities.Audience.get(formData.audienceId) : null,
                 formData.selectedMaterials.length > 0 
                     ? base44.entities.Material.filter({ id: { $in: formData.selectedMaterials } }) 
-                    : []
+                    : [],
+                base44.entities.ApprovedModel.filter({ is_active: true })
             ]);
 
-            setGenerationStatus('Refinando prompt via webhook...');
+            setGenerationStatus('Construindo prompt...');
 
-            // 2. Build initial prompt
-            const rawPrompt = buildPrompt({
+            // 3. Build prompt
+            const prompt = buildPrompt({
                 postType: postType?.data || postType,
                 persona: persona?.data || persona,
                 audience: audience?.data || audience,
@@ -155,39 +167,13 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 userNotes: formData.userNotes
             });
 
-            // 3. Send to refiner agent for refinement
-            let refinedPrompt = rawPrompt;
-            try {
-                const webhookResponse = await base44.functions.invoke('refinePrompt', {
-                    prompt: rawPrompt
-                });
-                
-                console.log('Refiner response:', webhookResponse.data);
-                
-                // Extract refined prompt from response
-                if (webhookResponse.data?.output) {
-                    refinedPrompt = webhookResponse.data.output;
-                } else if (webhookResponse.data?.refined_prompt) {
-                    refinedPrompt = webhookResponse.data.refined_prompt;
-                } else if (typeof webhookResponse.data === 'string') {
-                    refinedPrompt = webhookResponse.data;
-                }
-            } catch (refineError) {
-                console.warn('Refine prompt failed, using raw prompt:', refineError);
-                // Continue with raw prompt if refinement fails
-            }
+            setGenerationStatus('Criando conversa...');
 
-            setGenerationStatus('Criando conversa e enviando para IAs...');
-
-            // 4. Fetch approved models to get their configurations
-            const approvedModels = await base44.entities.ApprovedModel.filter({
-                model_id: { $in: formData.selectedModels }
-            });
-
-            // 4. Create the conversation (configs are per-model now)
+            // 4. Create the conversation
+            // formData.selectedModels contém recordIds (IDs únicos do ApprovedModel)
             const conversation = await base44.entities.TitanosConversation.create({
                 title: formData.title || `Multi Script - ${new Date().toLocaleDateString('pt-BR')}`,
-                selected_models: formData.selectedModels,
+                selected_models: formData.selectedModels, // recordIds
                 metrics: {},
                 source: 'multiscript_wizard',
                 post_type_id: formData.postTypeId,
@@ -195,40 +181,83 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 audience_id: formData.audienceId || null
             });
 
-            // 5. Build model configs from ApprovedModel settings
-            const modelConfigs = {};
+            // 5. Save user message
+            await base44.entities.TitanosMessage.create({
+                conversation_id: conversation.id,
+                role: 'user',
+                content: prompt,
+                model_id: null,
+            });
+
+            setGenerationStatus('Enviando para IAs...');
+
+            // 6. Build model info map (recordId -> ApprovedModel)
+            const modelMap = {};
             approvedModels.forEach(am => {
-                modelConfigs[am.model_id] = {
-                    enableReasoning: am.supports_reasoning || false,
-                    reasoningEffort: am.reasoning_effort || 'high',
-                    enableWebSearch: am.supports_web_search || false,
-                    parameters: am.parameters || {}
-                };
+                modelMap[am.id] = am;
             });
 
-            // 6. Send the refined prompt to all selected models
-            console.log('Sending refined prompt to models:', formData.selectedModels);
-            console.log('Model configs:', modelConfigs);
+            // 7. Call each model in parallel
+            const results = await Promise.allSettled(
+                formData.selectedModels.map(async (recordId) => {
+                    const modelInfo = modelMap[recordId];
+                    if (!modelInfo) {
+                        throw new Error(`Modelo não encontrado: ${recordId}`);
+                    }
 
-            const chatResponse = await base44.functions.invoke('titanosChatSimple', {
-                message: refinedPrompt,
-                conversationId: conversation.id,
-                selectedModels: formData.selectedModels,
-                history: [],
-                modelConfigs // Pass per-model configurations
-            });
+                    const openRouterId = modelInfo.model_id;
+                    const options = {
+                        enableReasoning: modelInfo.supports_reasoning || false,
+                        reasoningEffort: modelInfo.reasoning_effort || 'high',
+                        enableWebSearch: modelInfo.supports_web_search || false,
+                    };
 
-            console.log('Chat response:', chatResponse.data);
+                    const result = await callOpenRouter(
+                        apiKey,
+                        openRouterId,
+                        [{ role: 'user', content: prompt }],
+                        options
+                    );
+
+                    // Save response with recordId
+                    await base44.entities.TitanosMessage.create({
+                        conversation_id: conversation.id,
+                        role: 'assistant',
+                        content: result.content,
+                        model_id: recordId, // Salva com recordId!
+                        metrics: {
+                            prompt_tokens: result.usage?.prompt_tokens || 0,
+                            completion_tokens: result.usage?.completion_tokens || 0,
+                            total_tokens: result.usage?.total_tokens || 0,
+                        },
+                    });
+
+                    return { recordId, success: true };
+                })
+            );
+
+            // Count results
+            const failures = results.filter(r => r.status === 'rejected' || !r.value?.success);
+            const successes = results.length - failures.length;
+
+            if (successes === 0) {
+                toast.error('Falha em todos os modelos');
+                setIsGenerating(false);
+                setGenerationStatus('');
+                return;
+            }
+
+            if (failures.length > 0) {
+                toast.warning(`${failures.length} modelo(s) falharam`);
+            }
 
             setGenerationStatus('Concluído!');
             toast.success('Multi Script gerado com sucesso!');
 
-            // 6. Call onCreate callback
             if (onCreate) {
                 onCreate(conversation);
             }
 
-            // 7. Close modal
             onOpenChange(false);
 
         } catch (error) {
