@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, Filter, X } from "lucide-react";
+import React, { memo } from 'react';
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,30 +9,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { COLUMNS, PLATFORMS } from "./constants";
 
-export default function PostFilters({ 
+function PostFilters({ 
   filters, 
   setFilters, 
   postTypes = [], 
   audiences = [],
-  platforms = [],
-  statusOptions = []
+  onClear,
+  hasActiveFilters
 }) {
-  const activeFiltersCount = Object.values(filters).filter(Boolean).length;
-
-  const handleClearFilters = () => {
-    setFilters({
-      search: "",
-      status: "all",
-      post_type_id: "all",
-      platform: "all",
-      audience_id: "all"
-    });
+  const updateFilter = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6 space-y-4">
+    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6">
       <div className="flex flex-col md:flex-row gap-4">
         {/* Search */}
         <div className="relative flex-1">
@@ -40,35 +32,33 @@ export default function PostFilters({
           <Input
             placeholder="Buscar por título ou conteúdo..."
             value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            onChange={(e) => updateFilter('search', e.target.value)}
             className="pl-9"
           />
         </div>
 
-        {/* Filters Group */}
+        {/* Filters */}
         <div className="flex flex-wrap gap-2">
-          {/* Status Filter */}
           <Select 
             value={filters.status} 
-            onValueChange={(value) => setFilters({ ...filters, status: value })}
+            onValueChange={(v) => updateFilter('status', v)}
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos Status</SelectItem>
-              {statusOptions.map((status) => (
-                <SelectItem key={status.id} value={status.id}>
-                  {status.title}
+              {COLUMNS.map((col) => (
+                <SelectItem key={col.id} value={col.id}>
+                  {col.title}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Post Type Filter */}
           <Select 
             value={filters.post_type_id} 
-            onValueChange={(value) => setFilters({ ...filters, post_type_id: value })}
+            onValueChange={(v) => updateFilter('post_type_id', v)}
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Tipo de Post" />
@@ -83,47 +73,43 @@ export default function PostFilters({
             </SelectContent>
           </Select>
 
-          {/* Platform Filter */}
           <Select 
             value={filters.platform} 
-            onValueChange={(value) => setFilters({ ...filters, platform: value })}
+            onValueChange={(v) => updateFilter('platform', v)}
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Plataforma" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas Plat.</SelectItem>
-              {platforms.map((platform) => (
-                <SelectItem key={platform} value={platform}>
-                  {platform}
-                </SelectItem>
+              {PLATFORMS.map((p) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Audience Filter */}
           <Select 
             value={filters.audience_id} 
-            onValueChange={(value) => setFilters({ ...filters, audience_id: value })}
+            onValueChange={(v) => updateFilter('audience_id', v)}
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Público Alvo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos Públicos</SelectItem>
-              {audiences.map((audience) => (
-                <SelectItem key={audience.id} value={audience.id}>
-                  {audience.name}
+              {audiences.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {activeFiltersCount > (filters.search ? 1 : 0) + (filters.status !== 'all' || filters.post_type_id !== 'all' || filters.platform !== 'all' || filters.audience_id !== 'all' ? 0 : -99) && ( // logic is a bit weird here, simplifying
+          {hasActiveFilters && (
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={handleClearFilters}
+              onClick={onClear}
               className="text-slate-400 hover:text-red-500"
               title="Limpar filtros"
             >
@@ -135,3 +121,5 @@ export default function PostFilters({
     </div>
   );
 }
+
+export default memo(PostFilters);
