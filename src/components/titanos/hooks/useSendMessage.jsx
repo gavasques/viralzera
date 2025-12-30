@@ -1,178 +1,125 @@
 /**
- * Hook para envio de mensagens no Multi Chat
- * Refatorado com SOLID e separação de responsabilidades
+ * Hooks para envio de mensagens no Multi Chat
+ * Responsabilidade: orquestrar envio de mensagens para múltiplos modelos
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-// Services
 import { 
+  getUserApiKey, 
   callOpenRouter, 
-  prepareMessagesForSend, 
-  OpenRouterError, 
-  ERROR_CODES,
-  sanitizeInput 
-} from '../services/OpenRouterService';
-import { getApiKey } from '../services/ApiKeyService';
+  validateApiKey 
+} from '../services/openRouterService';
 import { 
-  createUserMessage, 
-  createAssistantMessage, 
-  prepareEffectiveHistory 
-} from '../services/MessageService';
-
-// Constants
+  saveUserMessage, 
+  saveAssistantMessage, 
+  prepareMessageHistory,
+  injectGroupSystemPrompt,
+  prepareRegenerateHistory,
+  prepareSingleModelHistory,
+} from '../services/messageService';
 import { TITANOS_QUERY_KEYS } from '../constants';
 
 /**
- * Invalida queries relacionadas a uma conversa
- */
-function invalidateConversationQueries(queryClient, conversationId) {
-  queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
-  queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
-  queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
-}
-
-/**
- * Trata erros de forma padronizada
- */
-function handleError(error, defaultMessage = 'Erro desconhecido') {
-  console.error('[useSendMessage]', error);
-  
-  if (error instanceof OpenRouterError) {
-    switch (error.code) {
-      case ERROR_CODES.NO_API_KEY:
-        toast.error('Configure sua API Key do OpenRouter em Configurações');
-        break;
-      case ERROR_CODES.INVALID_API_KEY:
-        toast.error('API Key inválida. Verifique suas configurações.');
-        break;
-      case ERROR_CODES.RATE_LIMITED:
-        toast.error('Limite de requisições atingido. Aguarde um momento.');
-        break;
-      case ERROR_CODES.TIMEOUT:
-        toast.error('Timeout na requisição. Tente novamente.');
-        break;
-      default:
-        toast.error(error.message || defaultMessage);
-    }
-  } else {
-    toast.error(error?.message || defaultMessage);
-  }
-}
-
-/**
- * Hook principal para envio de mensagens
+ * Hook principal para envio de mensagens a múltiplos modelos
  */
 export function useSendMessage(conversationId, activeConversation, messages, groups) {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const abortControllerRef = useRef(null);
 
   const sendMessage = useCallback(async (input, selectedModels) => {
-    // Validações iniciais
-    const sanitizedInput = sanitizeInput(input);
-    if (!sanitizedInput || !conversationId || !selectedModels?.length) {
+    // Validação de entrada
+    if (!input?.trim()) {
+      toast.error('Digite uma mensagem');
       return { success: false };
     }
-
-    // Cancela requisição anterior se existir
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (!conversationId) {
+      toast.error('Selecione uma conversa');
+      return { success: false };
     }
-    abortControllerRef.current = new AbortController();
+    if (!selectedModels?.length) {
+      toast.error('Selecione pelo menos um modelo');
+      return { success: false };
+    }
 
     setIsLoading(true);
 
     try {
-      // Busca API Key
-      const apiKey = await getApiKey();
-      if (!apiKey) {
+      // Valida API key
+      const { isValid, apiKey } = await validateApiKey();
+      if (!isValid) {
         toast.error('Configure sua API Key do OpenRouter em Configurações');
         return { success: false };
       }
 
-      // Prepara histórico efetivo
-      const groupSystemPrompt = activeConversation?.group_id
-        ? groups.find(g => g.id === activeConversation.group_id)?.default_system_prompt
-        : null;
-      
-      const effectiveHistory = prepareEffectiveHistory(messages, selectedModels, groupSystemPrompt);
+      // Prepara histórico
+      let history = prepareMessageHistory(messages, selectedModels, input);
+      history = injectGroupSystemPrompt(history, messages, activeConversation, groups);
 
-      // Salva mensagem do usuário no banco (antes de chamar modelos)
-      await createUserMessage(conversationId, sanitizedInput);
+      // Salva mensagem do usuário primeiro
+      await saveUserMessage(conversationId, input.trim());
 
-      // Prepara mensagens para envio
-      const historyMessages = prepareMessagesForSend(effectiveHistory, sanitizedInput);
-
-      // Opções para OpenRouter
+      // Prepara opções
       const options = {
         enableReasoning: activeConversation?.enable_reasoning || false,
         reasoningEffort: activeConversation?.reasoning_effort || 'high',
         enableWebSearch: activeConversation?.enable_web_search || false,
       };
 
-      // Chama cada modelo em paralelo com Promise.allSettled
+      // Chama cada modelo em paralelo
       const results = await Promise.allSettled(
         selectedModels.map(async (modelId) => {
           try {
-            const result = await callOpenRouter(apiKey, modelId, historyMessages, options);
+            const result = await callOpenRouter(apiKey, modelId, history, options);
             
-            // Salva resposta no banco
-            await createAssistantMessage(conversationId, modelId, result.content, {
-              prompt_tokens: result.usage?.prompt_tokens,
-              completion_tokens: result.usage?.completion_tokens,
-              total_tokens: result.usage?.total_tokens,
-              duration: result.duration,
-              cost: result.usage?.cost,
+            // Salva resposta
+            await saveAssistantMessage(conversationId, modelId, result.content, {
+              prompt_tokens: result.usage?.prompt_tokens || 0,
+              completion_tokens: result.usage?.completion_tokens || 0,
+              total_tokens: result.usage?.total_tokens || 0,
+              duration_ms: result.duration,
+              cost: result.usage?.cost || 0,
             });
             
             return { modelId, success: true };
           } catch (err) {
-            console.error(`[useSendMessage] Erro no modelo ${modelId}:`, err.message);
+            console.error(`[useSendMessage] Error for ${modelId}:`, err.message);
             return { modelId, success: false, error: err.message };
           }
         })
       );
 
       // Analisa resultados
-      const successes = results.filter(r => r.status === 'fulfilled' && r.value?.success);
       const failures = results.filter(r => r.status === 'rejected' || !r.value?.success);
       
-      // Feedback ao usuário
       if (failures.length === selectedModels.length) {
         toast.error('Falha em todos os modelos');
         return { success: false };
       }
       
       if (failures.length > 0) {
-        toast.warning(`${failures.length} modelo(s) falharam`);
+        const failedModels = failures
+          .map(f => f.value?.modelId || 'Unknown')
+          .join(', ');
+        toast.warning(`${failures.length} modelo(s) falharam: ${failedModels}`);
       }
 
-      // Invalida queries para forçar refetch
-      invalidateConversationQueries(queryClient, conversationId);
+      // Invalida queries
+      await invalidateConversationQueries(queryClient, conversationId);
 
-      return { success: true, successCount: successes.length, failureCount: failures.length };
-      
+      return { success: true };
     } catch (err) {
-      handleError(err, 'Falha ao enviar mensagem');
+      console.error('[useSendMessage] Error:', err);
+      toast.error('Falha ao enviar mensagem: ' + (err.message || 'Erro desconhecido'));
       return { success: false };
     } finally {
       setIsLoading(false);
-      abortControllerRef.current = null;
     }
   }, [conversationId, activeConversation, messages, groups, queryClient]);
 
-  // Cancela requisições pendentes ao desmontar
-  const cancel = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-  }, []);
-
-  return { sendMessage, isLoading, cancel };
+  return { sendMessage, isLoading };
 }
 
 /**
@@ -183,50 +130,44 @@ export function useRegenerateResponse(conversationId) {
   const [regeneratingModel, setRegeneratingModel] = useState(null);
 
   const regenerate = useCallback(async (modelId, allMessages) => {
-    // Validações
-    if (!conversationId || !modelId || regeneratingModel) return;
-    
-    const userMessages = allMessages.filter(m => m.role === 'user' && !m.model_id);
-    if (userMessages.length === 0) {
+    // Prepara histórico
+    const preparedHistory = prepareRegenerateHistory(allMessages);
+    if (!preparedHistory) {
       toast.error('Nenhuma mensagem do usuário encontrada');
-      return;
+      return { success: false };
     }
 
     setRegeneratingModel(modelId);
 
     try {
-      const apiKey = await getApiKey();
-      if (!apiKey) {
+      const { isValid, apiKey } = await validateApiKey();
+      if (!isValid) {
         toast.error('Configure sua API Key do OpenRouter');
-        return;
+        return { success: false };
       }
 
-      // Prepara histórico (system + todas as mensagens do usuário)
-      const history = allMessages
-        .filter(m => m.role === 'system' || (m.role === 'user' && !m.model_id))
-        .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
-      
-      const historyMessages = history.map(m => ({ role: m.role, content: m.content }));
-
-      const result = await callOpenRouter(apiKey, modelId, historyMessages, {});
+      const result = await callOpenRouter(apiKey, modelId, preparedHistory.history, {});
 
       // Salva nova resposta
-      await createAssistantMessage(conversationId, modelId, result.content, {
-        prompt_tokens: result.usage?.prompt_tokens,
-        completion_tokens: result.usage?.completion_tokens,
-        total_tokens: result.usage?.total_tokens,
-        duration: result.duration,
+      await saveAssistantMessage(conversationId, modelId, result.content, {
+        prompt_tokens: result.usage?.prompt_tokens || 0,
+        completion_tokens: result.usage?.completion_tokens || 0,
+        total_tokens: result.usage?.total_tokens || 0,
+        duration_ms: result.duration,
       });
 
       toast.success('Resposta regenerada!');
-      invalidateConversationQueries(queryClient, conversationId);
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) });
       
+      return { success: true };
     } catch (err) {
-      handleError(err, 'Falha ao regenerar resposta');
+      console.error('[useRegenerateResponse] Error:', err);
+      toast.error('Falha ao regenerar: ' + err.message);
+      return { success: false };
     } finally {
       setRegeneratingModel(null);
     }
-  }, [conversationId, regeneratingModel, queryClient]);
+  }, [conversationId, queryClient]);
 
   return { regenerate, regeneratingModel };
 }
@@ -238,53 +179,58 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
-  const getHistoryForModel = useCallback(() => {
-    return allMessages
-      .filter(m => m.role === 'system' || m.role === 'user' || m.model_id === modelId)
-      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
-  }, [allMessages, modelId]);
-
   const sendMessage = useCallback(async (message) => {
-    const sanitizedMessage = sanitizeInput(message);
-    if (!sanitizedMessage || isLoading || !conversationId || !modelId) {
-      return { success: false };
-    }
+    if (!message?.trim() || isLoading) return { success: false };
 
     setIsLoading(true);
 
     try {
-      const apiKey = await getApiKey();
-      if (!apiKey) {
+      const { isValid, apiKey } = await validateApiKey();
+      if (!isValid) {
         toast.error('Configure sua API Key do OpenRouter');
         return { success: false };
       }
 
       // Salva mensagem do usuário
-      await createUserMessage(conversationId, sanitizedMessage);
+      await saveUserMessage(conversationId, message.trim());
 
       // Prepara histórico
-      const historyMessages = prepareMessagesForSend(getHistoryForModel(), sanitizedMessage);
+      const history = [
+        ...prepareSingleModelHistory(allMessages, modelId),
+        { role: 'user', content: message.trim() },
+      ];
 
-      const result = await callOpenRouter(apiKey, modelId, historyMessages, {});
+      const result = await callOpenRouter(apiKey, modelId, history, {});
 
       // Salva resposta
-      await createAssistantMessage(conversationId, modelId, result.content, {
-        prompt_tokens: result.usage?.prompt_tokens,
-        completion_tokens: result.usage?.completion_tokens,
-        total_tokens: result.usage?.total_tokens,
-        duration: result.duration,
+      await saveAssistantMessage(conversationId, modelId, result.content, {
+        prompt_tokens: result.usage?.prompt_tokens || 0,
+        completion_tokens: result.usage?.completion_tokens || 0,
+        total_tokens: result.usage?.total_tokens || 0,
+        duration_ms: result.duration,
       });
 
-      invalidateConversationQueries(queryClient, conversationId);
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) });
       return { success: true };
-      
     } catch (err) {
-      handleError(err, 'Erro ao enviar mensagem');
+      console.error('[useSingleModelChat] Error:', err);
+      toast.error('Erro ao enviar: ' + err.message);
       return { success: false };
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, modelId, isLoading, getHistoryForModel, queryClient]);
+  }, [conversationId, modelId, allMessages, isLoading, queryClient]);
 
   return { sendMessage, isLoading };
+}
+
+/**
+ * Invalida queries relacionadas à conversa
+ */
+async function invalidateConversationQueries(queryClient, conversationId) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) }),
+    queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] }),
+    queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(conversationId) }),
+  ]);
 }

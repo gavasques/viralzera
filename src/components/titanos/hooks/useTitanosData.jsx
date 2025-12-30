@@ -5,16 +5,17 @@
 
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { STALE_TIMES, DEFAULT_CONVERSATION_LIMIT } from '../constants';
+import { STALE_TIMES, DEFAULT_CONVERSATION_LIMIT, TITANOS_QUERY_KEYS } from '../constants';
 
 /**
  * Hook para dados do usuário atual
  */
 export function useTitanosUser() {
   return useQuery({
-    queryKey: ['titanos-user'],
+    queryKey: TITANOS_QUERY_KEYS.USER,
     queryFn: () => base44.auth.me(),
     staleTime: STALE_TIMES.USER,
+    retry: 1,
   });
 }
 
@@ -23,7 +24,7 @@ export function useTitanosUser() {
  */
 export function useApprovedModels() {
   return useQuery({
-    queryKey: ['titanos-approved-models'],
+    queryKey: TITANOS_QUERY_KEYS.APPROVED_MODELS,
     queryFn: () => base44.entities.ApprovedModel.list('order', 100),
     staleTime: STALE_TIMES.MODELS,
     select: (data) => data || [],
@@ -35,7 +36,7 @@ export function useApprovedModels() {
  */
 export function useTitanosGroups() {
   return useQuery({
-    queryKey: ['titanos-groups'],
+    queryKey: TITANOS_QUERY_KEYS.GROUPS,
     queryFn: () => base44.entities.TitanosChatGroup.list('order', 50),
     staleTime: STALE_TIMES.GROUPS,
     select: (data) => data || [],
@@ -43,11 +44,11 @@ export function useTitanosGroups() {
 }
 
 /**
- * Hook para lista de conversas
+ * Hook para lista de conversas com paginação
  */
 export function useTitanosConversations(limit = DEFAULT_CONVERSATION_LIMIT) {
   return useQuery({
-    queryKey: ['titanos-conversations', limit],
+    queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS(limit),
     queryFn: () => base44.entities.TitanosConversation.list('-created_date', limit),
     placeholderData: keepPreviousData,
     staleTime: STALE_TIMES.CONVERSATIONS,
@@ -60,9 +61,10 @@ export function useTitanosConversations(limit = DEFAULT_CONVERSATION_LIMIT) {
  */
 export function useTitanosConversation(conversationId) {
   return useQuery({
-    queryKey: ['titanos-conversation', conversationId],
+    queryKey: TITANOS_QUERY_KEYS.CONVERSATION(conversationId),
     queryFn: () => base44.entities.TitanosConversation.get(conversationId),
     enabled: !!conversationId,
+    staleTime: STALE_TIMES.CONVERSATIONS,
   });
 }
 
@@ -71,16 +73,22 @@ export function useTitanosConversation(conversationId) {
  */
 export function useTitanosMessages(conversationId) {
   return useQuery({
-    queryKey: ['titanos-messages', conversationId],
+    queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId),
     queryFn: async () => {
-      const msgs = await base44.entities.TitanosMessage.filter({ conversation_id: conversationId });
-      console.log('[useTitanosMessages] Fetched messages:', msgs?.length || 0);
+      const msgs = await base44.entities.TitanosMessage.filter({ 
+        conversation_id: conversationId 
+      });
       return msgs;
     },
     enabled: !!conversationId,
     staleTime: 0, // Sempre buscar dados frescos
     refetchOnMount: true,
-    select: (data) => (data || []).sort((a, b) => new Date(a.created_date) - new Date(b.created_date)),
+    select: (data) => {
+      if (!data) return [];
+      return [...data].sort((a, b) => 
+        new Date(a.created_date) - new Date(b.created_date)
+      );
+    },
   });
 }
 
@@ -89,7 +97,7 @@ export function useTitanosMessages(conversationId) {
  */
 export function useConversationVotes(conversationId) {
   return useQuery({
-    queryKey: ['titanos-votes', conversationId],
+    queryKey: TITANOS_QUERY_KEYS.CONVERSATION_VOTES(conversationId),
     queryFn: () => base44.entities.ModelVote.filter({ conversation_id: conversationId }),
     enabled: !!conversationId,
     select: (data) => data || [],
@@ -101,9 +109,23 @@ export function useConversationVotes(conversationId) {
  */
 export function useSavedPrompts() {
   return useQuery({
-    queryKey: ['titanos-prompts'],
+    queryKey: TITANOS_QUERY_KEYS.PROMPTS,
     queryFn: () => base44.entities.Prompt.list('-created_date', 100),
     staleTime: STALE_TIMES.PROMPTS,
     select: (data) => data || [],
+  });
+}
+
+/**
+ * Hook para configuração do usuário (API keys)
+ */
+export function useUserConfig() {
+  return useQuery({
+    queryKey: ['user-config'],
+    queryFn: async () => {
+      const configs = await base44.entities.UserConfig.list();
+      return configs?.[0] || null;
+    },
+    staleTime: STALE_TIMES.USER,
   });
 }
