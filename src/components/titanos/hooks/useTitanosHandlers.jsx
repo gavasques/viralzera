@@ -91,14 +91,19 @@ export function useConversationHandlers({
     
     clearInput();
     
-    const result = await sendMessage(sanitizedInput, selectedModels);
+    // Converte IDs de registro para model_ids do OpenRouter
+    const openRouterIds = selectedModels.map(recordId => 
+      getOpenRouterId(recordId, approvedModels)
+    );
+    
+    const result = await sendMessage(sanitizedInput, openRouterIds);
     
     if (!result.success) {
       restoreInput(inputValue);
     }
     
     return result;
-  }, [activeConversationId, selectedModels, sendMessage, clearInput, restoreInput]);
+  }, [activeConversationId, selectedModels, approvedModels, sendMessage, clearInput, restoreInput]);
 
   // Handler: Regenerar resposta
   const handleRegenerate = useCallback((modelId) => {
