@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { AdminProtection } from '@/components/admin/AdminProtection';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { 
   Table, 
   TableBody, 
@@ -71,7 +73,9 @@ export default function OpenRouterModels() {
   };
 
   return (
-    <div className="space-y-6 w-full pb-20">
+    <AdminProtection>
+      <AdminLayout currentPage="OpenRouterModels">
+        <div className="space-y-6 w-full">
       <PageHeader 
         title="Modelos OpenRouter" 
         subtitle="Explorador completo de modelos disponíveis na API"
@@ -264,7 +268,8 @@ export default function OpenRouterModels() {
              Nenhum modelo encontrado para "{searchTerm}"
            </div>
         )}
-      </div>
-    </div>
-  );
-}
+        </div>
+        </AdminLayout>
+        </AdminProtection>
+        );
+        }

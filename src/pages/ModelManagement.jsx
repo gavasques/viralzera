@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { fetchModels } from '@/components/chat/OpenRouterService';
 import { toast } from 'sonner';
+import { AdminProtection } from '@/components/admin/AdminProtection';
+import AdminLayout from '@/components/admin/AdminLayout';
 import PageHeader from '@/components/common/PageHeader';
 import { Bot, Plus, Search, Check, X, GripVertical, Brain, Globe, Pencil, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -91,7 +93,9 @@ export default function ModelManagement() {
   }
 
   return (
-    <div className="space-y-6 w-full pb-20">
+    <AdminProtection>
+      <AdminLayout currentPage="ModelManagement">
+        <div className="space-y-6 w-full">
       <PageHeader 
         title="Gestão de Modelos" 
         subtitle="Configure quais modelos de IA estarão disponíveis para os usuários"
@@ -244,6 +248,8 @@ export default function ModelManagement() {
           setSelectedModel(null);
         }}
       />
-    </div>
+        </div>
+      </AdminLayout>
+    </AdminProtection>
   );
 }

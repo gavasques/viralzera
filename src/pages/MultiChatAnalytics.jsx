@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { AdminProtection } from '@/components/admin/AdminProtection';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { 
     BarChart3, Bot, Coins, Hash, Clock, TrendingUp, Calendar,
     ArrowUpRight, ArrowDownRight, Sparkles, Trophy, ThumbsUp
@@ -201,7 +203,9 @@ export default function MultiChatAnalytics() {
     }));
 
     return (
-        <div className="space-y-8 w-full pb-20">
+        <AdminProtection>
+            <AdminLayout currentPage="MultiChatAnalytics">
+                <div className="space-y-8 w-full">
             {/* Header with improved styling */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div>
@@ -539,6 +543,8 @@ export default function MultiChatAnalytics() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+                </div>
+            </AdminLayout>
+        </AdminProtection>
     );
 }

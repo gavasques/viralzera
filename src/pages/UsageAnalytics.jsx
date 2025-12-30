@@ -3,6 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { AdminProtection } from '@/components/admin/AdminProtection';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -289,7 +291,9 @@ export default function UsageAnalytics() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 w-full pb-20">
+    <AdminProtection>
+      <AdminLayout currentPage="UsageAnalytics">
+        <div className="w-full pb-20">
       {/* Header */}
       <div className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-20">
         <div className="flex items-center justify-between">
@@ -421,7 +425,8 @@ export default function UsageAnalytics() {
             <DetailedLogsTable logs={filteredLogs} />
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+        </div>
+      </AdminLayout>
+    </AdminProtection>
   );
 }

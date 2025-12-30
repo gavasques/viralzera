@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AdminProtection } from '@/components/admin/AdminProtection';
+import AdminLayout from '@/components/admin/AdminLayout';
 import PageHeader from "@/components/common/PageHeader";
 import ChatSettingsModal from "@/components/chat/ChatSettingsModal";
 import PostTypeSettingsModal from "@/components/instagram/PostTypeSettingsModal";
@@ -117,7 +119,9 @@ export default function AgentSettings() {
   const currentConfig = openModal ? AGENT_CONFIGS[openModal] : null;
 
   return (
-    <div className="space-y-6">
+    <AdminProtection>
+      <AdminLayout currentPage="AgentSettings">
+        <div className="space-y-6">
       <PageHeader
         title="Configurações de Agentes"
         subtitle="Configure os modelos e prompts de cada agente de IA"
@@ -172,6 +176,8 @@ export default function AgentSettings() {
         open={showPostTypeModal}
         onOpenChange={setShowPostTypeModal}
       />
-    </div>
+        </div>
+      </AdminLayout>
+    </AdminProtection>
   );
 }
