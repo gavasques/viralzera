@@ -74,7 +74,7 @@ export default function ApprovedModelPicker({
     <ScrollArea className="h-full">
       <div className="space-y-2 p-2">
         {filteredModels.map(model => {
-          // Usa model.id (ID único) para identificação, não model.model_id
+          // Usa model.id (ID único do registro) para permitir mesmo model_id com configs diferentes
           const isSelected = selectedModels.includes(model.id);
           
           return (
