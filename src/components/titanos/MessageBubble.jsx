@@ -84,7 +84,7 @@ export default function MessageBubble({ role, content, metrics, modelName, chatT
                                         ? <code className="bg-slate-100 text-pink-600 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
                                         : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-xs my-2"><code>{children}</code></pre>,
                                     blockquote: ({children}) => <blockquote className="border-l-2 border-indigo-300 pl-3 italic text-slate-600 my-2">{children}</blockquote>,
-                                    hr: () => <hr className="my-3 border-slate-200" />,
+                                    hr: () => <div className="my-4 flex items-center gap-2"><div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" /></div>,
                                 }}
                             >
                                 {displayContent}
