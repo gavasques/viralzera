@@ -27,17 +27,17 @@ function TitanosChatArea({
           {visibleModels.length === 0 ? (
             <NoModelsState />
           ) : (
-            visibleModels.map(modelId => (
+            visibleModels.map(recordId => (
               <ChatColumn 
-                key={modelId}
-                modelId={modelId}
-                modelName={getAlias(modelId)}
-                messages={getMessagesForModel(modelId)}
-                isLoading={isLoading || regeneratingModel === modelId}
-                onHide={() => onHide(modelId)}
-                onRemove={() => onRemove(modelId)}
-                onRegenerate={() => onRegenerate(modelId)}
-                onExpand={() => onExpand(modelId)}
+                key={recordId}
+                modelId={recordId}
+                modelName={getAlias(recordId)}
+                messages={getMessagesForModel(recordId)}
+                isLoading={isLoading || regeneratingModel === recordId}
+                onHide={() => onHide(recordId)}
+                onRemove={() => onRemove(recordId)}
+                onRegenerate={() => onRegenerate(recordId)}
+                onExpand={() => onExpand(recordId)}
                 isAdmin={isAdmin}
                 conversationId={conversationId}
               />
