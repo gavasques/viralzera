@@ -41,6 +41,7 @@ import {
 } from '@/components/titanos/hooks/useTitanosData';
 import { useConversationMutations } from '@/components/titanos/hooks/useTitanosMutations';
 import { useRegenerateResponse } from '@/components/titanos/hooks/useSendMessage';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Utils
 import { getMessagesForModel, getModelAlias } from '@/components/titanos/utils';
@@ -57,6 +58,8 @@ export default function TitanosRouter() {
   const [removeModelTarget, setRemoveModelTarget] = useState(null);
   const [expandedModel, setExpandedModel] = useState(null);
   const [limit, setLimit] = useState(DEFAULT_CONVERSATION_LIMIT);
+
+  const queryClient = useQueryClient();
 
   // Data Hooks
   const { data: user } = useTitanosUser();
@@ -160,6 +163,9 @@ export default function TitanosRouter() {
       if (res.data?.error) {
         toast.error(`Erro: ${res.data.error}`);
         setInput(currentInput);
+      } else {
+        // Invalida query de mensagens para forçar refetch
+        queryClient.invalidateQueries({ queryKey: ['titanos-messages', activeConversationId] });
       }
     } catch (err) {
       toast.error('Falha ao enviar mensagem');
@@ -168,7 +174,7 @@ export default function TitanosRouter() {
     } finally {
       setIsLoading(false);
     }
-  }, [input, activeConversationId, selectedModels, messages, activeConversation, groups]);
+  }, [input, activeConversationId, selectedModels, messages, activeConversation, groups, queryClient]);
 
   const handleRegenerate = useCallback((modelId) => {
     regenerate(modelId, messages);
