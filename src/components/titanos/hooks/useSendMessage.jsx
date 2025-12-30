@@ -294,14 +294,24 @@ export function useRegenerateResponse(conversationId) {
   const [regeneratingModel, setRegeneratingModel] = useState(null);
 
   const regenerate = useCallback(async (modelId, messages) => {
+    if (!conversationId || !modelId) {
+      toast.error('Dados inválidos para regeneração');
+      return { success: false };
+    }
+
     const userMessages = messages.filter(m => m.role === 'user' && !m.model_id);
     if (userMessages.length === 0) {
       toast.error('Nenhuma mensagem do usuário encontrada');
-      return;
+      return { success: false };
+    }
+
+    // Já está regenerando este modelo
+    if (regeneratingModel === modelId) {
+      return { success: false };
     }
 
     const firstUserMessage = userMessages[0];
-    const history = messages
+    const systemMessages = messages
       .filter(m => m.role === 'system')
       .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 
@@ -311,11 +321,11 @@ export function useRegenerateResponse(conversationId) {
       const apiKey = await getUserApiKey();
       if (!apiKey) {
         toast.error('Configure sua API Key do OpenRouter');
-        return;
+        return { success: false };
       }
 
       const historyMessages = [
-        ...history.map(m => ({ role: m.role, content: m.content })),
+        ...systemMessages.map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: firstUserMessage.content },
       ];
 
@@ -336,14 +346,17 @@ export function useRegenerateResponse(conversationId) {
       });
 
       toast.success('Resposta regenerada!');
-      queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      
+      return { success: true };
     } catch (err) {
+      console.error('[useRegenerateResponse] Error:', err.message);
       toast.error('Falha ao regenerar: ' + err.message);
-      console.error(err);
+      return { success: false, error: err.message };
     } finally {
       setRegeneratingModel(null);
     }
-  }, [conversationId, queryClient]);
+  }, [conversationId, queryClient, regeneratingModel]);
 
   return { regenerate, regeneratingModel };
 }
