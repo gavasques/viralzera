@@ -73,9 +73,10 @@ export function useTitanosConversations(limit = DEFAULT_CONVERSATION_LIMIT) {
  */
 export function useTitanosConversation(conversationId) {
   return useQuery({
-    queryKey: ['titanos-conversation', conversationId],
+    queryKey: TITANOS_QUERY_KEYS.CONVERSATION(conversationId),
     queryFn: () => base44.entities.TitanosConversation.get(conversationId),
     enabled: !!conversationId,
+    staleTime: 30 * 1000, // 30s
   });
 }
 
