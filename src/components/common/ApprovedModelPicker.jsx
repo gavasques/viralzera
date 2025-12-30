@@ -37,16 +37,18 @@ export default function ApprovedModelPicker({
     m.category === 'both' || m.category === category
   );
 
-  const handleSelect = (modelId) => {
+  // Usa model.id (ID único do registro) para seleção, não model.model_id
+  // Isso permite que o mesmo model_id apareça múltiplas vezes com configs diferentes
+  const handleSelect = (recordId) => {
     if (singleSelect) {
-      onSelectionChange([modelId]);
+      onSelectionChange([recordId]);
       return;
     }
 
-    if (selectedModels.includes(modelId)) {
-      onSelectionChange(selectedModels.filter(id => id !== modelId));
+    if (selectedModels.includes(recordId)) {
+      onSelectionChange(selectedModels.filter(id => id !== recordId));
     } else if (selectedModels.length < maxSelection) {
-      onSelectionChange([...selectedModels, modelId]);
+      onSelectionChange([...selectedModels, recordId]);
     }
   };
 
