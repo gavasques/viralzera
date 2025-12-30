@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   LayoutDashboard, Users, FileText, Layers, FolderTree, Package, Library,
   Dna, ScrollText, Sparkles, TrendingUp, Calendar, Settings, Menu, X,
   ChevronRight, Target, Video, MessageSquare, Bot
 } from 'lucide-react';
+import { useSelectedFocus } from '@/components/hooks/useSelectedFocus';
 
 const menuItems = [
   { section: 'Principal', items: [
@@ -47,42 +45,8 @@ const menuItems = [
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedFocusId, setSelectedFocusId] = useState(null);
-  const location = useLocation();
   
-  // Fetch focuses directly instead of using the hook to avoid QueryClient issues
-  const { data: focuses = [] } = useQuery({
-    queryKey: ['layout-focuses'],
-    queryFn: () => base44.entities.Focus.list('-created_date', 50),
-    staleTime: 30000,
-  });
-
-  // Fetch user to get saved focus
-  const { data: user } = useQuery({
-    queryKey: ['layout-user'],
-    queryFn: () => base44.auth.me(),
-    staleTime: 60000,
-  });
-
-  // Sync selected focus from user data
-  useEffect(() => {
-    if (user?.selected_focus_id && !selectedFocusId) {
-      setSelectedFocusId(user.selected_focus_id);
-    } else if (focuses.length > 0 && !selectedFocusId && !user?.selected_focus_id) {
-      setSelectedFocusId(focuses[0].id);
-    }
-  }, [user, focuses, selectedFocusId]);
-
-  const selectFocus = async (focusId) => {
-    setSelectedFocusId(focusId);
-    try {
-      await base44.auth.updateMe({ selected_focus_id: focusId });
-    } catch (e) {
-      console.error('Error saving focus:', e);
-    }
-  };
-
-  const currentFocus = focuses.find(f => f.id === selectedFocusId) || null;
+  const { selectedFocusId, setFocus, currentFocus, allFocuses } = useSelectedFocus();
 
   // Pages that don't use the sidebar layout
   const fullWidthPages = ['Landing', 'Login'];
@@ -108,12 +72,12 @@ export default function Layout({ children, currentPageName }) {
       {sidebarOpen && (
         <div className="p-4 border-b border-slate-200">
           <label className="text-xs text-slate-500 mb-2 block">Foco Ativo</label>
-          <Select value={selectedFocusId || ''} onValueChange={selectFocus}>
+          <Select value={selectedFocusId || ''} onValueChange={setFocus}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione um foco" />
             </SelectTrigger>
             <SelectContent>
-              {focuses.map((focus) => (
+              {allFocuses.map((focus) => (
                 <SelectItem key={focus.id} value={focus.id}>
                   {focus.title}
                 </SelectItem>

@@ -61,6 +61,7 @@ import UsageAnalytics from "./UsageAnalytics";
 import UserSettings from "./UserSettings";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import AppProviders from '@/components/providers/AppProviders';
 
 const PAGES = {
     
@@ -218,8 +219,10 @@ function PagesContent() {
 
 export default function Pages() {
     return (
-        <Router>
-            <PagesContent />
-        </Router>
+        <AppProviders>
+            <Router>
+                <PagesContent />
+            </Router>
+        </AppProviders>
     );
 }
