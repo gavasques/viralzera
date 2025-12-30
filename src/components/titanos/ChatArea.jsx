@@ -1,11 +1,11 @@
 /**
- * Área principal do chat com múltiplas colunas de modelos
+ * Área principal de chat com colunas de modelos
+ * Renderiza colunas para cada modelo visível
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo } from 'react';
 import ChatColumn from '../ChatColumn';
 import NoModelsState from '../NoModelsState';
-import { getMessagesForModel } from '../services/messageService';
 
 function ChatArea({ 
   visibleModels, 
@@ -13,6 +13,7 @@ function ChatArea({
   isLoading, 
   regeneratingModel, 
   getAlias, 
+  getMessagesForModel,
   onHide, 
   onRemove, 
   onRegenerate, 
@@ -20,15 +21,6 @@ function ChatArea({
   isAdmin, 
   conversationId 
 }) {
-  // Memoiza mensagens por modelo para evitar recálculos
-  const messagesByModel = useMemo(() => {
-    const map = {};
-    visibleModels.forEach(modelId => {
-      map[modelId] = getMessagesForModel(messages, modelId);
-    });
-    return map;
-  }, [visibleModels, messages]);
-
   return (
     <div className="flex-1 relative min-h-0 bg-slate-50/30">
       <div className="absolute inset-0 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-slate-200">
@@ -41,7 +33,7 @@ function ChatArea({
                 key={modelId}
                 modelId={modelId}
                 modelName={getAlias(modelId)}
-                messages={messagesByModel[modelId] || []}
+                messages={getMessagesForModel(modelId)}
                 isLoading={isLoading || regeneratingModel === modelId}
                 onHide={() => onHide(modelId)}
                 onRemove={() => onRemove(modelId)}

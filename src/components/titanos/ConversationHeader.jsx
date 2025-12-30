@@ -4,8 +4,8 @@
  */
 
 import React, { memo } from 'react';
-import ModelSelector from '../ModelSelector';
 import ConversationMetricsButton from '../ConversationMetricsButton';
+import ModelSelector from '../ModelSelector';
 
 function ConversationHeader({ conversation, messages, selectedModels, onModelsChange }) {
   if (!conversation) return null;

@@ -14,9 +14,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-function RemoveModelDialog({ open, modelName, onConfirm, onCancel }) {
+function RemoveModelDialog({ modelId, modelName, onConfirm, onCancel }) {
+  const isOpen = !!modelId;
+  
   return (
-    <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Remover Modelo</AlertDialogTitle>
