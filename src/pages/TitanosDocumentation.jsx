@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Check } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
 
 export default function TitanosDocumentation() {
     const [copied, setCopied] = React.useState(false);
@@ -78,17 +77,57 @@ O **Titanos Router** é uma aplicação de chat avançada que permite interagir 
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-                    <article className="prose prose-slate max-w-none 
-                        prose-headings:text-slate-900 
-                        prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-6 prose-h1:pb-4 prose-h1:border-b
-                        prose-h2:text-2xl prose-h2:font-semibold prose-h2:mt-8 prose-h2:mb-4
-                        prose-h3:text-xl prose-h3:font-medium prose-h3:mt-6
-                        prose-p:text-slate-700 prose-p:leading-relaxed
-                        prose-li:text-slate-700
-                        prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-                        prose-pre:bg-slate-900 prose-pre:text-slate-50
-                    ">
-                        <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                    <article className="prose prose-slate max-w-none">
+                        <h1 className="text-3xl font-bold text-slate-900 mb-6 pb-4 border-b">📘 Documentação do Sistema Titanos Router</h1>
+                        
+                        <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">🌟 Visão Geral</h2>
+                        <p className="text-slate-700 leading-relaxed">
+                            O <strong>Titanos Router</strong> é uma aplicação de chat avançada que permite interagir com múltiplos modelos de Inteligência Artificial (LLMs) simultaneamente. O sistema utiliza a API do OpenRouter para conectar-se a diversos provedores (OpenAI, Anthropic, Google, Meta, etc.), permitindo comparação direta de respostas, custos e latência.
+                        </p>
+                        
+                        <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">🚀 Funcionalidades Principais</h2>
+                        <ol className="list-decimal list-inside text-slate-700 space-y-2">
+                            <li><strong>Chat Multi-Modelo</strong>: Converse com até 8 IAs ao mesmo tempo na mesma tela.</li>
+                            <li><strong>Comparação em Tempo Real</strong>: Visualize respostas lado a lado.</li>
+                            <li><strong>Configuração Granular</strong>: Ajuste temperatura, top_p e outros parâmetros individualmente por modelo.</li>
+                            <li><strong>Analytics</strong>: Acompanhe consumo de tokens e custos detalhados (USD).</li>
+                            <li><strong>Gerenciamento de Prompts</strong>: Crie e salve templates de System Prompts (Refiner Prompts).</li>
+                            <li><strong>Organização</strong>: Agrupe conversas em pastas/grupos e favoritos.</li>
+                            <li><strong>Ferramentas (Tools)</strong>: Suporte a Web Search e análise de dados via backend.</li>
+                        </ol>
+                        
+                        <hr className="my-8 border-slate-200" />
+                        
+                        <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">📂 Estrutura do Projeto</h2>
+                        
+                        <h3 className="text-xl font-medium text-slate-900 mt-6 mb-3">1. Entidades (Banco de Dados)</h3>
+                        <ul className="list-disc list-inside text-slate-700 space-y-1">
+                            <li><strong>TitanosConversation</strong>: Armazena a sessão de chat.</li>
+                            <li><strong>TitanosMessage</strong>: Mensagens individuais.</li>
+                            <li><strong>TitanosRefinerPrompt</strong>: Templates de System Prompts reutilizáveis.</li>
+                        </ul>
+                        
+                        <h3 className="text-xl font-medium text-slate-900 mt-6 mb-3">2. Funções Backend</h3>
+                        <ul className="list-disc list-inside text-slate-700 space-y-1">
+                            <li><strong>titanosChatSimple.js</strong>: <span className="text-blue-600 bg-blue-50 px-1 py-0.5 rounded">[CORE]</span> O cérebro do chat.</li>
+                            <li><strong>titanosListModels.js</strong>: Busca lista atualizada de modelos disponíveis no OpenRouter.</li>
+                        </ul>
+                        
+                        <h3 className="text-xl font-medium text-slate-900 mt-6 mb-3">3. Frontend</h3>
+                        <ul className="list-disc list-inside text-slate-700 space-y-1">
+                            <li><strong>TitanosRouter.js</strong>: Interface principal de Chat.</li>
+                            <li><strong>TitanosDocumentation.js</strong>: Esta página.</li>
+                        </ul>
+                        
+                        <hr className="my-8 border-slate-200" />
+                        
+                        <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">🛠️ Como usar</h2>
+                        <ol className="list-decimal list-inside text-slate-700 space-y-2">
+                            <li>Configure sua chave API do OpenRouter nas configurações.</li>
+                            <li>Crie uma nova conversa.</li>
+                            <li>Selecione os modelos que deseja comparar.</li>
+                            <li>Digite sua mensagem e veja a mágica acontecer!</li>
+                        </ol>
                     </article>
                 </div>
             </div>
