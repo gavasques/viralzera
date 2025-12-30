@@ -90,17 +90,17 @@ function SingleModelChatModal({
         {/* Messages */}
         <ScrollArea className="flex-1 bg-slate-50/30">
           <div className="p-4 space-y-4">
-            {messages.length === 0 ? (
+            {filteredMessages.length === 0 ? (
               <EmptyMessages />
             ) : (
-              messages.map((msg, idx) => (
+              filteredMessages.map((msg, idx) => (
                 <MessageBubble 
                   key={msg.id || idx}
                   role={msg.role}
                   content={msg.content}
                   metrics={msg.metrics}
                   modelName={msg.role === 'assistant' ? modelName : 'Você'}
-                  isInitialPrompt={msg.role === 'user' && idx === 0 && messages.length > 1}
+                  isInitialPrompt={msg.role === 'user' && idx === 0 && filteredMessages.length > 1}
                   chatTitle={modelName}
                 />
               ))
