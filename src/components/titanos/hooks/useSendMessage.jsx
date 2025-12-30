@@ -8,19 +8,28 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 /**
- * Invoca função backend usando o SDK
- * A chamada correta é base44.functions.invoke(name, payload)
+ * Invoca função backend via fetch direto
+ * O SDK não expõe base44.functions, então usamos fetch
  */
 async function invokeFunction(functionName, payload) {
-  // Verifica se o método existe
-  if (typeof base44.functions?.invoke !== 'function') {
-    console.error('[invokeFunction] base44.functions.invoke não disponível');
-    console.log('[invokeFunction] base44 keys:', Object.keys(base44 || {}));
-    console.log('[invokeFunction] base44.functions:', base44?.functions);
-    throw new Error('SDK functions não configurado corretamente');
-  }
+  const config = base44.getConfig?.() || {};
+  const token = config.token;
+  const appId = config.appId;
   
-  return base44.functions.invoke(functionName, payload);
+  // Monta a URL base correta
+  const baseUrl = `https://api.base44.com/v1/apps/${appId}/functions/${functionName}`;
+  
+  const response = await fetch(baseUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  
+  const data = await response.json();
+  return { data, status: response.status };
 }
 
 
