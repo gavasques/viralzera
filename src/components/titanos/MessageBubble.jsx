@@ -53,17 +53,18 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
     setTimeout(() => setSentToCanvas(false), 2000);
   }, [content, chatTitle, modelName, sendToCanvas]);
 
-    if (isSystem) {
-        return (
-            <div className="flex justify-center my-4">
-                <div className="bg-slate-100 text-slate-500 text-xs px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-2">
-                    <Bot className="w-3 h-3" />
-                    <span className="font-medium">System Prompt:</span>
-                    <span className="truncate max-w-[200px]">{content}</span>
-                </div>
-            </div>
-        )
-    }
+  // System message
+  if (isSystem) {
+    return (
+      <div className="flex justify-center my-4">
+        <div className="bg-slate-100 text-slate-500 text-xs px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-2">
+          <Bot className="w-3 h-3" />
+          <span className="font-medium">System Prompt:</span>
+          <span className="truncate max-w-[200px]">{content}</span>
+        </div>
+      </div>
+    );
+  }
 
 
 
