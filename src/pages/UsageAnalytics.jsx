@@ -293,9 +293,8 @@ export default function UsageAnalytics() {
   return (
     <AdminProtection>
       <AdminLayout currentPage="UsageAnalytics">
-        <div className="w-full pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-20">
+        {/* Header */}
+        <div className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-2.5 rounded-xl shadow-lg shadow-pink-200">
@@ -425,7 +424,6 @@ export default function UsageAnalytics() {
             <DetailedLogsTable logs={filteredLogs} />
           </TabsContent>
         </Tabs>
-        </div>
       </AdminLayout>
     </AdminProtection>
   );
