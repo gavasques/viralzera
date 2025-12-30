@@ -133,9 +133,14 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
         setGenerationStatus('Coletando informações...');
 
         try {
-            // 1. Fetch API Key
-            const configs = await base44.entities.UserConfig.list();
-            const apiKey = configs?.[0]?.openrouter_api_key;
+            // 1. Fetch API Key and RefinerConfig
+            const [userConfigs, refinerConfigs] = await Promise.all([
+                base44.entities.UserConfig.list(),
+                base44.entities.RefinerConfig.list()
+            ]);
+            
+            const apiKey = userConfigs?.[0]?.openrouter_api_key;
+            const refinerConfig = refinerConfigs?.[0];
             
             if (!apiKey) {
                 toast.error('Configure sua API Key do OpenRouter em Configurações');
@@ -157,8 +162,8 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
 
             setGenerationStatus('Construindo prompt...');
 
-            // 3. Build prompt
-            const prompt = buildPrompt({
+            // 3. Build raw prompt with collected data
+            const rawPrompt = buildPrompt({
                 postType: postType?.data || postType,
                 persona: persona?.data || persona,
                 audience: audience?.data || audience,
@@ -166,6 +171,41 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 includeExamples: formData.includeExamples,
                 userNotes: formData.userNotes
             });
+
+            // 4. Refine prompt via Refiner Agent (if configured)
+            let prompt = rawPrompt;
+            
+            if (refinerConfig?.model && refinerConfig?.prompt) {
+                setGenerationStatus('Refinando prompt com IA...');
+                
+                try {
+                    // Replace {USER_DATA} placeholder with raw prompt
+                    const systemPrompt = refinerConfig.prompt.replace('{USER_DATA}', rawPrompt);
+                    
+                    const refinerOptions = {
+                        enableReasoning: refinerConfig.enable_reasoning || false,
+                        reasoningEffort: refinerConfig.reasoning_effort || 'medium',
+                    };
+                    
+                    const refinerResult = await callOpenRouter(
+                        apiKey,
+                        refinerConfig.model,
+                        [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: rawPrompt }
+                        ],
+                        refinerOptions
+                    );
+                    
+                    if (refinerResult.content) {
+                        prompt = refinerResult.content;
+                        console.log('Prompt refinado com sucesso');
+                    }
+                } catch (refineError) {
+                    console.warn('Falha ao refinar prompt, usando prompt original:', refineError);
+                    // Continue with raw prompt if refinement fails
+                }
+            }
 
             setGenerationStatus('Criando conversa...');
 
