@@ -150,20 +150,24 @@ export default function TitanosRouter() {
         }
       }
 
-      console.log('base44:', base44);
-      console.log('base44.functions:', base44?.functions);
-      const res = await base44.functions.invoke('titanosChat', {
-        message: currentInput.trim(),
-        conversationId: activeConversationId,
-        selectedModels: selectedModels,
-        history: effectiveHistory,
-        enableReasoning: activeConversation?.enable_reasoning || false,
-        reasoningEffort: activeConversation?.reasoning_effort || 'high',
-        enableWebSearch: activeConversation?.enable_web_search || false,
+      const response = await fetch('/api/functions/titanosChat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: currentInput.trim(),
+          conversationId: activeConversationId,
+          selectedModels: selectedModels,
+          history: effectiveHistory,
+          enableReasoning: activeConversation?.enable_reasoning || false,
+          reasoningEffort: activeConversation?.reasoning_effort || 'high',
+          enableWebSearch: activeConversation?.enable_web_search || false,
+        }),
       });
+      
+      const res = await response.json();
 
-      if (res.data?.error) {
-        toast.error(`Erro: ${res.data.error}`);
+      if (res.error) {
+        toast.error(`Erro: ${res.error}`);
         setInput(currentInput);
       } else {
         // Invalida query de mensagens para forçar refetch
