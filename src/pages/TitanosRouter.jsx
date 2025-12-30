@@ -20,10 +20,10 @@ import SingleModelChatModal from '@/components/titanos/SingleModelChatModal';
 import EmptyConversation from '@/components/titanos/EmptyConversation';
 
 // Sub-componentes extraídos
-import ChatInputArea from '@/components/titanos/components/ChatInputArea';
-import ConversationHeader from '@/components/titanos/components/ConversationHeader';
-import ChatArea from '@/components/titanos/components/ChatArea';
-import RemoveModelDialog from '@/components/titanos/components/RemoveModelDialog';
+import ChatInputArea from '@/components/titanos/ChatInputArea';
+import ConversationHeader from '@/components/titanos/ConversationHeader';
+import ChatArea from '@/components/titanos/ChatArea';
+import RemoveModelDialog from '@/components/titanos/RemoveModelDialog';
 
 // Hooks
 import { 
