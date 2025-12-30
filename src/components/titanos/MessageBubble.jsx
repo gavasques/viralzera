@@ -122,10 +122,8 @@ export default function MessageBubble({ role, content, metrics, modelName, chatT
                         ? 'bg-slate-700 text-white rounded-2xl rounded-tr-sm shadow-md' 
                         : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm shadow-sm hover:shadow-md hover:border-indigo-100/50'}
                 `}>
-                    <div className={isUser ? 'text-slate-100 marker:text-slate-400' : 'text-slate-700'}>
-                        <Suspense fallback={<div className="whitespace-pre-wrap">{displayContent}</div>}>
-                            <ReactMarkdown components={components}>{displayContent}</ReactMarkdown>
-                        </Suspense>
+                    <div className={`${isUser ? 'text-slate-100 marker:text-slate-400' : 'text-slate-700'} whitespace-pre-wrap`}>
+                        {displayContent}
                     </div>
 
                     {!isUser && (
