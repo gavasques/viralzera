@@ -108,7 +108,7 @@ export default function ChatSidebar({
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Clock className="w-3 h-3" />
-            <span>{moment(session.created_date).fromNow()}</span>
+            <span>{formatDistanceToNow(new Date(session.created_date), { addSuffix: true, locale: ptBR })}</span>
             {session.messages?.length > 0 && (
               <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                 {session.messages.length}
