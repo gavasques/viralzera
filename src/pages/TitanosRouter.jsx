@@ -127,31 +127,17 @@ export default function TitanosRouter() {
     setInput('');
     setIsLoading(true);
     
-    const result = await sendMessageWithMessages(currentInput, selectedModels, messages);
-    
-    setIsLoading(false);
-    if (!result.success) {
-      setInput(currentInput);
-    }
-  }, [input, activeConversationId, selectedModels, messages, sendMessageWithMessages]);
-
-  // Função auxiliar para enviar com mensagens atuais
-  const sendMessageWithMessages = useCallback(async (messageText, models, currentMessages) => {
-    if (!messageText?.trim() || !activeConversationId || models.length === 0) {
-      return { success: false };
-    }
-
     try {
       const { base44 } = await import('@/api/base44Client');
       
-      let effectiveHistory = currentMessages.filter(
-        m => m.model_id === null || models.includes(m.model_id)
+      let effectiveHistory = messages.filter(
+        m => m.model_id === null || selectedModels.includes(m.model_id)
       );
 
       if (activeConversation?.group_id) {
         const group = groups.find(g => g.id === activeConversation.group_id);
         if (group?.default_system_prompt) {
-          const hasOwnSystemPrompt = currentMessages.some(m => m.role === 'system');
+          const hasOwnSystemPrompt = messages.some(m => m.role === 'system');
           if (!hasOwnSystemPrompt) {
             effectiveHistory = [
               { role: 'system', content: group.default_system_prompt },
@@ -162,9 +148,9 @@ export default function TitanosRouter() {
       }
 
       const res = await base44.functions.invoke('titanosChat', {
-        message: messageText.trim(),
+        message: currentInput.trim(),
         conversationId: activeConversationId,
-        selectedModels: models,
+        selectedModels: selectedModels,
         history: effectiveHistory,
         enableReasoning: activeConversation?.enable_reasoning || false,
         reasoningEffort: activeConversation?.reasoning_effort || 'high',
@@ -173,16 +159,16 @@ export default function TitanosRouter() {
 
       if (res.data?.error) {
         toast.error(`Erro: ${res.data.error}`);
-        return { success: false };
+        setInput(currentInput);
       }
-
-      return { success: true };
     } catch (err) {
       toast.error('Falha ao enviar mensagem');
       console.error(err);
-      return { success: false };
+      setInput(currentInput);
+    } finally {
+      setIsLoading(false);
     }
-  }, [activeConversationId, activeConversation, groups]);
+  }, [input, activeConversationId, selectedModels, messages, activeConversation, groups]);
 
   const handleRegenerate = useCallback((modelId) => {
     regenerate(modelId, messages);
