@@ -124,14 +124,14 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
                 {/* Metrics Footer */}
                 {!isUser && metrics && (
                     <div className="flex items-center gap-2 mt-1.5 ml-1 text-[10px] text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                        {metrics.duration && (
+                        {(metrics.duration_ms || metrics.duration) && (
                             <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 border border-slate-200">
-                                {(metrics.duration / 1000).toFixed(2)}s
+                                {((metrics.duration_ms || metrics.duration) / 1000).toFixed(2)}s
                             </span>
                         )}
-                        {metrics.usage?.total_tokens && (
+                        {(metrics.total_tokens || metrics.usage?.total_tokens) && (
                             <span className="flex items-center gap-1">
-                                <span>•</span> {metrics.usage.total_tokens} tokens
+                                <span>•</span> {metrics.total_tokens || metrics.usage?.total_tokens} tokens
                             </span>
                         )}
                     </div>
@@ -140,3 +140,5 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
         </div>
     );
 }
+
+export default memo(MessageBubble);
