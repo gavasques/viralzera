@@ -27,11 +27,6 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
   const [titleError, setTitleError] = useState(false);
   const [isContextExpanded, setIsContextExpanded] = useState(false);
   
-  // Advanced settings
-  const [enableReasoning, setEnableReasoning] = useState(false);
-  const [reasoningEffort, setReasoningEffort] = useState('high');
-  const [enableWebSearch, setEnableWebSearch] = useState(false);
-  
   const groupId = defaultGroup?.id || null;
 
   // Hooks
