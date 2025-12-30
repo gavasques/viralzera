@@ -195,13 +195,16 @@ export function useVoteMutations(conversationId) {
 
   const vote = useMutation({
     mutationFn: async ({ modelId, modelAlias, existingVote, allVotes, context }) => {
+      if (!conversationId) throw new Error('Conversa não selecionada');
+      if (!modelId) throw new Error('Modelo não especificado');
+
       // Se já votou neste modelo, remove
       if (existingVote) {
         await base44.entities.ModelVote.delete(existingVote.id);
         return { action: 'removed' };
       }
       
-      // Remove votos anteriores
+      // Remove votos anteriores (um voto por conversa)
       if (allVotes?.length > 0) {
         await Promise.all(allVotes.map(v => base44.entities.ModelVote.delete(v.id)));
       }
@@ -210,15 +213,15 @@ export function useVoteMutations(conversationId) {
       await base44.entities.ModelVote.create({
         conversation_id: conversationId,
         model_id: modelId,
-        model_alias: modelAlias,
+        model_alias: modelAlias || modelId,
         vote_type: 'best',
-        context,
+        context: context || 'multi_chat',
       });
       
       return { action: 'voted', modelAlias };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['titanos-votes', conversationId] });
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION_VOTES(conversationId) });
       queryClient.invalidateQueries({ queryKey: ['modelVotes'] });
       
       if (result.action === 'voted') {
@@ -227,7 +230,8 @@ export function useVoteMutations(conversationId) {
         toast.success('Voto removido');
       }
     },
-    onError: () => {
+    onError: (err) => {
+      console.error('[useVoteMutations] Error:', err);
       toast.error('Erro ao registrar voto');
     },
   });
