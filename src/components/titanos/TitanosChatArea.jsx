@@ -18,7 +18,9 @@ function TitanosChatArea({
   onRegenerate, 
   onExpand, 
   isAdmin, 
-  conversationId 
+  conversationId,
+  promptLog,
+  onShowLog
 }) {
   return (
     <div className="flex-1 relative min-h-0 bg-slate-50/30">
