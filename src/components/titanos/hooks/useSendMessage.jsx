@@ -369,13 +369,27 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
   const [isLoading, setIsLoading] = useState(false);
 
   const getHistoryForModel = useCallback(() => {
+    if (!allMessages || !Array.isArray(allMessages)) return [];
+    
     return allMessages
       .filter(m => m.role === 'system' || m.role === 'user' || m.model_id === modelId)
       .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
   }, [allMessages, modelId]);
 
   const sendMessage = useCallback(async (message) => {
-    if (!message?.trim() || isLoading) return { success: false };
+    // Validações
+    if (!message?.trim()) {
+      return { success: false, error: 'Mensagem vazia' };
+    }
+    
+    if (!conversationId || !modelId) {
+      toast.error('Dados inválidos');
+      return { success: false, error: 'Dados inválidos' };
+    }
+    
+    if (isLoading) {
+      return { success: false, error: 'Envio em andamento' };
+    }
 
     setIsLoading(true);
 
@@ -383,20 +397,22 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
       const apiKey = await getUserApiKey();
       if (!apiKey) {
         toast.error('Configure sua API Key do OpenRouter');
-        return { success: false };
+        return { success: false, error: 'API Key não configurada' };
       }
+
+      const trimmedMessage = message.trim();
 
       // Salva mensagem do usuário
       await base44.entities.TitanosMessage.create({
         conversation_id: conversationId,
         role: 'user',
-        content: message.trim(),
+        content: trimmedMessage,
         model_id: null,
       });
 
       const historyMessages = [
         ...getHistoryForModel().map(m => ({ role: m.role, content: m.content })),
-        { role: 'user', content: message.trim() },
+        { role: 'user', content: trimmedMessage },
       ];
 
       const result = await callOpenRouter(apiKey, modelId, historyMessages, {});
@@ -415,11 +431,12 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
         },
       });
 
-      queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
       return { success: true };
     } catch (err) {
+      console.error('[useSingleModelChat] Error:', err.message);
       toast.error('Erro ao enviar: ' + err.message);
-      return { success: false };
+      return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
     }
