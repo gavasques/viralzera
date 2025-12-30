@@ -68,15 +68,7 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
         }
       }
 
-      console.log('[useSendMessage] Calling titanosChat with SDK');
-      console.log('[useSendMessage] base44:', base44);
-      console.log('[useSendMessage] base44.functions:', base44?.functions);
-      
-      if (!base44?.functions?.invoke) {
-        throw new Error('SDK functions.invoke não disponível');
-      }
-      
-      const res = await base44.functions.invoke('titanosChat', {
+      const res = await invokeFunction('titanosChat', {
         message: input.trim(),
         conversationId,
         selectedModels,
