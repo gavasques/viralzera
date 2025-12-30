@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ConversationCard from './ConversationCard';
 import GroupSettingsModal from './GroupSettingsModal';
+import ConversationFilters from './ConversationFilters';
 
 // Hooks
 import { useTitanosGroups } from './hooks/useTitanosData';
@@ -35,6 +36,7 @@ function ConversationSidebar({ conversations, activeId, onNew, onNewInGroup, onD
   const [deleteChatTarget, setDeleteChatTarget] = useState(null);
   const [selectedChat, setSelectedChat] = useState(null);
   const [inputValue, setInputValue] = useState('');
+  const [filters, setFilters] = useState({ source: null, channel: null, format: null });
 
   // Data Hooks
   const { data: groups = [] } = useTitanosGroups();
@@ -48,10 +50,35 @@ function ConversationSidebar({ conversations, activeId, onNew, onNewInGroup, onD
 
   // Memoized data
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
-    const query = searchQuery.toLowerCase();
-    return conversations.filter(c => c.title?.toLowerCase().includes(query));
-  }, [conversations, searchQuery]);
+    let result = conversations;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(c => c.title?.toLowerCase().includes(query));
+    }
+    
+    // Apply source filter
+    if (filters.source) {
+      if (filters.source === 'manual') {
+        result = result.filter(c => !c.source || c.source === 'manual');
+      } else {
+        result = result.filter(c => c.source === filters.source);
+      }
+    }
+    
+    // Apply channel filter
+    if (filters.channel) {
+      result = result.filter(c => c.post_channel === filters.channel);
+    }
+    
+    // Apply format filter
+    if (filters.format) {
+      result = result.filter(c => c.post_format === filters.format);
+    }
+    
+    return result;
+  }, [conversations, searchQuery, filters]);
 
   const favoriteChats = useMemo(
     () => filteredConversations.filter(c => c.is_favorite), 
@@ -194,6 +221,9 @@ function ConversationSidebar({ conversations, activeId, onNew, onNewInGroup, onD
                         </button>
                     )}
                 </div>
+                
+                {/* Filters */}
+                <ConversationFilters filters={filters} onChange={setFilters} />
             </div>
             
             <ScrollArea className="flex-1 px-2 pb-4">
