@@ -2,14 +2,35 @@
  * Hook para envio de mensagens no Multi Chat
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-// Debug: verificar se o SDK está carregado corretamente
-console.log('[useSendMessage module] base44 imported:', !!base44);
-console.log('[useSendMessage module] base44.functions:', !!base44?.functions);
+/**
+ * Helper para invocar funções backend
+ * Usa base44.functions.invoke se disponível, senão faz fetch direto
+ */
+async function invokeFunction(functionName, payload) {
+  // Tenta usar o SDK primeiro
+  if (base44?.functions?.invoke) {
+    return base44.functions.invoke(functionName, payload);
+  }
+  
+  // Fallback: fetch direto
+  const token = base44?.getConfig?.()?.token || localStorage.getItem('base44_token');
+  const response = await fetch(`/api/functions/${functionName}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  
+  const data = await response.json();
+  return { data, status: response.status };
+}
 
 
 
