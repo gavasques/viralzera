@@ -37,9 +37,10 @@ function ApprovedModelPicker({
   
   const approvedModels = preloadedModels || fetchedModels;
 
-  // Filter by category
-  const filteredModels = approvedModels.filter(m => 
-    m.category === 'both' || m.category === category
+  // Filter by category - memoizado para evitar recálculos
+  const filteredModels = useMemo(() => 
+    approvedModels.filter(m => m.category === 'both' || m.category === category),
+    [approvedModels, category]
   );
 
   // Usa model.id (ID único do registro) para seleção, não model.model_id
