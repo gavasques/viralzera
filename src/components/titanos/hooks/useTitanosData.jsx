@@ -69,14 +69,18 @@ export function useTitanosConversation(conversationId) {
 /**
  * Hook para mensagens de uma conversa
  */
-export function useTitanosMessages(conversationId, isLoading = false) {
+export function useTitanosMessages(conversationId) {
   return useQuery({
     queryKey: ['titanos-messages', conversationId],
-    queryFn: () => base44.entities.TitanosMessage.filter({ conversation_id: conversationId }),
+    queryFn: async () => {
+      const msgs = await base44.entities.TitanosMessage.filter({ conversation_id: conversationId });
+      console.log('[useTitanosMessages] Fetched messages:', msgs?.length || 0);
+      return msgs;
+    },
     enabled: !!conversationId,
-    refetchInterval: isLoading ? 1000 : false,
-    staleTime: STALE_TIMES.MESSAGES,
-    select: (data) => data || [],
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnMount: true,
+    select: (data) => (data || []).sort((a, b) => new Date(a.created_date) - new Date(b.created_date)),
   });
 }
 
