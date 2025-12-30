@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Bot, EyeOff, Trash2, Clock, Hash, Coins, RefreshCw, Maximize2, Info } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,9 +33,14 @@ function ChatColumnHeader({
   conversationId
 }) {
   const { totalTokens = 0, totalCost = 0, avgDuration = 0 } = metrics;
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className="px-4 py-3 border-b border-slate-100 bg-white/90 backdrop-blur-sm sticky top-0 z-[5] transition-all">
+    <div 
+      className="px-4 py-3 border-b border-slate-100 bg-white/90 backdrop-blur-sm sticky top-0 z-[5] transition-all"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="flex items-center justify-between gap-2">
         {/* Model Info */}
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -46,14 +51,11 @@ function ChatColumnHeader({
             <span className="font-bold text-sm text-slate-800 truncate tracking-tight" title={modelName || modelId}>
               {modelName || modelId}
             </span>
-            {isAdmin && (
-              <span className="text-[10px] text-slate-400 font-medium truncate opacity-80">{modelId}</span>
-            )}
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 shrink-0">
+        {/* Actions - visible only on hover */}
+        <div className={`flex items-center gap-0.5 shrink-0 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
           {isLoading && (
             <Badge variant="secondary" className="animate-pulse text-[9px] bg-indigo-50 text-indigo-600 px-1.5 h-5 mr-1 border-0">
               Gerando
