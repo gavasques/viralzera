@@ -42,7 +42,7 @@ import Products from "./Products";
 
 import Prompts from "./Prompts";
 
-import ScriptGenerator from "./ScriptGenerator";
+
 
 import ThemeMatrix from "./ThemeMatrix";
 
@@ -107,7 +107,7 @@ const PAGES = {
     
     Prompts: Prompts,
     
-    ScriptGenerator: ScriptGenerator,
+
     
     ThemeMatrix: ThemeMatrix,
     
@@ -194,7 +194,7 @@ function PagesContent() {
                 
                 <Route path="/Prompts" element={<Prompts />} />
                 
-                <Route path="/ScriptGenerator" element={<ScriptGenerator />} />
+
                 
                 <Route path="/ThemeMatrix" element={<ThemeMatrix />} />
                 
