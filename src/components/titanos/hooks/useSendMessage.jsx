@@ -17,19 +17,25 @@ async function invokeFunction(functionName, payload) {
     return base44.functions.invoke(functionName, payload);
   }
   
-  // Fallback: fetch direto
-  const token = base44?.getConfig?.()?.token || localStorage.getItem('base44_token');
-  const response = await fetch(`/api/functions/${functionName}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
-  });
-  
-  const data = await response.json();
-  return { data, status: response.status };
+  // Fallback: usa o método correto do SDK
+  // O SDK expõe funções através de base44.functions
+  // Se não disponível, tenta acessar via API interna
+  try {
+    const response = await fetch(`https://api.base44.com/v1/functions/${functionName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+    
+    const data = await response.json();
+    return { data, status: response.status };
+  } catch (err) {
+    console.error('[invokeFunction] Fallback failed:', err);
+    throw err;
+  }
 }
 
 
