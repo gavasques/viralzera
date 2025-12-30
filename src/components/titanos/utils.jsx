@@ -1,6 +1,6 @@
 /**
  * Utilitários para Multi Chat
- * Funções puras para formatação e cálculos
+ * Funções puras e reutilizáveis
  */
 
 /**
@@ -39,18 +39,18 @@ export function formatDuration(ms) {
 
 /**
  * Extrai nome do modelo a partir do ID
- * @param {string} modelId - ID do modelo (ex: openai/gpt-4o)
- * @returns {string} Nome do modelo
+ * @param {string} modelId - ID completo do modelo (ex: openai/gpt-4)
+ * @returns {string} Nome simplificado
  */
 export function extractModelName(modelId) {
-  if (!modelId) return 'Modelo';
+  if (!modelId || typeof modelId !== 'string') return 'Modelo';
   const parts = modelId.split('/');
-  return parts.length > 1 ? parts[1] : modelId;
+  return parts[1] || modelId;
 }
 
 /**
  * Calcula métricas agregadas das mensagens
- * @param {Array} messages - Array de mensagens
+ * @param {Array} messages - Lista de mensagens
  * @returns {Object} Métricas calculadas
  */
 export function calculateMetrics(messages) {
@@ -63,18 +63,20 @@ export function calculateMetrics(messages) {
   let totalDuration = 0;
   let responseCount = 0;
 
-  messages.forEach(msg => {
-    if (msg.role !== 'assistant' || !msg.metrics) return;
-    
-    const metrics = msg.metrics;
-    const promptTokens = metrics.prompt_tokens || 0;
-    const completionTokens = metrics.completion_tokens || 0;
-    
-    totalTokens += metrics.total_tokens || (promptTokens + completionTokens) || 0;
-    totalDuration += metrics.duration_ms || metrics.duration || 0;
-    totalCost += metrics.cost || ((promptTokens * 0.000001) + (completionTokens * 0.000002));
-    responseCount++;
-  });
+  for (const msg of messages) {
+    if (msg.role === 'assistant' && msg.metrics) {
+      const metrics = msg.metrics;
+      const promptTokens = metrics.prompt_tokens || 0;
+      const completionTokens = metrics.completion_tokens || 0;
+      
+      totalTokens += metrics.total_tokens || (promptTokens + completionTokens) || 0;
+      totalDuration += metrics.duration_ms || metrics.duration || 0;
+      responseCount++;
+      
+      // Estimativa de custo (valores médios de mercado)
+      totalCost += (promptTokens * 0.000001) + (completionTokens * 0.000002);
+    }
+  }
 
   return {
     totalTokens,
@@ -87,6 +89,7 @@ export function calculateMetrics(messages) {
 
 /**
  * Filtra mensagens para um modelo específico
+ * Retorna mensagens do usuário, sistema e do modelo especificado
  * @param {Array} messages - Todas as mensagens
  * @param {string} modelId - ID do modelo
  * @returns {Array} Mensagens filtradas e ordenadas
@@ -107,41 +110,37 @@ export function getMessagesForModel(messages, modelId) {
  */
 export function getModelAlias(modelId, approvedModels = []) {
   if (!modelId) return 'Modelo';
+  
   const approved = approvedModels.find(m => m.model_id === modelId);
   return approved?.alias || extractModelName(modelId);
 }
 
 /**
- * Valida se uma string é um role válido
- * @param {string} role - Role a validar
- * @returns {boolean}
- */
-export function isValidRole(role) {
-  return ['system', 'user', 'assistant'].includes(role);
-}
-
-/**
- * Sanitiza conteúdo de mensagem
- * @param {string} content - Conteúdo da mensagem
- * @returns {string} Conteúdo sanitizado
- */
-export function sanitizeMessageContent(content) {
-  if (typeof content !== 'string') return '';
-  return content.trim();
-}
-
-/**
  * Agrupa mensagens por modelo
- * @param {Array} messages - Todas as mensagens
- * @param {Array<string>} modelIds - IDs dos modelos
- * @returns {Object} Mapa de modelId -> mensagens
+ * @param {Array} messages - Lista de mensagens
+ * @returns {Object} Mensagens agrupadas por model_id
  */
-export function groupMessagesByModel(messages, modelIds) {
-  if (!Array.isArray(messages) || !Array.isArray(modelIds)) return {};
+export function groupMessagesByModel(messages) {
+  if (!Array.isArray(messages)) return {};
   
-  const grouped = {};
-  modelIds.forEach(modelId => {
-    grouped[modelId] = getMessagesForModel(messages, modelId);
-  });
-  return grouped;
+  return messages.reduce((acc, msg) => {
+    const key = msg.model_id || 'user';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(msg);
+    return acc;
+  }, {});
+}
+
+/**
+ * Conta mensagens por tipo
+ * @param {Array} messages - Lista de mensagens
+ * @returns {Object} Contagem por role
+ */
+export function countMessagesByRole(messages) {
+  if (!Array.isArray(messages)) return { user: 0, assistant: 0, system: 0 };
+  
+  return messages.reduce((acc, msg) => {
+    acc[msg.role] = (acc[msg.role] || 0) + 1;
+    return acc;
+  }, { user: 0, assistant: 0, system: 0 });
 }
