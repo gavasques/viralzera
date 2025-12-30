@@ -237,7 +237,7 @@ export default function Dashboard() {
                   <span>Progresso</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
-                <Progress value={progress} className="h-2" indicatorClassName="bg-pink-600" />
+                <Progress value={progress} className="h-2 [&>div]:bg-pink-600" />
               </div>
 
               <div className="space-y-4">
