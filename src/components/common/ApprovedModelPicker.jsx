@@ -58,7 +58,8 @@ function ApprovedModelPicker({
     }
   };
 
-  if (isLoading) {
+  // Só mostra loading se não tiver modelos pré-carregados E estiver carregando
+  if (!preloadedModels && isLoading) {
     return (
       <div className="space-y-3 p-2">
         {[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}
