@@ -29,6 +29,7 @@ import TwitterProjects from './pages/TwitterProjects';
 import UsageAnalytics from './pages/UsageAnalytics';
 import UserSettings from './pages/UserSettings';
 import index from './pages/index';
+import TitanosRouter from './pages/TitanosRouter';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "UsageAnalytics": UsageAnalytics,
     "UserSettings": UserSettings,
     "index": index,
+    "TitanosRouter": TitanosRouter,
 }
 
 export const pagesConfig = {
