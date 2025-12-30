@@ -17,6 +17,7 @@ import TitanosModals from './TitanosModals';
 import TitanosChatArea from './TitanosChatArea';
 import TitanosHeader from './TitanosHeader';
 import TitanosInputArea from './TitanosInputArea';
+import PromptLogModal from './PromptLogModal';
 
 /**
  * Componente principal do Multi Chat
