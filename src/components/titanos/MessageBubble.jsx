@@ -120,21 +120,36 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
                 </div>
 
                 {/* Metrics Footer */}
-                {!isUser && metrics && (
-                    <div className="flex items-center gap-2 mt-1.5 ml-1 text-[10px] text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                        {metrics.duration && (
-                            <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 border border-slate-200">
-                                {(metrics.duration / 1000).toFixed(2)}s
-                            </span>
-                        )}
-                        {metrics.usage?.total_tokens && (
-                            <span className="flex items-center gap-1">
-                                <span>•</span> {metrics.usage.total_tokens} tokens
-                            </span>
-                        )}
-                    </div>
-                )}
+                <MetricsFooter metrics={metrics} isUser={isUser} />
             </div>
         </div>
     );
 }
+
+// Sub-componente para métricas
+const MetricsFooter = memo(({ metrics, isUser }) => {
+  if (isUser || !metrics) return null;
+  
+  const duration = metrics.duration_ms || metrics.duration;
+  const tokens = metrics.total_tokens || metrics.usage?.total_tokens;
+  
+  if (!duration && !tokens) return null;
+  
+  return (
+    <div className="flex items-center gap-2 mt-1.5 ml-1 text-[10px] text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+      {duration > 0 && (
+        <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 border border-slate-200">
+          {(duration / 1000).toFixed(2)}s
+        </span>
+      )}
+      {tokens > 0 && (
+        <span className="flex items-center gap-1">
+          <span>•</span> {tokens} tokens
+        </span>
+      )}
+    </div>
+  );
+});
+MetricsFooter.displayName = 'MetricsFooter';
+
+export default memo(MessageBubble);
