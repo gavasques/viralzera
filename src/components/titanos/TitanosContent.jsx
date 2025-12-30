@@ -75,6 +75,10 @@ function TitanosContent({
   handleConversationCreated,
 }) {
   const hasMore = conversations.length >= limit;
+  const [showPromptLog, setShowPromptLog] = useState(false);
+  
+  // Prompt log da conversa ativa (se existir)
+  const promptLog = activeConversation?.prompt_log || null;
 
   return (
     <div className="space-y-6 -m-6 md:-m-12">
