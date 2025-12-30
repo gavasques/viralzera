@@ -135,6 +135,14 @@ async function callOpenRouter(apiKey, model, messages, options = {}) {
 
 
 /**
+ * Helper: Obtém o model_id (ID do OpenRouter) a partir do ID único do registro
+ */
+function getOpenRouterId(recordId, approvedModels = []) {
+  const approved = approvedModels.find(m => m.id === recordId);
+  return approved?.model_id || recordId;
+}
+
+/**
  * Hook principal para envio de mensagens
  */
 export function useSendMessage(conversationId, activeConversation, messages, groups) {
@@ -142,7 +150,9 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef(false);
 
-  const sendMessage = useCallback(async (input, selectedModels) => {
+  // selectedModels agora são recordIds (IDs únicos do registro ApprovedModel)
+  // approvedModels é a lista completa de modelos aprovados para fazer a conversão
+  const sendMessage = useCallback(async (input, selectedModels, approvedModels = []) => {
     // Validações iniciais
     if (!input?.trim()) {
       return { success: false, error: 'Mensagem vazia' };
@@ -173,7 +183,7 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
         return { success: false, error: 'API Key não configurada' };
       }
 
-      // Prepara histórico efetivo
+      // Prepara histórico efetivo - filtra por recordId (não por openRouterId)
       let effectiveHistory = messages.filter(
         m => m.model_id === null || selectedModels.includes(m.model_id)
       );
@@ -216,22 +226,27 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
       };
 
       // Chama cada modelo em paralelo
-      // selectedModels aqui já são os model_ids do OpenRouter (convertidos pelo handler)
+      // selectedModels são recordIds - precisamos converter para openRouterId para chamar a API
+      // mas salvar com recordId no banco para manter a associação correta
       const results = await Promise.allSettled(
-        selectedModels.map(async (openRouterId) => {
+        selectedModels.map(async (recordId) => {
           if (abortRef.current) {
-            return { modelId: openRouterId, success: false, error: 'Abortado' };
+            return { modelId: recordId, success: false, error: 'Abortado' };
           }
+          
+          // Converte recordId para openRouterId para a chamada à API
+          const openRouterId = getOpenRouterId(recordId, approvedModels);
           
           try {
             const result = await callOpenRouter(apiKey, openRouterId, historyMessages, options);
             
-            // Salva resposta no banco usando o model_id do OpenRouter
+            // Salva resposta no banco usando o recordId (ID único do ApprovedModel)
+            // Isso permite diferenciar "Dominion" de "Dominion Pro" mesmo que tenham o mesmo model_id
             await base44.entities.TitanosMessage.create({
               conversation_id: conversationId,
               role: 'assistant',
               content: result.content,
-              model_id: openRouterId,
+              model_id: recordId, // Salva com recordId, não openRouterId!
               metrics: {
                 prompt_tokens: result.usage?.prompt_tokens || 0,
                 completion_tokens: result.usage?.completion_tokens || 0,
@@ -241,10 +256,10 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
               },
             });
             
-            return { modelId: openRouterId, success: true };
+            return { modelId: recordId, success: true };
           } catch (err) {
-            console.error(`[useSendMessage] Error for ${openRouterId}:`, err.message);
-            return { modelId: openRouterId, success: false, error: err.message };
+            console.error(`[useSendMessage] Error for ${recordId} (${openRouterId}):`, err.message);
+            return { modelId: recordId, success: false, error: err.message };
           }
         })
       );
