@@ -34,28 +34,22 @@ export function StepContext({ focusId, value, onChange }) {
     refetchOnWindowFocus: false
   });
 
-  // Prepare Options
-  const personaOptions = [
-    { value: 'none', label: 'Não utilizar persona específica', original: null },
-    ...(personas?.map(p => ({
-      value: p.id,
-      label: p.name,
-      original: p
-    })) || [])
-  ];
+  // Prepare Options (without "none" options)
+  const personaOptions = personas?.map(p => ({
+    value: p.id,
+    label: p.name,
+    original: p
+  })) || [];
 
-  const audienceOptions = [
-    { value: 'none', label: 'Público geral', original: null },
-    ...(audiences?.map(a => {
-      const group = audienceGroups?.find(g => g.id === a.group_id);
-      return {
-        value: a.id,
-        label: a.name,
-        searchLabel: `${a.name} ${a.funnel_stage || ''} ${group?.name || ''}`,
-        original: { ...a, groupName: group?.name }
-      };
-    }) || [])
-  ];
+  const audienceOptions = audiences?.map(a => {
+    const group = audienceGroups?.find(g => g.id === a.group_id);
+    return {
+      value: a.id,
+      label: a.name,
+      searchLabel: `${a.name} ${a.funnel_stage || ''} ${group?.name || ''}`,
+      original: { ...a, groupName: group?.name }
+    };
+  }) || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -76,8 +70,8 @@ export function StepContext({ focusId, value, onChange }) {
           <Skeleton className="h-12 w-full" />
         ) : (
           <WizardCombobox
-            value={value.personaId || 'none'}
-            onChange={(id) => onChange({ ...value, personaId: id === 'none' ? '' : id })}
+            value={value.personaId || ''}
+            onChange={(id) => onChange({ ...value, personaId: id })}
             options={personaOptions}
             placeholder="Selecione uma persona..."
             searchPlaceholder="Buscar persona..."
@@ -86,7 +80,7 @@ export function StepContext({ focusId, value, onChange }) {
                  <span className="font-medium text-slate-900">{p.name}</span>
                  {p.who_am_i && <span className="text-xs text-slate-400 truncate max-w-[300px]">{p.who_am_i}</span>}
               </div>
-            ) : 'Não utilizar persona específica'}
+            ) : null}
           />
         )}
       </div>
@@ -109,8 +103,8 @@ export function StepContext({ focusId, value, onChange }) {
           <Skeleton className="h-12 w-full" />
         ) : (
           <WizardCombobox
-            value={value.audienceId || 'none'}
-            onChange={(id) => onChange({ ...value, audienceId: id === 'none' ? '' : id })}
+            value={value.audienceId || ''}
+            onChange={(id) => onChange({ ...value, audienceId: id })}
             options={audienceOptions}
             placeholder="Selecione o público..."
             searchPlaceholder="Buscar público..."
@@ -124,13 +118,13 @@ export function StepContext({ focusId, value, onChange }) {
                    <span className="text-[10px] text-slate-400 mt-0.5">Grupo: {a.groupName}</span>
                  )}
                </div>
-            ) : 'Público geral'}
+            ) : null}
             renderSelected={(a) => a ? (
               <div className="flex items-center gap-2">
                 <span className="font-medium text-slate-900">{a.name}</span>
                 {a.funnel_stage && <Badge variant="outline" className="text-[10px] bg-slate-100 text-slate-600 border-slate-200">{a.funnel_stage}</Badge>}
               </div>
-            ) : 'Público geral'}
+            ) : null}
           />
         )}
       </div>
