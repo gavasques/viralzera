@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,20 +17,25 @@ import { QUERY_KEYS } from '@/components/constants/queryKeys';
  * @param {number} maxSelection - Máximo de modelos (para Multi Chat)
  * @param {string} category - 'chat', 'script', ou 'both' para filtrar
  * @param {boolean} singleSelect - Se true, permite apenas 1 seleção
+ * @param {Array} models - Modelos pré-carregados (opcional, evita refetch)
  */
-export default function ApprovedModelPicker({ 
+function ApprovedModelPicker({ 
   selectedModels = [], 
   onSelectionChange, 
   maxSelection = 6,
   category = 'both',
-  singleSelect = false
+  singleSelect = false,
+  models: preloadedModels = null
 }) {
-  // Fetch approved models
-  const { data: approvedModels = [], isLoading } = useQuery({
+  // Só faz fetch se não receber models pré-carregados
+  const { data: fetchedModels = [], isLoading } = useQuery({
     queryKey: [QUERY_KEYS.APPROVED_MODELS],
     queryFn: () => base44.entities.ApprovedModel.filter({ is_active: true }, 'order', 100),
-    staleTime: 60000
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    enabled: !preloadedModels // Só executa se não tiver modelos pré-carregados
   });
+  
+  const approvedModels = preloadedModels || fetchedModels;
 
   // Filter by category
   const filteredModels = approvedModels.filter(m => 
