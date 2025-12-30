@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, MoreVertical, Pencil, Trash2, Folder, ArrowRightLeft, Star, StarOff, Clock } from 'lucide-react';
+import { MessageSquare, MoreVertical, Pencil, Trash2, Folder, ArrowRightLeft, Star, StarOff, Clock, Wand2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import {
     DropdownMenu,
@@ -27,6 +27,7 @@ export default function ConversationCard({
 }) {
     // Count messages (excluding system messages)
     const messageCount = chat.message_count || 0;
+    const isWizard = chat.source === 'multiscript_wizard';
 
     return (
         <div 
@@ -38,7 +39,11 @@ export default function ConversationCard({
             `}
             onClick={() => onSelect(chat.id)}
         >
-            <MessageSquare className={`w-4 h-4 shrink-0 ${isActive ? 'text-pink-600' : 'text-slate-400'}`} />
+            {isWizard ? (
+                <Wand2 className={`w-4 h-4 shrink-0 ${isActive ? 'text-pink-600' : 'text-indigo-500'}`} />
+            ) : (
+                <MessageSquare className={`w-4 h-4 shrink-0 ${isActive ? 'text-pink-600' : 'text-slate-400'}`} />
+            )}
             
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -49,7 +54,33 @@ export default function ConversationCard({
                         <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
                     )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+                
+                {/* Source Badge + Channel/Format */}
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    {isWizard ? (
+                        <>
+                            <Badge variant="secondary" className="h-4 px-1.5 text-[9px] bg-indigo-100 text-indigo-700 font-medium">
+                                Wizard
+                            </Badge>
+                            {chat.post_channel && (
+                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] border-slate-200 text-slate-500">
+                                    {chat.post_channel}
+                                </Badge>
+                            )}
+                            {chat.post_format && (
+                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] border-slate-200 text-slate-500">
+                                    {chat.post_format}
+                                </Badge>
+                            )}
+                        </>
+                    ) : (
+                        <Badge variant="secondary" className="h-4 px-1.5 text-[9px] bg-slate-100 text-slate-500 font-medium">
+                            Manual
+                        </Badge>
+                    )}
+                </div>
+                
+                <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
                     <Clock className="w-3 h-3" />
                     <span>{formatDistanceToNow(new Date(chat.created_date), { addSuffix: true, locale: ptBR })}</span>
                     {messageCount > 0 && (
