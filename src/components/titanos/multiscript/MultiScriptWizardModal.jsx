@@ -7,14 +7,12 @@ import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 
-// Reutilizar steps do ScriptWizard
-import { StepPostType } from "@/components/script/wizard/steps/StepPostType";
-import { StepContext } from "@/components/script/wizard/steps/StepContext";
-import { StepRefinement } from "@/components/script/wizard/steps/StepRefinement";
-
-// Steps específicos do MultiScript
+// Steps do MultiScript
 import { StepName } from "./steps/StepName";
+import { StepPostType } from "./steps/StepPostType";
+import { StepContext } from "./steps/StepContext";
 import { StepModels } from "./steps/StepModels";
+import { StepRefinement } from "./steps/StepRefinement";
 
 // Função para chamar OpenRouter diretamente (igual ao useSendMessage)
 async function callOpenRouter(apiKey, model, messages, options = {}) {
