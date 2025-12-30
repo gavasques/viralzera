@@ -12,10 +12,8 @@ import {
     DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import moment from 'moment';
-import 'moment/locale/pt-br';
-
-moment.locale('pt-br');
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function ConversationCard({ 
     chat, 
@@ -53,7 +51,7 @@ export default function ConversationCard({
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                     <Clock className="w-3 h-3" />
-                    <span>{moment(chat.created_date).fromNow()}</span>
+                    <span>{formatDistanceToNow(new Date(chat.created_date), { addSuffix: true, locale: ptBR })}</span>
                     {messageCount > 0 && (
                         <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                             {messageCount}
