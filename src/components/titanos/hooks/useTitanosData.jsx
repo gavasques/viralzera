@@ -29,10 +29,15 @@ export function useTitanosUser() {
  */
 export function useApprovedModels() {
   return useQuery({
-    queryKey: ['titanos-approved-models'],
+    queryKey: TITANOS_QUERY_KEYS.APPROVED_MODELS,
     queryFn: () => base44.entities.ApprovedModel.list('order', 100),
     staleTime: STALE_TIMES.MODELS,
-    select: (data) => data || [],
+    gcTime: 5 * 60 * 1000,
+    select: (data) => {
+      if (!data) return [];
+      // Filtra apenas modelos ativos
+      return data.filter(m => m.is_active !== false);
+    },
   });
 }
 
