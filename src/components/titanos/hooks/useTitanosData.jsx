@@ -103,9 +103,10 @@ export function useTitanosMessages(conversationId) {
  */
 export function useConversationVotes(conversationId) {
   return useQuery({
-    queryKey: ['titanos-votes', conversationId],
+    queryKey: TITANOS_QUERY_KEYS.CONVERSATION_VOTES(conversationId),
     queryFn: () => base44.entities.ModelVote.filter({ conversation_id: conversationId }),
     enabled: !!conversationId,
+    staleTime: 60 * 1000, // 1 min
     select: (data) => data || [],
   });
 }
