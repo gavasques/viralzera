@@ -309,8 +309,9 @@ export function useRegenerateResponse(conversationId) {
   const queryClient = useQueryClient();
   const [regeneratingModel, setRegeneratingModel] = useState(null);
 
-  const regenerate = useCallback(async (modelId, messages) => {
-    if (!conversationId || !modelId) {
+  // recordId é o ID único do ApprovedModel, approvedModels é necessário para obter o openRouterId
+  const regenerate = useCallback(async (recordId, messages, approvedModels = []) => {
+    if (!conversationId || !recordId) {
       toast.error('Dados inválidos para regeneração');
       return { success: false };
     }
@@ -322,7 +323,7 @@ export function useRegenerateResponse(conversationId) {
     }
 
     // Já está regenerando este modelo
-    if (regeneratingModel === modelId) {
+    if (regeneratingModel === recordId) {
       return { success: false };
     }
 
@@ -331,7 +332,7 @@ export function useRegenerateResponse(conversationId) {
       .filter(m => m.role === 'system')
       .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 
-    setRegeneratingModel(modelId);
+    setRegeneratingModel(recordId);
 
     try {
       const apiKey = await getUserApiKey();
@@ -340,19 +341,22 @@ export function useRegenerateResponse(conversationId) {
         return { success: false };
       }
 
+      // Converte recordId para openRouterId para chamar a API
+      const openRouterId = getOpenRouterId(recordId, approvedModels);
+
       const historyMessages = [
         ...systemMessages.map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: firstUserMessage.content },
       ];
 
-      const result = await callOpenRouter(apiKey, modelId, historyMessages, {});
+      const result = await callOpenRouter(apiKey, openRouterId, historyMessages, {});
 
-      // Salva nova resposta no banco
+      // Salva nova resposta no banco com recordId (não openRouterId)
       await base44.entities.TitanosMessage.create({
         conversation_id: conversationId,
         role: 'assistant',
         content: result.content,
-        model_id: modelId,
+        model_id: recordId, // Salva com recordId!
         metrics: {
           prompt_tokens: result.usage?.prompt_tokens || 0,
           completion_tokens: result.usage?.completion_tokens || 0,
