@@ -46,9 +46,10 @@ export function useApprovedModels() {
  */
 export function useTitanosGroups() {
   return useQuery({
-    queryKey: ['titanos-groups'],
+    queryKey: TITANOS_QUERY_KEYS.GROUPS,
     queryFn: () => base44.entities.TitanosChatGroup.list('order', 50),
     staleTime: STALE_TIMES.GROUPS,
+    gcTime: 10 * 60 * 1000,
     select: (data) => data || [],
   });
 }
