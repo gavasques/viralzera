@@ -8,6 +8,26 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 /**
+ * Helper para chamar backend functions
+ */
+async function invokeFunction(functionName, payload) {
+  // Usa o token auth do base44 para autenticação
+  const token = await base44.auth.getToken?.() || localStorage.getItem('base44_token');
+  
+  const response = await fetch(`/api/functions/${functionName}`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(payload),
+  });
+  
+  const data = await response.json();
+  return { data };
+}
+
+/**
  * Hook principal para envio de mensagens
  */
 export function useSendMessage(conversationId, activeConversation, messages, groups) {
@@ -41,7 +61,7 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
         }
       }
 
-      const res = await base44.functions.invoke('titanosChat', {
+      const res = await invokeFunction('titanosChat', {
         message: input.trim(),
         conversationId,
         selectedModels,
@@ -96,7 +116,7 @@ export function useRegenerateResponse(conversationId) {
     setRegeneratingModel(modelId);
 
     try {
-      const res = await base44.functions.invoke('titanosChatSingle', {
+      const res = await invokeFunction('titanosChatSingle', {
         message: firstUserMessage.content,
         conversationId,
         modelId,
@@ -140,7 +160,7 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
     setIsLoading(true);
 
     try {
-      const res = await base44.functions.invoke('titanosChatSingle', {
+      const res = await invokeFunction('titanosChatSingle', {
         message: message.trim(),
         conversationId,
         modelId,
