@@ -2,10 +2,14 @@
  * Hook para envio de mensagens no Multi Chat
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+
+// Debug: verificar se o SDK está carregado corretamente
+console.log('[useSendMessage module] base44 imported:', !!base44);
+console.log('[useSendMessage module] base44.functions:', !!base44?.functions);
 
 
 
