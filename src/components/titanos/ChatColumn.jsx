@@ -64,6 +64,9 @@ function ChatColumn({
                 modelName={msg.role === 'assistant' ? modelName : 'Você'}
                 chatTitle={modelName}
                 isInitialPrompt={msg.role === 'user' && idx === 0}
+                promptLog={promptLog}
+                isAdmin={isAdmin}
+                onShowLog={onShowLog}
               />
             ))
           )}
