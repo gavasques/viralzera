@@ -129,7 +129,7 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
                          {/* Active Line Progress */}
                          <div 
                             className="absolute top-1/2 left-0 h-0.5 bg-indigo-600 -z-0 -translate-y-1/2 rounded-full transition-all duration-300"
-                            style={{ width: `${((step - 1) / 3) * 100}%` }}
+                            style={{ width: `${((step - 1) / 2) * 100}%` }}
                          ></div>
 
                          {steps.map((s) => {
