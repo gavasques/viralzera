@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { ChevronLeft, MessageCircle, Repeat, Heart, Bookmark, Share, X, Move, Maximize, ZoomIn, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import ReactMarkdown from 'react-markdown';
+
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 
@@ -155,14 +155,7 @@ export default function TweetCard({
             />
           ) : (
              <div className="w-full font-medium whitespace-pre-wrap" style={{ fontSize: `${currentFontSize}px`, lineHeight: '1.5', color: text_color }}>
-                     <ReactMarkdown components={{
-                        strong: ({node, ...props}) => <span className="font-bold" style={{ color: text_color }} {...props} />,
-                        em: ({node, ...props}) => <span className="italic" {...props} />,
-                        p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                        a: ({node, ...props}) => <span className="text-[#1D9BF0]" {...props} />
-                     }}>
                   {text || ""}
-               </ReactMarkdown>
              </div>
           )}
         </div>

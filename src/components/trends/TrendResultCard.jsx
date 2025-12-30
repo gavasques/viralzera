@@ -12,7 +12,7 @@ import {
   ChevronUp,
   Check
 } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
+
 
 // Parse content into individual news items
 function parseContentIntoItems(content) {
@@ -181,25 +181,8 @@ export default function TrendResultCard({ result, onSave, isSaving }) {
           </div>
         ) : (
           /* Fallback: Show full content if parsing didn't find items */
-          <div className="prose prose-sm prose-slate max-w-none">
-            <ReactMarkdown
-              components={{
-                a: ({ children, href }) => (
-                  <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
-                    {children} <ExternalLink className="w-3 h-3 inline" />
-                  </a>
-                ),
-                p: ({ children }) => <p className="mb-3">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc pl-4 mb-3">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal pl-4 mb-3">{children}</ol>,
-                li: ({ children }) => <li className="mb-1">{children}</li>,
-                h1: ({ children }) => <h3 className="font-bold text-lg mt-4 mb-2">{children}</h3>,
-                h2: ({ children }) => <h4 className="font-bold text-base mt-3 mb-2">{children}</h4>,
-                h3: ({ children }) => <h5 className="font-semibold mt-2 mb-1">{children}</h5>,
-              }}
-            >
-              {result.content}
-            </ReactMarkdown>
+          <div className="prose prose-sm prose-slate max-w-none whitespace-pre-wrap text-slate-700">
+            {result.content}
           </div>
         )}
 
