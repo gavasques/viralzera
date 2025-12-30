@@ -78,9 +78,6 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
       selected_models: selectedModels,
       metrics: {},
       group_id: groupId || null,
-      enable_reasoning: enableReasoning,
-      reasoning_effort: reasoningEffort,
-      enable_web_search: enableWebSearch,
       systemPrompt: usingGroupPrompt ? '' : systemPrompt.trim(),
     }, {
       onSuccess: (newConv) => {
@@ -88,7 +85,7 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
         onOpenChange(false);
       },
     });
-  }, [title, selectedModels, groupId, enableReasoning, reasoningEffort, enableWebSearch, usingGroupPrompt, systemPrompt, createMutation, onCreated, onOpenChange]);
+  }, [title, selectedModels, groupId, usingGroupPrompt, systemPrompt, createMutation, onCreated, onOpenChange]);
 
   const handleNext = useCallback(() => {
     if (step === 1) {
