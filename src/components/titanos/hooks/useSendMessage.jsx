@@ -7,13 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-/**
- * Helper para chamar backend functions via SDK
- */
-async function invokeFunction(functionName, payload) {
-  const response = await base44.functions.invoke(functionName, payload);
-  return response;
-}
+
 
 /**
  * Hook principal para envio de mensagens
@@ -49,7 +43,7 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
         }
       }
 
-      const res = await invokeFunction('titanosChat', {
+      const res = await base44.functions.invoke('titanosChat', {
         message: input.trim(),
         conversationId,
         selectedModels,
@@ -104,7 +98,7 @@ export function useRegenerateResponse(conversationId) {
     setRegeneratingModel(modelId);
 
     try {
-      const res = await invokeFunction('titanosChatSingle', {
+      const res = await base44.functions.invoke('titanosChatSingle', {
         message: firstUserMessage.content,
         conversationId,
         modelId,
@@ -148,7 +142,7 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
     setIsLoading(true);
 
     try {
-      const res = await invokeFunction('titanosChatSingle', {
+      const res = await base44.functions.invoke('titanosChatSingle', {
         message: message.trim(),
         conversationId,
         modelId,
