@@ -114,7 +114,7 @@ function TitanosContent({
           )}
 
           {/* Hidden Models Bar */}
-          {activeConversationId && hiddenModels.length > 0 && (
+          {activeConversationId && (
             <HiddenModelsBar 
               hiddenModels={hiddenModels} 
               onShow={handleShowModel} 
