@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,6 @@ import {
   Dna, ScrollText, Sparkles, TrendingUp, Calendar, Settings, Menu, X,
   ChevronRight, Target, Video, MessageSquare, Bot
 } from 'lucide-react';
-import { useSelectedFocus } from '@/components/hooks/useSelectedFocus.jsx';
-
-const STORAGE_KEY = 'selectedFocusId';
 
 const menuItems = [
   { section: 'Principal', items: [
