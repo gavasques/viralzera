@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import SaveFromChatButton from './SaveFromChatButton';
 import PersonaPreviewCard from '@/components/persona/PersonaPreviewCard';
@@ -124,8 +123,7 @@ export default function ChatMessage({
               
               prose-hr:my-6 prose-hr:border-slate-200"
             >
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
+              <ReactMarkdown
                 components={{
                   a: ({node, ...props}) => (
                     <a {...props} className="text-indigo-600 hover:text-indigo-800 hover:underline underline-offset-4" target="_blank" rel="noopener noreferrer" />
