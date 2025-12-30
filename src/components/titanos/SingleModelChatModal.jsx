@@ -79,7 +79,7 @@ function SingleModelChatModal({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onOpenChange(false)}
+              onClick={handleClose}
               className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
             >
               <X className="w-5 h-5" />
