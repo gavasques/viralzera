@@ -8,23 +8,11 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 /**
- * Helper para chamar backend functions
+ * Helper para chamar backend functions via SDK
  */
 async function invokeFunction(functionName, payload) {
-  // Usa o token auth do base44 para autenticação
-  const token = await base44.auth.getToken?.() || localStorage.getItem('base44_token');
-  
-  const response = await fetch(`/api/functions/${functionName}`, {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-    },
-    body: JSON.stringify(payload),
-  });
-  
-  const data = await response.json();
-  return { data };
+  const response = await base44.functions.invoke(functionName, payload);
+  return response;
 }
 
 /**
