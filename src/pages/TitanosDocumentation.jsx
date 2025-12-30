@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Check } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 
 export default function TitanosDocumentation() {
     const [copied, setCopied] = React.useState(false);
@@ -87,7 +88,7 @@ O **Titanos Router** é uma aplicação de chat avançada que permite interagir 
                         prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
                         prose-pre:bg-slate-900 prose-pre:text-slate-50
                     ">
-                        <div className="whitespace-pre-wrap">{markdownContent}</div>
+                        <ReactMarkdown>{markdownContent}</ReactMarkdown>
                     </article>
                 </div>
             </div>
