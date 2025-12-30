@@ -110,6 +110,7 @@ function TitanosContent({
               messages={messages}
               selectedModels={selectedModels}
               onModelsChange={handleModelsChange}
+              isAdmin={isAdmin}
             />
           )}
 
