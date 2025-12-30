@@ -18,7 +18,9 @@ function ChatColumn({
   onRegenerate,
   onExpand,
   isAdmin = false,
-  conversationId
+  conversationId,
+  promptLog,
+  onShowLog
 }) {
   const messagesEndRef = useRef(null);
 
