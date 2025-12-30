@@ -1,0 +1,414 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Sparkles, ArrowRight, ArrowLeft, Wand2, Check, MessageSquare, Users, Bot, Library, Loader2 } from "lucide-react";
+import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
+import { base44 } from "@/api/base44Client";
+import { cn } from "@/lib/utils";
+import { toast } from 'sonner';
+
+// Reutilizar steps do ScriptWizard
+import { StepPostType } from "@/components/script/wizard/steps/StepPostType";
+import { StepContext } from "@/components/script/wizard/steps/StepContext";
+import { StepRefinement } from "@/components/script/wizard/steps/StepRefinement";
+
+// Steps específicos do MultiScript
+import { StepName } from "./steps/StepName";
+import { StepModels } from "./steps/StepModels";
+
+const STEPS = [
+    { id: 'name', title: 'Nome', description: 'Identificação do chat', icon: MessageSquare },
+    { id: 'format', title: 'Formato', description: 'Tipo de conteúdo', icon: Wand2 },
+    { id: 'context', title: 'Contexto', description: 'Persona e Público', icon: Users },
+    { id: 'models', title: 'Inteligências', description: 'Modelos de IA', icon: Bot },
+    { id: 'refine', title: 'Refinamento', description: 'Materiais e Notas', icon: Library },
+];
+
+export default function MultiScriptWizardModal({ open, onOpenChange, onCreate }) {
+    const { selectedFocusId } = useSelectedFocus();
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generationStatus, setGenerationStatus] = useState('');
+
+    const [formData, setFormData] = useState({
+        // Step 1: Nome
+        title: '',
+        // Step 2: Formato
+        postTypeId: '',
+        includeExamples: true,
+        // Step 3: Contexto
+        personaId: '',
+        audienceId: '',
+        // Step 4: Modelos
+        selectedModels: [], // Array of model IDs
+        // Step 5: Refinamento
+        selectedMaterials: [],
+        userNotes: ''
+    });
+
+    // Reset form when opening
+    React.useEffect(() => {
+        if (open) {
+            setCurrentStep(0);
+            setFormData({
+                title: `Multi Script - ${new Date().toLocaleDateString('pt-BR')}`,
+                postTypeId: '',
+                includeExamples: true,
+                personaId: '',
+                audienceId: '',
+                selectedModels: [],
+                selectedMaterials: [],
+                userNotes: ''
+            });
+            setIsGenerating(false);
+            setGenerationStatus('');
+        }
+    }, [open]);
+
+    const handleNext = () => {
+        if (currentStep < STEPS.length - 1) {
+            setCurrentStep(curr => curr + 1);
+        } else {
+            handleGenerate();
+        }
+    };
+
+    const handleBack = () => {
+        if (currentStep > 0) {
+            setCurrentStep(curr => curr - 1);
+        }
+    };
+
+    const canProceed = () => {
+        switch (currentStep) {
+            case 0: return formData.title.trim().length > 0;
+            case 1: return !!formData.postTypeId;
+            case 2: return true; // Contexto é opcional
+            case 3: return formData.selectedModels.length > 0;
+            case 4: return true; // Refinamento é opcional
+            default: return true;
+        }
+    };
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        setGenerationStatus('Coletando informações...');
+
+        try {
+            // 1. Fetch all required data
+            const [postType, persona, audience, materials] = await Promise.all([
+                formData.postTypeId ? base44.entities.PostType.get(formData.postTypeId) : null,
+                formData.personaId ? base44.entities.Persona.get(formData.personaId) : null,
+                formData.audienceId ? base44.entities.Audience.get(formData.audienceId) : null,
+                formData.selectedMaterials.length > 0 
+                    ? base44.entities.Material.filter({ id: { $in: formData.selectedMaterials } }) 
+                    : []
+            ]);
+
+            setGenerationStatus('Refinando prompt via webhook...');
+
+            // 2. Build initial prompt
+            const rawPrompt = buildPrompt({
+                postType: postType?.data || postType,
+                persona: persona?.data || persona,
+                audience: audience?.data || audience,
+                materials: Array.isArray(materials) ? materials : (materials?.data || []),
+                includeExamples: formData.includeExamples,
+                userNotes: formData.userNotes
+            });
+
+            // 3. Send to refiner agent for refinement
+            let refinedPrompt = rawPrompt;
+            try {
+                const webhookResponse = await base44.functions.invoke('refinePrompt', {
+                    prompt: rawPrompt
+                });
+                
+                console.log('Refiner response:', webhookResponse.data);
+                
+                // Extract refined prompt from response
+                if (webhookResponse.data?.output) {
+                    refinedPrompt = webhookResponse.data.output;
+                } else if (webhookResponse.data?.refined_prompt) {
+                    refinedPrompt = webhookResponse.data.refined_prompt;
+                } else if (typeof webhookResponse.data === 'string') {
+                    refinedPrompt = webhookResponse.data;
+                }
+            } catch (refineError) {
+                console.warn('Refine prompt failed, using raw prompt:', refineError);
+                // Continue with raw prompt if refinement fails
+            }
+
+            setGenerationStatus('Criando conversa e enviando para IAs...');
+
+            // 4. Fetch approved models to get their configurations
+            const approvedModels = await base44.entities.ApprovedModel.filter({
+                model_id: { $in: formData.selectedModels }
+            });
+
+            // 4. Create the conversation (configs are per-model now)
+            const conversation = await base44.entities.TitanosConversation.create({
+                title: formData.title || `Multi Script - ${new Date().toLocaleDateString('pt-BR')}`,
+                selected_models: formData.selectedModels,
+                metrics: {},
+                source: 'multiscript_wizard',
+                post_type_id: formData.postTypeId,
+                persona_id: formData.personaId || null,
+                audience_id: formData.audienceId || null
+            });
+
+            // 5. Build model configs from ApprovedModel settings
+            const modelConfigs = {};
+            approvedModels.forEach(am => {
+                modelConfigs[am.model_id] = {
+                    enableReasoning: am.supports_reasoning || false,
+                    reasoningEffort: am.reasoning_effort || 'high',
+                    enableWebSearch: am.supports_web_search || false,
+                    parameters: am.parameters || {}
+                };
+            });
+
+            // 6. Send the refined prompt to all selected models
+            console.log('Sending refined prompt to models:', formData.selectedModels);
+            console.log('Model configs:', modelConfigs);
+
+            const chatResponse = await base44.functions.invoke('titanosChatSimple', {
+                message: refinedPrompt,
+                conversationId: conversation.id,
+                selectedModels: formData.selectedModels,
+                history: [],
+                modelConfigs // Pass per-model configurations
+            });
+
+            console.log('Chat response:', chatResponse.data);
+
+            setGenerationStatus('Concluído!');
+            toast.success('Multi Script gerado com sucesso!');
+
+            // 6. Call onCreate callback
+            if (onCreate) {
+                onCreate(conversation);
+            }
+
+            // 7. Close modal
+            onOpenChange(false);
+
+        } catch (error) {
+            console.error("Error generating multi script:", error);
+            toast.error('Erro ao gerar Multi Script: ' + (error.message || 'Erro desconhecido'));
+            setIsGenerating(false);
+            setGenerationStatus('');
+        }
+    };
+
+    const renderStep = () => {
+        switch (currentStep) {
+            case 0:
+                return <StepName value={formData} onChange={setFormData} />;
+            case 1:
+                return <StepPostType focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+            case 2:
+                return <StepContext focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+            case 3:
+                return <StepModels value={formData} onChange={setFormData} />;
+            case 4:
+                return <StepRefinement focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-5xl p-0 gap-0 overflow-hidden bg-white h-[800px] flex flex-row">
+                
+                {/* Sidebar Steps */}
+                <div className="w-[260px] bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 p-5 flex flex-col justify-between hidden md:flex">
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-2 mb-6">
+                            <div className="bg-pink-600 p-1.5 rounded-lg shadow-sm">
+                                <Wand2 className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="font-bold text-lg text-slate-900 tracking-tight">Multi Script</span>
+                        </div>
+
+                        <div className="space-y-0.5 relative">
+                            {/* Connector Line */}
+                            <div className="absolute left-[17px] top-5 bottom-5 w-0.5 bg-slate-200 z-0" />
+                            
+                            {STEPS.map((step, idx) => {
+                                const isActive = currentStep === idx;
+                                const isCompleted = currentStep > idx;
+                                const Icon = step.icon;
+
+                                return (
+                                    <div key={step.id} className="relative z-10 flex items-center gap-3 py-2.5">
+                                        <div className={cn(
+                                            "w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-sm",
+                                            isActive 
+                                                ? "bg-pink-600 border-pink-600 text-white scale-110" 
+                                                : isCompleted 
+                                                    ? "bg-emerald-500 border-emerald-500 text-white" 
+                                                    : "bg-white border-slate-200 text-slate-400"
+                                        )}>
+                                            {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                                        </div>
+                                        <div>
+                                            <p className={cn(
+                                                "font-semibold text-sm transition-colors",
+                                                isActive ? "text-pink-900" : isCompleted ? "text-slate-900" : "text-slate-500"
+                                            )}>
+                                                {step.title}
+                                            </p>
+                                            <p className="text-[10px] text-slate-400">{step.description}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="bg-pink-50/80 rounded-xl p-4 border border-pink-100">
+                        <p className="text-xs text-pink-800 font-medium mb-1">💡 Multi Script</p>
+                        <p className="text-[11px] text-pink-600/80 leading-relaxed">
+                            Compare scripts gerados por diferentes IAs para escolher o melhor resultado.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col min-w-0">
+                    {/* Header (Mobile Only) */}
+                    <div className="md:hidden p-4 border-b flex items-center gap-2 bg-slate-50">
+                        <span className="font-bold text-slate-900">Passo {currentStep + 1} de {STEPS.length}</span>
+                        <span className="text-slate-400"> - {STEPS[currentStep].title}</span>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex-1 p-6 overflow-y-auto">
+                        <div className="max-w-2xl mx-auto">
+                            {renderStep()}
+                        </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="p-5 border-t border-slate-100 bg-white flex justify-between items-center">
+                        <Button 
+                            variant="ghost" 
+                            onClick={handleBack} 
+                            disabled={currentStep === 0 || isGenerating}
+                            className={cn("text-slate-500", currentStep === 0 && "invisible")}
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Voltar
+                        </Button>
+
+                        <div className="flex gap-2">
+                            <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isGenerating}>
+                                Cancelar
+                            </Button>
+                            <Button 
+                                onClick={handleNext} 
+                                disabled={!canProceed() || isGenerating}
+                                className={cn(
+                                    "min-w-[160px] shadow-lg transition-all",
+                                    currentStep === STEPS.length - 1 
+                                        ? "bg-pink-600 hover:bg-pink-700 hover:scale-[1.02]" 
+                                        : "bg-slate-900 hover:bg-slate-800"
+                                )}
+                            >
+                                {isGenerating ? (
+                                    <span className="flex items-center gap-2">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span className="text-xs truncate max-w-[120px]">{generationStatus}</span>
+                                    </span>
+                                ) : currentStep === STEPS.length - 1 ? (
+                                    <>
+                                        Gerar Multi Script
+                                        <Sparkles className="w-4 h-4 ml-2" />
+                                    </>
+                                ) : (
+                                    <>
+                                        Próximo
+                                        <ArrowRight className="w-4 h-4 ml-2" />
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// Prompt Builder (similar to ScriptWizardModal but adapted)
+function buildPrompt({ postType, persona, audience, materials, includeExamples, userNotes }) {
+    let prompt = `Preciso que você crie um script magnético com base nas informações abaixo.\n\n`;
+    
+    // Post Type Info
+    if (postType) {
+        prompt += `📝 **TIPO DE POSTAGEM:**\n`;
+        prompt += `- Nome: ${postType.title || 'N/A'}\n`;
+        prompt += `- Formato: ${postType.format || 'N/A'}\n`;
+        if (postType.character_limit) prompt += `- Limite de Caracteres: ${postType.character_limit}\n`;
+        if (postType.description) prompt += `- Descrição/Objetivo: ${postType.description}\n`;
+        if (postType.content_structure) prompt += `- Estrutura de Conteúdo:\n${postType.content_structure}\n`;
+        if (postType.creation_instructions) prompt += `- Instruções de Criação:\n${postType.creation_instructions}\n`;
+
+        if (includeExamples && postType.examples?.length > 0) {
+            prompt += `\n📚 **EXEMPLOS DE REFERÊNCIA:**\n`;
+            postType.examples.slice(0, 5).forEach((ex, i) => {
+                const content = typeof ex === 'string' ? ex : ex.content;
+                const sourceType = typeof ex === 'string' ? '' : (ex.source_type === 'mine' ? ' (Meu)' : ' (Referência)');
+                prompt += `--- Exemplo ${i + 1}${sourceType} ---\n${content}\n\n`;
+            });
+        }
+    }
+
+    // Persona
+    if (persona) {
+        prompt += `\n👤 **MINHA PERSONA:**\n`;
+        prompt += `- Nome: ${persona.name}\n`;
+        if (persona.who_am_i) prompt += `- Quem Sou Eu: ${persona.who_am_i}\n`;
+        if (persona.hobbies?.length > 0) {
+            const hobbiesText = Array.isArray(persona.hobbies) ? persona.hobbies.join(', ') : persona.hobbies;
+            prompt += `- Hobbies e Interesses: ${hobbiesText}\n`;
+        }
+        if (persona.tone_of_voice) {
+            const toneText = typeof persona.tone_of_voice === 'object'
+                ? JSON.stringify(persona.tone_of_voice, null, 2)
+                : persona.tone_of_voice;
+            prompt += `- Tom de Voz: ${toneText}\n`;
+        }
+    }
+
+    // Audience
+    if (audience) {
+        prompt += `\n🎯 **PÚBLICO-ALVO:**\n`;
+        prompt += `- Nome: ${audience.name}\n`;
+        if (audience.funnel_stage) prompt += `- Etapa do Funil: ${audience.funnel_stage}\n`;
+        if (audience.description) prompt += `- Descrição: ${audience.description}\n`;
+        if (audience.pains) prompt += `- Dores: ${audience.pains}\n`;
+        if (audience.ambitions) prompt += `- Ambições: ${audience.ambitions}\n`;
+    }
+
+    // Materials
+    if (materials && materials.length > 0) {
+        prompt += `\n📋 **MATERIAIS DE APOIO:**\n`;
+        materials.forEach((mat) => {
+            prompt += `--- ${mat.title} ---\n${mat.content}\n\n`;
+        });
+    }
+
+    // User Notes
+    if (userNotes && userNotes.trim()) {
+        prompt += `\n📝 **INSTRUÇÕES ADICIONAIS:**\n`;
+        prompt += `${userNotes}\n`;
+    }
+
+    prompt += `\n---\n\nCrie um script magnético completo seguindo a estrutura e estilo definidos. Seja criativo e impactante.`;
+
+    return prompt;
+}
