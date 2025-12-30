@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings, Sparkles, User, Image, Download, ChevronLeft, ChevronRight, Loader2, Twitter, Plus, Trash2, Save, ArrowLeft, Type, PanelRightClose, PanelRightOpen, FileText } from "lucide-react";
 import { toast } from "sonner";
-import html2canvas from 'html2canvas';
+// html2canvas import removed - using native canvas approach
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
 
