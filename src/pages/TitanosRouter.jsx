@@ -1,9 +1,9 @@
 /**
- * Multi Chat - Página Principal
- * Refatorada para melhor organização e performance
+ * Multi Chat - Página principal
+ * Compara respostas de múltiplos modelos de IA em paralelo
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,11 +19,11 @@ import HiddenModelsBar from '@/components/titanos/HiddenModelsBar';
 import SingleModelChatModal from '@/components/titanos/SingleModelChatModal';
 import EmptyConversation from '@/components/titanos/EmptyConversation';
 
-// Sub-componentes extraídos
-import ChatInputArea from '@/components/titanos/components/ChatInputArea';
-import ConversationHeader from '@/components/titanos/components/ConversationHeader';
-import ChatArea from '@/components/titanos/components/ChatArea';
-import RemoveModelDialog from '@/components/titanos/components/RemoveModelDialog';
+// Extracted Components
+import ConversationHeader from '@/components/titanos/components/ConversationHeader.jsx';
+import ChatArea from '@/components/titanos/components/ChatArea.jsx';
+import ChatInputArea from '@/components/titanos/components/ChatInputArea.jsx';
+import RemoveModelDialog from '@/components/titanos/components/RemoveModelDialog.jsx';
 
 // Hooks
 import { 
@@ -38,7 +38,7 @@ import { useConversationMutations } from '@/components/titanos/hooks/useTitanosM
 import { useRegenerateResponse, useSendMessage } from '@/components/titanos/hooks/useSendMessage';
 
 // Utils
-import { getMessagesForModel, getModelAlias } from '@/components/titanos/utils';
+import { getModelAlias } from '@/components/titanos/utils';
 import { DEFAULT_CONVERSATION_LIMIT } from '@/components/titanos/constants';
 
 export default function TitanosRouter() {
@@ -59,15 +59,10 @@ export default function TitanosRouter() {
   const { data: groups = [] } = useTitanosGroups();
   const { data: conversations = [] } = useTitanosConversations(limit);
   const { data: activeConversation } = useTitanosConversation(activeConversationId);
-  const { data: messages = [] } = useTitanosMessages(activeConversationId);
   
-  // Message hooks
-  const { sendMessage, isLoading, cancel } = useSendMessage(
-    activeConversationId, 
-    activeConversation, 
-    messages, 
-    groups
-  );
+  // Messages query & send hook
+  const { data: messages = [] } = useTitanosMessages(activeConversationId);
+  const { sendMessage, isLoading } = useSendMessage(activeConversationId, activeConversation, messages, groups);
   const { regenerate, regeneratingModel } = useRegenerateResponse(activeConversationId);
 
   // Mutations
@@ -75,17 +70,12 @@ export default function TitanosRouter() {
 
   // Derived state (memoized)
   const isAdmin = user?.role === 'admin';
-  const hiddenModels = activeConversation?.hidden_models || [];
-  const selectedModels = activeConversation?.selected_models || [];
+  const hiddenModels = useMemo(() => activeConversation?.hidden_models || [], [activeConversation?.hidden_models]);
+  const selectedModels = useMemo(() => activeConversation?.selected_models || [], [activeConversation?.selected_models]);
   const visibleModels = useMemo(
     () => selectedModels.filter(m => !hiddenModels.includes(m)), 
     [selectedModels, hiddenModels]
   );
-
-  // Cleanup ao desmontar ou trocar de conversa
-  useEffect(() => {
-    return () => cancel?.();
-  }, [activeConversationId, cancel]);
 
   // Handlers (memoized)
   const handleNewConversation = useCallback(() => {
@@ -134,13 +124,17 @@ export default function TitanosRouter() {
     const result = await sendMessage(currentInput, selectedModels);
     
     if (!result.success) {
-      setInput(currentInput);
+      setInput(currentInput); // Restaura input em caso de erro
     }
   }, [input, activeConversationId, selectedModels, sendMessage]);
 
   const handleRegenerate = useCallback((modelId) => {
     regenerate(modelId, messages);
   }, [regenerate, messages]);
+
+  const handleModelsChange = useCallback((models) => {
+    updateConversation.mutate({ selected_models: models });
+  }, [updateConversation]);
 
   const handleDeleteConversation = useCallback((id) => {
     deleteConversation.mutate(id);
@@ -149,16 +143,11 @@ export default function TitanosRouter() {
     }
   }, [deleteConversation, activeConversationId]);
 
-  const handleModelsChange = useCallback((models) => {
-    updateConversation.mutate({ selected_models: models });
-  }, [updateConversation]);
+  const handleLoadMore = useCallback(() => {
+    setLimit(prev => prev + 50);
+  }, []);
 
   const getAlias = useCallback((modelId) => getModelAlias(modelId, approvedModels), [approvedModels]);
-  
-  const getMessagesForModelCallback = useCallback(
-    (modelId) => getMessagesForModel(messages, modelId), 
-    [messages]
-  );
 
   return (
     <div className="space-y-6 -m-6 md:-m-12">
@@ -182,23 +171,23 @@ export default function TitanosRouter() {
           onNewInGroup={handleNewConversationInGroup}
           onDelete={handleDeleteConversation}
           onSelect={setActiveConversationId}
-          onLoadMore={() => setLimit(prev => prev + 50)}
+          onLoadMore={handleLoadMore}
           hasMore={conversations.length >= limit}
         />
       
-        {/* Chat Area */}
+        {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
           {activeConversation && (
-            <ConversationHeader 
-              conversation={activeConversation}
-              messages={messages}
-              selectedModels={selectedModels}
-              onModelsChange={handleModelsChange}
-            />
-          )}
+            <>
+              <ConversationHeader 
+                conversation={activeConversation}
+                messages={messages}
+                selectedModels={selectedModels}
+                onModelsChange={handleModelsChange}
+              />
 
-          {activeConversationId && (
-            <HiddenModelsBar hiddenModels={hiddenModels} onShow={handleShowModel} />
+              <HiddenModelsBar hiddenModels={hiddenModels} onShow={handleShowModel} />
+            </>
           )}
 
           {activeConversationId ? (
@@ -209,7 +198,6 @@ export default function TitanosRouter() {
                 isLoading={isLoading}
                 regeneratingModel={regeneratingModel}
                 getAlias={getAlias}
-                getMessagesForModel={getMessagesForModelCallback}
                 onHide={handleHideModel}
                 onRemove={setRemoveModelTarget}
                 onRegenerate={handleRegenerate}
@@ -260,13 +248,13 @@ export default function TitanosRouter() {
           modelId={expandedModel}
           modelName={getAlias(expandedModel)}
           conversationId={activeConversationId}
-          messages={getMessagesForModelCallback(expandedModel)}
+          messages={messages}
           allMessages={messages}
         />
       )}
 
       <RemoveModelDialog
-        modelId={removeModelTarget}
+        open={!!removeModelTarget}
         modelName={removeModelTarget ? getAlias(removeModelTarget) : ''}
         onConfirm={handleRemoveModel}
         onCancel={() => setRemoveModelTarget(null)}
