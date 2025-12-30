@@ -126,7 +126,7 @@ export function useRegenerateResponse(conversationId) {
     setRegeneratingModel(modelId);
 
     try {
-      const res = await base44.functions.invoke('titanosChatSingle', {
+      const res = await invokeFunction('titanosChatSingle', {
         message: firstUserMessage.content,
         conversationId,
         modelId,
