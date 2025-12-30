@@ -6,7 +6,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { TITANOS_QUERY_KEYS } from '../constants';
 
 /**
  * Hook para mutações de conversa
@@ -150,7 +149,7 @@ export function useVoteMutations(conversationId) {
       return { action: 'voted', modelAlias };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION_VOTES(conversationId) });
+      queryClient.invalidateQueries({ queryKey: ['titanos-votes', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['modelVotes'] });
       
       if (result.action === 'voted') {

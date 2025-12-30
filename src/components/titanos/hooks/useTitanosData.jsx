@@ -5,7 +5,7 @@
 
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { TITANOS_QUERY_KEYS, STALE_TIMES, DEFAULT_CONVERSATION_LIMIT } from '../constants';
+import { STALE_TIMES, DEFAULT_CONVERSATION_LIMIT } from '../constants';
 
 /**
  * Hook para dados do usuário atual
