@@ -16,7 +16,6 @@ const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
   ]},
   { section: 'Criação', items: [
-    { name: 'Gerador de Scripts', icon: Sparkles, page: 'ScriptGenerator' },
     { name: 'Multi Chat', icon: Bot, page: 'TitanosRouter' },
     { name: 'Canvas', icon: ScrollText, page: 'Canvas' },
   ]},
