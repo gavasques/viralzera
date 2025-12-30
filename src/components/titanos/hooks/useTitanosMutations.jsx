@@ -17,15 +17,15 @@ export function useConversationMutations(activeConversationId) {
   const update = useMutation({
     mutationFn: (data) => base44.entities.TitanosConversation.update(activeConversationId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(activeConversationId) });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversation', activeConversationId] });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
     },
   });
 
   const remove = useMutation({
     mutationFn: (id) => base44.entities.TitanosConversation.delete(id),
-    onSuccess: (_, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS() });
-      return deletedId;
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
     },
   });
 
@@ -46,7 +46,7 @@ export function useConversationMutations(activeConversationId) {
       return conversation;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS() });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
       toast.success('Conversa criada com sucesso!');
     },
     onError: (err) => {
@@ -71,7 +71,7 @@ export function useGroupMutations() {
       return base44.entities.TitanosChatGroup.create(data);
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.GROUPS });
+      queryClient.invalidateQueries({ queryKey: ['titanos-groups'] });
       toast.success(id ? 'Grupo atualizado!' : 'Grupo criado!');
     },
   });
@@ -86,8 +86,8 @@ export function useGroupMutations() {
       return base44.entities.TitanosChatGroup.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.GROUPS });
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS() });
+      queryClient.invalidateQueries({ queryKey: ['titanos-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
       toast.success('Grupo excluído!');
     },
   });
@@ -98,20 +98,20 @@ export function useGroupMutations() {
 /**
  * Hook para mutações de chat (atualização de conversa)
  */
-export function useChatMutations(conversationId) {
+export function useChatMutations() {
   const queryClient = useQueryClient();
 
   const updateChat = useMutation({
     mutationFn: ({ chatId, data }) => base44.entities.TitanosConversation.update(chatId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS() });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
     },
   });
 
   const renameChat = useMutation({
     mutationFn: ({ id, title }) => base44.entities.TitanosConversation.update(id, { title }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS() });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
       toast.success('Chat renomeado!');
     },
   });
