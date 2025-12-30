@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight, ArrowLeft, Wand2, Check, MessageSquare, Users, Bot, Library, Loader2 } from "lucide-react";
@@ -15,6 +15,44 @@ import { StepRefinement } from "@/components/script/wizard/steps/StepRefinement"
 // Steps específicos do MultiScript
 import { StepName } from "./steps/StepName";
 import { StepModels } from "./steps/StepModels";
+
+// Função para chamar OpenRouter diretamente (igual ao useSendMessage)
+async function callOpenRouter(apiKey, model, messages, options = {}) {
+    const body = {
+        model,
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+    };
+    
+    if (options.enableReasoning && model.includes('claude')) {
+        body.reasoning = { effort: options.reasoningEffort || 'high' };
+    }
+    
+    if (options.enableWebSearch) {
+        body.plugins = [{ id: 'web' }];
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Multi Script',
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `OpenRouter error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+        content: data.choices?.[0]?.message?.content || '',
+        usage: data.usage || {},
+    };
+}
 
 const STEPS = [
     { id: 'name', title: 'Nome', description: 'Identificação do chat', icon: MessageSquare },
