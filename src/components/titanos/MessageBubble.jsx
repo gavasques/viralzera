@@ -68,7 +68,20 @@ export default function MessageBubble({ role, content, metrics, modelName, chatT
                 `}>
                     <div className={`${isUser ? 'text-slate-100' : 'text-slate-700'} prose prose-sm max-w-none ${isUser ? 'prose-invert' : ''}`}>
                         {isUser ? (
-                            <span className="whitespace-pre-wrap">{displayContent}</span>
+                            <div className="flex flex-col gap-2">
+                                <span className="whitespace-pre-wrap">{displayContent}</span>
+                                {isInitialPrompt && isAdmin && promptLog && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={onShowLog}
+                                        className="self-start mt-2 bg-white/10 border-white/20 text-white hover:bg-white/20 text-xs h-7"
+                                    >
+                                        <ScrollText className="w-3 h-3 mr-1.5" />
+                                        Ver Log do Prompt
+                                    </Button>
+                                )}
+                            </div>
                         ) : (
                             <ReactMarkdown
                                 components={{
