@@ -142,6 +142,8 @@ function TitanosContent({
                 onExpand={openExpandedModel}
                 isAdmin={isAdmin}
                 conversationId={activeConversationId}
+                promptLog={promptLog}
+                onShowLog={() => setShowPromptLog(true)}
               />
 
               <TitanosInputArea 
