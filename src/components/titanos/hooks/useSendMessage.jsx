@@ -53,15 +53,18 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
         enableWebSearch: activeConversation?.enable_web_search || false,
       });
 
+      console.log('[useSendMessage] Response:', res);
+      
       if (res.data?.error) {
         toast.error(`Erro: ${res.data.error}`);
         return { success: false };
       }
 
-      // Invalida queries
-      queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
-      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
-      queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
+      // Invalida queries para forçar refetch das mensagens
+      console.log('[useSendMessage] Invalidating queries for conversation:', conversationId);
+      await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      await queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
+      await queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
 
       return { success: true };
     } catch (err) {
