@@ -82,8 +82,30 @@ export function getMessagesForModel(messages, modelId) {
 
 /**
  * Obtém alias do modelo a partir da lista de modelos aprovados
+ * @param {string} recordId - ID único do registro (não o model_id)
+ * @param {Array} approvedModels - Lista de modelos aprovados
  */
-export function getModelAlias(modelId, approvedModels = []) {
-  const approved = approvedModels.find(m => m.model_id === modelId);
-  return approved?.alias || extractModelName(modelId);
+export function getModelAlias(recordId, approvedModels = []) {
+  // Busca pelo ID único do registro
+  const approved = approvedModels.find(m => m.id === recordId);
+  return approved?.alias || extractModelName(recordId);
+}
+
+/**
+ * Obtém o model_id (ID do OpenRouter) a partir do ID único do registro
+ * @param {string} recordId - ID único do registro
+ * @param {Array} approvedModels - Lista de modelos aprovados
+ */
+export function getOpenRouterId(recordId, approvedModels = []) {
+  const approved = approvedModels.find(m => m.id === recordId);
+  return approved?.model_id || recordId;
+}
+
+/**
+ * Obtém o registro completo do modelo aprovado
+ * @param {string} recordId - ID único do registro
+ * @param {Array} approvedModels - Lista de modelos aprovados
+ */
+export function getApprovedModel(recordId, approvedModels = []) {
+  return approvedModels.find(m => m.id === recordId) || null;
 }
