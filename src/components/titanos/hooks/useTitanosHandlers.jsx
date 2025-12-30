@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
-import { getMessagesForModel, getModelAlias } from '../utils';
+import { getMessagesForModel, getModelAlias, getOpenRouterId } from '../utils';
 import { sanitizeInput } from '../utils/sanitize';
 
 /**
