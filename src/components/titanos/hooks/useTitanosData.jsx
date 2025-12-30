@@ -1,11 +1,16 @@
 /**
  * Hooks para busca de dados do Multi Chat
  * Centraliza todas as queries em um único lugar
+ * 
+ * Otimizações:
+ * - Stale times configuráveis por tipo de dado
+ * - Cache compartilhado via query keys
+ * - Ordenação no cliente quando possível
  */
 
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { STALE_TIMES, DEFAULT_CONVERSATION_LIMIT } from '../constants';
+import { STALE_TIMES, DEFAULT_CONVERSATION_LIMIT, TITANOS_QUERY_KEYS } from '../constants';
 
 /**
  * Hook para dados do usuário atual
