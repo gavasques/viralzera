@@ -129,23 +129,7 @@ export default function Dashboard() {
                 </Card>
               </Link>
 
-              {/* Script Generator */}
-              <Link to={createPageUrl('ScriptGenerator')}>
-                <Card className="h-full hover:border-pink-200 hover:shadow-md transition-all group cursor-pointer border-slate-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="p-3 bg-pink-50 rounded-xl group-hover:bg-pink-100 transition-colors">
-                        <Sparkles className="w-6 h-6 text-pink-600" />
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-pink-500 group-hover:translate-x-1 transition-all" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-900 group-hover:text-pink-700 transition-colors">Gerador de Scripts</h3>
-                      <p className="text-sm text-slate-500 mt-1">Crie roteiros magnéticos para vídeos curtos e reels.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+
 
               {/* Canvas */}
               <Link to={createPageUrl('Canvas')}>

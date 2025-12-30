@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -128,7 +127,7 @@ export default function Layout({ children }) {
     'Trends',
     'PostTypes',
     'ThemeMatrix',
-    'ScriptGenerator',
+
     'TitanosRouter',
     'Prompts',
     'Canvas',
@@ -156,7 +155,6 @@ export default function Layout({ children }) {
             items: [
               { name: 'Gestão de Postagens', icon: Calendar, page: 'PostManagement' },
               { name: 'Multi Chat', icon: Sparkles, page: 'TitanosRouter' },
-              { name: 'Gerar Script Magnético', icon: Sparkles, page: 'ScriptGenerator' },
               { name: 'Canvas', icon: FileText, page: 'Canvas' },
             ]
           },
