@@ -21,32 +21,59 @@ export function useConversationMutations(activeConversationId) {
   const queryClient = useQueryClient();
 
   const update = useMutation({
-    mutationFn: (data) => base44.entities.TitanosConversation.update(activeConversationId, data),
+    mutationFn: (data) => {
+      if (!activeConversationId) {
+        throw new Error('Nenhuma conversa selecionada');
+      }
+      return base44.entities.TitanosConversation.update(activeConversationId, data);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['titanos-conversation', activeConversationId] });
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(activeConversationId) });
       queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
+    },
+    onError: (err) => {
+      console.error('[useConversationMutations] Update error:', err.message);
     },
   });
 
   const remove = useMutation({
-    mutationFn: (id) => base44.entities.TitanosConversation.delete(id),
-    onSuccess: () => {
+    mutationFn: (id) => {
+      if (!id) throw new Error('ID inválido');
+      return base44.entities.TitanosConversation.delete(id);
+    },
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
+      // Remove a conversa do cache
+      queryClient.removeQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(deletedId) });
+      queryClient.removeQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(deletedId) });
+      toast.success('Conversa excluída');
+    },
+    onError: (err) => {
+      toast.error('Erro ao excluir: ' + (err.message || 'Erro desconhecido'));
     },
   });
 
   const create = useMutation({
     mutationFn: async (data) => {
-      const conversation = await base44.entities.TitanosConversation.create(data);
+      // Sanitiza dados de entrada
+      const sanitizedData = {
+        ...data,
+        title: sanitizeTitle(data.title) || 'Nova Conversa',
+      };
+
+      const conversation = await base44.entities.TitanosConversation.create(sanitizedData);
       
       // Adiciona system prompt se fornecido
-      if (data.systemPrompt?.trim()) {
-        await base44.entities.TitanosMessage.create({
-          conversation_id: conversation.id,
-          role: 'system',
-          content: data.systemPrompt.trim(),
-          model_id: null,
-        });
+      if (data.systemPrompt) {
+        const sanitizedPrompt = sanitizeSystemPrompt(data.systemPrompt);
+        if (sanitizedPrompt) {
+          await base44.entities.TitanosMessage.create({
+            conversation_id: conversation.id,
+            role: 'system',
+            content: sanitizedPrompt,
+            model_id: null,
+          });
+        }
       }
       
       return conversation;
@@ -56,6 +83,7 @@ export function useConversationMutations(activeConversationId) {
       toast.success('Conversa criada com sucesso!');
     },
     onError: (err) => {
+      console.error('[useConversationMutations] Create error:', err);
       toast.error('Erro ao criar conversa: ' + (err.message || 'Erro desconhecido'));
     },
   });
