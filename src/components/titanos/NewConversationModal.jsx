@@ -63,10 +63,6 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
                 setIsContextExpanded(false);
             }
             
-            // Reset advanced settings
-            setEnableReasoning(false);
-            setReasoningEffort('high');
-            setEnableWebSearch(false);
             setTitleError(false);
         }
     }, [open, defaultGroup]);
