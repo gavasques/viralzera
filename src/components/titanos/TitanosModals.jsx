@@ -32,6 +32,7 @@ function TitanosModals({
   closeNewModal,
   handleConversationCreated,
   newConversationGroup,
+  approvedModels,
   
   // Multi Script Modal
   isMultiScriptOpen,
