@@ -59,10 +59,11 @@ export function useTitanosGroups() {
  */
 export function useTitanosConversations(limit = DEFAULT_CONVERSATION_LIMIT) {
   return useQuery({
-    queryKey: ['titanos-conversations', limit],
+    queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS(limit),
     queryFn: () => base44.entities.TitanosConversation.list('-created_date', limit),
     placeholderData: keepPreviousData,
     staleTime: STALE_TIMES.CONVERSATIONS,
+    gcTime: 5 * 60 * 1000,
     select: (data) => data || [],
   });
 }
