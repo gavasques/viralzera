@@ -216,21 +216,22 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
       };
 
       // Chama cada modelo em paralelo
+      // selectedModels aqui já são os model_ids do OpenRouter (convertidos pelo handler)
       const results = await Promise.allSettled(
-        selectedModels.map(async (modelId) => {
+        selectedModels.map(async (openRouterId) => {
           if (abortRef.current) {
-            return { modelId, success: false, error: 'Abortado' };
+            return { modelId: openRouterId, success: false, error: 'Abortado' };
           }
           
           try {
-            const result = await callOpenRouter(apiKey, modelId, historyMessages, options);
+            const result = await callOpenRouter(apiKey, openRouterId, historyMessages, options);
             
-            // Salva resposta no banco
+            // Salva resposta no banco usando o model_id do OpenRouter
             await base44.entities.TitanosMessage.create({
               conversation_id: conversationId,
               role: 'assistant',
               content: result.content,
-              model_id: modelId,
+              model_id: openRouterId,
               metrics: {
                 prompt_tokens: result.usage?.prompt_tokens || 0,
                 completion_tokens: result.usage?.completion_tokens || 0,
@@ -240,10 +241,10 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
               },
             });
             
-            return { modelId, success: true };
+            return { modelId: openRouterId, success: true };
           } catch (err) {
-            console.error(`[useSendMessage] Error for ${modelId}:`, err.message);
-            return { modelId, success: false, error: err.message };
+            console.error(`[useSendMessage] Error for ${openRouterId}:`, err.message);
+            return { modelId: openRouterId, success: false, error: err.message };
           }
         })
       );
