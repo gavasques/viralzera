@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import ReactMarkdown from "react-markdown";
+import Markdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import CanvasRightPanel from "./CanvasRightPanel";
