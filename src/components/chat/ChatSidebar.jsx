@@ -21,10 +21,8 @@ import {
   Plus, MessageSquare, Trash2, MoreVertical, Star, StarOff, 
   Pencil, Clock, Search
 } from "lucide-react";
-import moment from 'moment';
-import 'moment/locale/pt-br';
-
-moment.locale('pt-br');
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 /**
  * Sidebar unificada para chats
