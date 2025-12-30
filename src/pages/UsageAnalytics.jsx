@@ -424,6 +424,7 @@ export default function UsageAnalytics() {
             <DetailedLogsTable logs={filteredLogs} />
           </TabsContent>
         </Tabs>
+      </div>
       </AdminLayout>
     </AdminProtection>
   );
