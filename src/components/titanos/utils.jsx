@@ -74,11 +74,11 @@ export function calculateMetrics(messages) {
 /**
  * Filtra mensagens para um modelo específico
  * @param {Array} messages - Lista de mensagens
- * @param {string} openRouterId - ID do modelo no OpenRouter (não o record ID)
+ * @param {string} recordId - ID único do registro ApprovedModel (não o model_id do OpenRouter)
  */
-export function getMessagesForModel(messages, openRouterId) {
+export function getMessagesForModel(messages, recordId) {
   return messages
-    .filter(m => m.role === 'user' || m.role === 'system' || m.model_id === openRouterId)
+    .filter(m => m.role === 'user' || m.role === 'system' || m.model_id === recordId)
     .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 }
 
