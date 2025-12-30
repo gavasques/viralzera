@@ -40,9 +40,8 @@ import {
   useTitanosMessages 
 } from '@/components/titanos/hooks/useTitanosData';
 import { useConversationMutations } from '@/components/titanos/hooks/useTitanosMutations';
-import { useRegenerateResponse } from '@/components/titanos/hooks/useSendMessage';
+import { useRegenerateResponse, useSendMessage } from '@/components/titanos/hooks/useSendMessage';
 import { useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 
 // Utils
 import { getMessagesForModel, getModelAlias } from '@/components/titanos/utils';
@@ -69,9 +68,9 @@ export default function TitanosRouter() {
   const { data: conversations = [] } = useTitanosConversations(limit);
   const { data: activeConversation } = useTitanosConversation(activeConversationId);
   
-  // Messages query
-  const [isLoading, setIsLoading] = useState(false);
-  const { data: messages = [] } = useTitanosMessages(activeConversationId, isLoading);
+  // Messages query & send hook
+  const { data: messages = [] } = useTitanosMessages(activeConversationId);
+  const { sendMessage, isLoading } = useSendMessage(activeConversationId, activeConversation, messages, groups);
   const { regenerate, regeneratingModel } = useRegenerateResponse(activeConversationId);
 
   // Mutations
@@ -129,58 +128,13 @@ export default function TitanosRouter() {
     
     const currentInput = input;
     setInput('');
-    setIsLoading(true);
     
-    try {
-      
-      let effectiveHistory = messages.filter(
-        m => m.model_id === null || selectedModels.includes(m.model_id)
-      );
-
-      if (activeConversation?.group_id) {
-        const group = groups.find(g => g.id === activeConversation.group_id);
-        if (group?.default_system_prompt) {
-          const hasOwnSystemPrompt = messages.some(m => m.role === 'system');
-          if (!hasOwnSystemPrompt) {
-            effectiveHistory = [
-              { role: 'system', content: group.default_system_prompt },
-              ...effectiveHistory.filter(m => m.role !== 'system'),
-            ];
-          }
-        }
-      }
-
-      const response = await fetch('/api/functions/titanosChat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: currentInput.trim(),
-          conversationId: activeConversationId,
-          selectedModels: selectedModels,
-          history: effectiveHistory,
-          enableReasoning: activeConversation?.enable_reasoning || false,
-          reasoningEffort: activeConversation?.reasoning_effort || 'high',
-          enableWebSearch: activeConversation?.enable_web_search || false,
-        }),
-      });
-      
-      const res = await response.json();
-
-      if (res.error) {
-        toast.error(`Erro: ${res.error}`);
-        setInput(currentInput);
-      } else {
-        // Invalida query de mensagens para forçar refetch
-        queryClient.invalidateQueries({ queryKey: ['titanos-messages', activeConversationId] });
-      }
-    } catch (err) {
-      toast.error('Falha ao enviar mensagem');
-      console.error(err);
+    const result = await sendMessage(currentInput, selectedModels);
+    
+    if (!result.success) {
       setInput(currentInput);
-    } finally {
-      setIsLoading(false);
     }
-  }, [input, activeConversationId, selectedModels, messages, activeConversation, groups, queryClient]);
+  }, [input, activeConversationId, selectedModels, sendMessage]);
 
   const handleRegenerate = useCallback((modelId) => {
     regenerate(modelId, messages);
