@@ -1,6 +1,6 @@
 /**
  * Hook para envio de mensagens no Multi Chat
- * Chamada direta à OpenRouter do frontend
+ * Chamada direta à OpenRouter do frontend (sem backend)
  */
 
 import { useState, useCallback } from 'react';
@@ -9,12 +9,15 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 /**
- * Busca API Key do usuário
+ * Busca API Key do usuário (com cache)
  */
+let cachedApiKey = null;
 async function getUserApiKey() {
+  if (cachedApiKey) return cachedApiKey;
   const configs = await base44.entities.UserConfig.list();
   const config = configs?.[0];
-  return config?.openrouter_api_key;
+  cachedApiKey = config?.openrouter_api_key;
+  return cachedApiKey;
 }
 
 /**
@@ -60,6 +63,7 @@ async function callOpenRouter(apiKey, model, messages, options = {}) {
     content: data.choices?.[0]?.message?.content || '',
     usage: data.usage,
     duration,
+    rawResponse: data,
   };
 }
 
