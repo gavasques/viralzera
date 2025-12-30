@@ -47,9 +47,42 @@ const menuItems = [
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedFocusId, setSelectedFocusId] = useState(null);
   const location = useLocation();
   
-  const { selectedFocusId, allFocuses: focuses, setFocus: selectFocus, currentFocus } = useSelectedFocus();
+  // Fetch focuses directly instead of using the hook to avoid QueryClient issues
+  const { data: focuses = [] } = useQuery({
+    queryKey: ['layout-focuses'],
+    queryFn: () => base44.entities.Focus.list('-created_date', 50),
+    staleTime: 30000,
+  });
+
+  // Fetch user to get saved focus
+  const { data: user } = useQuery({
+    queryKey: ['layout-user'],
+    queryFn: () => base44.auth.me(),
+    staleTime: 60000,
+  });
+
+  // Sync selected focus from user data
+  useEffect(() => {
+    if (user?.selected_focus_id && !selectedFocusId) {
+      setSelectedFocusId(user.selected_focus_id);
+    } else if (focuses.length > 0 && !selectedFocusId && !user?.selected_focus_id) {
+      setSelectedFocusId(focuses[0].id);
+    }
+  }, [user, focuses, selectedFocusId]);
+
+  const selectFocus = async (focusId) => {
+    setSelectedFocusId(focusId);
+    try {
+      await base44.auth.updateMe({ selected_focus_id: focusId });
+    } catch (e) {
+      console.error('Error saving focus:', e);
+    }
+  };
+
+  const currentFocus = focuses.find(f => f.id === selectedFocusId) || null;
 
   // Pages that don't use the sidebar layout
   const fullWidthPages = ['Landing', 'Login'];
