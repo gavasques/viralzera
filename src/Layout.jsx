@@ -52,7 +52,7 @@ export default function Layout({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   
-  const { selectedFocusId, focuses, selectFocus, currentFocus } = useSelectedFocus();
+  const { selectedFocusId, allFocuses: focuses, setFocus: selectFocus, currentFocus } = useSelectedFocus();
 
   // Pages that don't use the sidebar layout
   const fullWidthPages = ['Landing', 'Login'];
