@@ -12,7 +12,7 @@ import { TITANOS_QUERY_KEYS, STALE_TIMES, DEFAULT_CONVERSATION_LIMIT } from '../
  */
 export function useTitanosUser() {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.USER,
+    queryKey: ['titanos-user'],
     queryFn: () => base44.auth.me(),
     staleTime: STALE_TIMES.USER,
   });
@@ -23,7 +23,7 @@ export function useTitanosUser() {
  */
 export function useApprovedModels() {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.APPROVED_MODELS,
+    queryKey: ['titanos-approved-models'],
     queryFn: () => base44.entities.ApprovedModel.list('order', 100),
     staleTime: STALE_TIMES.MODELS,
     select: (data) => data || [],
@@ -35,7 +35,7 @@ export function useApprovedModels() {
  */
 export function useTitanosGroups() {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.GROUPS,
+    queryKey: ['titanos-groups'],
     queryFn: () => base44.entities.TitanosChatGroup.list('order', 50),
     staleTime: STALE_TIMES.GROUPS,
     select: (data) => data || [],
@@ -47,7 +47,7 @@ export function useTitanosGroups() {
  */
 export function useTitanosConversations(limit = DEFAULT_CONVERSATION_LIMIT) {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS(limit),
+    queryKey: ['titanos-conversations', limit],
     queryFn: () => base44.entities.TitanosConversation.list('-created_date', limit),
     placeholderData: keepPreviousData,
     staleTime: STALE_TIMES.CONVERSATIONS,
@@ -60,7 +60,7 @@ export function useTitanosConversations(limit = DEFAULT_CONVERSATION_LIMIT) {
  */
 export function useTitanosConversation(conversationId) {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.CONVERSATION(conversationId),
+    queryKey: ['titanos-conversation', conversationId],
     queryFn: () => base44.entities.TitanosConversation.get(conversationId),
     enabled: !!conversationId,
   });
@@ -71,7 +71,7 @@ export function useTitanosConversation(conversationId) {
  */
 export function useTitanosMessages(conversationId, isLoading = false) {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId),
+    queryKey: ['titanos-messages', conversationId],
     queryFn: () => base44.entities.TitanosMessage.filter({ conversation_id: conversationId }),
     enabled: !!conversationId,
     refetchInterval: isLoading ? 1000 : false,
@@ -85,7 +85,7 @@ export function useTitanosMessages(conversationId, isLoading = false) {
  */
 export function useConversationVotes(conversationId) {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.CONVERSATION_VOTES(conversationId),
+    queryKey: ['titanos-votes', conversationId],
     queryFn: () => base44.entities.ModelVote.filter({ conversation_id: conversationId }),
     enabled: !!conversationId,
     select: (data) => data || [],
@@ -97,7 +97,7 @@ export function useConversationVotes(conversationId) {
  */
 export function useSavedPrompts() {
   return useQuery({
-    queryKey: TITANOS_QUERY_KEYS.PROMPTS,
+    queryKey: ['titanos-prompts'],
     queryFn: () => base44.entities.Prompt.list('-created_date', 100),
     staleTime: STALE_TIMES.PROMPTS,
     select: (data) => data || [],
