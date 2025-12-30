@@ -170,7 +170,7 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
     setIsLoading(true);
 
     try {
-      const res = await base44.functions.invoke('titanosChatSingle', {
+      const res = await invokeFunction('titanosChatSingle', {
         message: message.trim(),
         conversationId,
         modelId,
