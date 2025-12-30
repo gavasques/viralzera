@@ -42,6 +42,8 @@ function TitanosChatArea({
                 onExpand={() => onExpand(recordId)}
                 isAdmin={isAdmin}
                 conversationId={conversationId}
+                promptLog={promptLog}
+                onShowLog={onShowLog}
               />
             ))
           )}
