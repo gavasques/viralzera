@@ -6,7 +6,6 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { TITANOS_QUERY_KEYS } from '../constants';
 
 /**
  * Hook principal para envio de mensagens
@@ -58,9 +57,9 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
       }
 
       // Invalida queries
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) });
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATIONS() });
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(conversationId) });
+      queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
 
       return { success: true };
     } catch (err) {
@@ -109,7 +108,7 @@ export function useRegenerateResponse(conversationId) {
         toast.error(`Erro: ${res.data.error}`);
       } else {
         toast.success('Resposta regenerada!');
-        queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) });
+        queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
       }
     } catch (err) {
       toast.error('Falha ao regenerar');
@@ -154,7 +153,7 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
         return { success: false };
       }
 
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) });
+      queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
       return { success: true };
     } catch (err) {
       toast.error('Erro ao enviar: ' + err.message);
