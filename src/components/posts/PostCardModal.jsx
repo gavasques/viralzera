@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Save, Trash2, FileText, Settings } from "lucide-react";
@@ -85,6 +85,9 @@ export default function PostCardModal({ open, onOpenChange, post, postTypes, onS
               </div>
               {isEditing ? 'Editar Postagem' : 'Nova Postagem'}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Formulário para {isEditing ? 'editar' : 'criar'} postagem
+            </DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="content" className="flex-1 overflow-hidden flex flex-col">

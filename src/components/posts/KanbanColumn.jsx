@@ -47,29 +47,27 @@ function KanbanColumn({
             ref={provided.innerRef}
             {...provided.droppableProps}
           >
-            <div className={`min-h-[200px] rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-white/50' : ''}`}>
-              {posts.map((post, index) => (
-                <Draggable key={post.id} draggableId={post.id} index={index}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      style={provided.draggableProps.style}
-                      className={`mb-2 ${snapshot.isDragging ? 'rotate-2 z-50' : ''}`}
-                    >
-                      <PostCard 
-                        post={post} 
-                        postTypes={postTypes}
-                        isDragging={snapshot.isDragging}
-                        onClick={() => onEditPost(post)}
-                      />
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
+            {posts.map((post, index) => (
+              <Draggable key={post.id} draggableId={post.id} index={index}>
+                {(dragProvided, dragSnapshot) => (
+                  <div
+                    ref={dragProvided.innerRef}
+                    {...dragProvided.draggableProps}
+                    {...dragProvided.dragHandleProps}
+                    style={dragProvided.draggableProps.style}
+                    className={`mb-2 ${dragSnapshot.isDragging ? 'rotate-2 z-50' : ''}`}
+                  >
+                    <PostCard 
+                      post={post} 
+                      postTypes={postTypes}
+                      isDragging={dragSnapshot.isDragging}
+                      onClick={() => onEditPost(post)}
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
           </div>
         )}
       </Droppable>
