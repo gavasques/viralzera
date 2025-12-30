@@ -1,16 +1,16 @@
 /**
- * Componente de bolha de mensagem para o chat
- * Renderiza mensagens de usuário, assistente e sistema
+ * Componente de bolha de mensagem
+ * Renderiza mensagens do usuário, sistema ou assistente com Markdown
  */
 
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Copy, Check, Bot, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCanvas } from '@/components/canvas/CanvasProvider';
 import ReactMarkdown from 'react-markdown';
 
-// Componentes de Markdown memoizados
-const MarkdownComponents = {
+// Configuração de componentes Markdown (memoizado fora do componente)
+const markdownComponents = {
   h1: ({children}) => <h1 className="text-lg font-bold mt-4 mb-2">{children}</h1>,
   h2: ({children}) => <h2 className="text-base font-bold mt-3 mb-2">{children}</h2>,
   h3: ({children}) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
@@ -28,29 +28,30 @@ const MarkdownComponents = {
 };
 
 function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitialPrompt }) {
-  const [copied, setCopied] = useState(false);
-  const [sentToCanvas, setSentToCanvas] = useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [sentToCanvas, setSentToCanvas] = React.useState(false);
   const { sendToCanvas } = useCanvas();
   
   const isUser = role === 'user';
   const isSystem = role === 'system';
   
   // Display simplified text for initial prompt
-  const displayContent = isInitialPrompt 
-    ? "Com base nos dados enviados, gere o conteúdo" 
-    : content;
+  const displayContent = useMemo(() => 
+    isInitialPrompt ? "Com base nos dados enviados, gere o conteúdo" : content,
+    [isInitialPrompt, content]
+  );
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [content]);
+    const handleCopy = () => {
+        navigator.clipboard.writeText(content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
-  const handleSendToCanvas = useCallback(() => {
-    sendToCanvas(content, chatTitle || modelName || 'Multi Chat', 'chat');
-    setSentToCanvas(true);
-    setTimeout(() => setSentToCanvas(false), 2000);
-  }, [content, chatTitle, modelName, sendToCanvas]);
+    const handleSendToCanvas = () => {
+        sendToCanvas(content, chatTitle || modelName || 'Multi Chat', 'chat');
+        setSentToCanvas(true);
+        setTimeout(() => setSentToCanvas(false), 2000);
+    };
 
     if (isSystem) {
         return (
@@ -93,7 +94,24 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
                         {isUser ? (
                             <span className="whitespace-pre-wrap">{displayContent}</span>
                         ) : (
-                            <ReactMarkdown components={MarkdownComponents}>
+                            <ReactMarkdown
+                                components={{
+                                    h1: ({children}) => <h1 className="text-lg font-bold mt-4 mb-2">{children}</h1>,
+                                    h2: ({children}) => <h2 className="text-base font-bold mt-3 mb-2">{children}</h2>,
+                                    h3: ({children}) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
+                                    p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                                    ul: ({children}) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                                    ol: ({children}) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                                    li: ({children}) => <li className="text-sm">{children}</li>,
+                                    strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                                    em: ({children}) => <em className="italic">{children}</em>,
+                                    code: ({inline, children}) => inline 
+                                        ? <code className="bg-slate-100 text-pink-600 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
+                                        : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-xs my-2"><code>{children}</code></pre>,
+                                    blockquote: ({children}) => <blockquote className="border-l-2 border-indigo-300 pl-3 italic text-slate-600 my-2">{children}</blockquote>,
+                                    hr: () => <div className="my-4 flex items-center gap-2"><div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" /></div>,
+                                }}
+                            >
                                 {displayContent}
                             </ReactMarkdown>
                         )}
@@ -120,36 +138,21 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
                 </div>
 
                 {/* Metrics Footer */}
-                <MetricsFooter metrics={metrics} isUser={isUser} />
+                {!isUser && metrics && (
+                    <div className="flex items-center gap-2 mt-1.5 ml-1 text-[10px] text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        {metrics.duration && (
+                            <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 border border-slate-200">
+                                {(metrics.duration / 1000).toFixed(2)}s
+                            </span>
+                        )}
+                        {metrics.usage?.total_tokens && (
+                            <span className="flex items-center gap-1">
+                                <span>•</span> {metrics.usage.total_tokens} tokens
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
 }
-
-// Sub-componente para métricas
-const MetricsFooter = memo(({ metrics, isUser }) => {
-  if (isUser || !metrics) return null;
-  
-  const duration = metrics.duration_ms || metrics.duration;
-  const tokens = metrics.total_tokens || metrics.usage?.total_tokens;
-  
-  if (!duration && !tokens) return null;
-  
-  return (
-    <div className="flex items-center gap-2 mt-1.5 ml-1 text-[10px] text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-      {duration > 0 && (
-        <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 border border-slate-200">
-          {(duration / 1000).toFixed(2)}s
-        </span>
-      )}
-      {tokens > 0 && (
-        <span className="flex items-center gap-1">
-          <span>•</span> {tokens} tokens
-        </span>
-      )}
-    </div>
-  );
-});
-MetricsFooter.displayName = 'MetricsFooter';
-
-export default memo(MessageBubble);
