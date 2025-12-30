@@ -1,7 +1,6 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MessageSquare, Wand2, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 /**
  * Modal para selecionar o tipo de conversa a ser criada
