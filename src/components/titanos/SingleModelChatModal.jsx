@@ -119,12 +119,7 @@ function SingleModelChatModal({
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={`Converse exclusivamente com ${modelName || modelId}...`}
                 className="min-h-[80px] pr-16 py-4 pl-5 w-full resize-none bg-transparent border-0 focus:ring-0 text-base placeholder:text-slate-400"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
+                onKeyDown={handleKeyDown}
               />
               <div className="absolute bottom-3 right-3">
                 <Button
