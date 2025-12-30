@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Check } from 'lucide-react';
 import { createPageUrl } from '@/utils';
