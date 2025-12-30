@@ -209,8 +209,15 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
 
             setGenerationStatus('Criando conversa...');
 
-            // 4. Create the conversation with refiner log
+            // 4. Create the conversation with prompt log
             // formData.selectedModels contém recordIds (IDs únicos do ApprovedModel)
+            const promptLog = {
+                rawPrompt: rawPrompt,
+                refinedPrompt: prompt !== rawPrompt ? prompt : null,
+                finalPrompt: prompt,
+                refinerModel: refinerConfig?.model_name || refinerConfig?.model || null,
+            };
+
             const conversation = await base44.entities.TitanosConversation.create({
                 title: formData.title || `Multi Script - ${new Date().toLocaleDateString('pt-BR')}`,
                 selected_models: formData.selectedModels, // recordIds
@@ -219,12 +226,7 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 post_type_id: formData.postTypeId,
                 persona_id: formData.personaId || null,
                 audience_id: formData.audienceId || null,
-                refiner_log: {
-                    raw_prompt: rawPrompt,
-                    refiner_model: refinerConfig?.model || null,
-                    refined_prompt: prompt,
-                    timestamp: new Date().toISOString()
-                }
+                prompt_log: promptLog
             });
 
             // 5. Save user message
