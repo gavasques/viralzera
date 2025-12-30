@@ -21,7 +21,9 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
+import { lazy, Suspense } from 'react';
+
+const ReactMarkdown = lazy(() => import('react-markdown'));
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 const STATUS_OPTIONS = [
@@ -208,22 +210,24 @@ export default function PostCardModal({ open, onOpenChange, post, postTypes, onS
                 ) : (
                   <div className="flex-1 min-h-[400px] border rounded-md p-6 bg-slate-50 overflow-y-auto prose prose-sm max-w-none">
                     {form.content ? (
-                      <ReactMarkdown
-                        components={{
-                          h1: ({node, ...props}) => <h1 className="text-xl font-bold mt-4 mb-2 text-slate-900" {...props} />,
-                          h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-slate-900" {...props} />,
-                          h3: ({node, ...props}) => <h3 className="text-base font-bold mt-3 mb-2 text-slate-800" {...props} />,
-                          p: ({node, ...props}) => <p className="mb-3 text-slate-700 leading-relaxed" {...props} />,
-                          ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
-                          ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
-                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-indigo-300 pl-4 my-3 italic text-slate-600 bg-slate-100 py-2 rounded-r" {...props} />,
-                          code: ({node, inline, ...props}) => inline 
-                            ? <code className="bg-slate-200 px-1.5 py-0.5 rounded text-sm font-mono text-indigo-700" {...props} />
-                            : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-sm my-3"><code {...props} /></pre>,
-                        }}
-                      >
-                        {form.content}
-                      </ReactMarkdown>
+                      <Suspense fallback={<div className="whitespace-pre-wrap text-slate-700">{form.content}</div>}>
+                        <ReactMarkdown
+                          components={{
+                            h1: ({node, ...props}) => <h1 className="text-xl font-bold mt-4 mb-2 text-slate-900" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-slate-900" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-base font-bold mt-3 mb-2 text-slate-800" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-3 text-slate-700 leading-relaxed" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-indigo-300 pl-4 my-3 italic text-slate-600 bg-slate-100 py-2 rounded-r" {...props} />,
+                            code: ({node, inline, ...props}) => inline 
+                              ? <code className="bg-slate-200 px-1.5 py-0.5 rounded text-sm font-mono text-indigo-700" {...props} />
+                              : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-sm my-3"><code {...props} /></pre>,
+                          }}
+                        >
+                          {form.content}
+                        </ReactMarkdown>
+                      </Suspense>
                     ) : (
                       <p className="text-slate-400 italic text-center py-10">
                         Nenhum conteúdo ainda. Clique em editar para adicionar.
