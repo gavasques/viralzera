@@ -106,10 +106,9 @@ export function useConversationHandlers({
   }, [activeConversationId, selectedModels, approvedModels, sendMessage, clearInput, restoreInput]);
 
   // Handler: Regenerar resposta
-  // Recebe o recordId e converte para model_id do OpenRouter
+  // Recebe o recordId - regenerate precisa do approvedModels para converter
   const handleRegenerate = useCallback((recordId) => {
-    const openRouterId = getOpenRouterId(recordId, approvedModels);
-    regenerate(openRouterId, messages);
+    regenerate(recordId, messages, approvedModels);
   }, [regenerate, messages, approvedModels]);
 
   // Handler: Atualizar modelos selecionados
