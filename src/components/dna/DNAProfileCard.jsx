@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dna, Eye, Trash2, Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import moment from 'moment';
+import { format } from 'date-fns';
 
 const statusConfig = {
   pending: { label: 'Pendente', color: 'bg-slate-100 text-slate-600' },
