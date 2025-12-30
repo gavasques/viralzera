@@ -4,18 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Loader2, ArrowRight, ArrowLeft, Check, Sparkles, MessageSquare, Bot, ScrollText, Search, Brain, Globe, Settings2, ChevronDown } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Check, Sparkles, MessageSquare, Bot, ScrollText, Search, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ApprovedModelPicker from '@/components/common/ApprovedModelPicker';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 
 import { useSavedPrompts } from './hooks/useTitanosData';
 import { useConversationMutations } from './hooks/useTitanosMutations';
-import { REASONING_LEVELS } from './constants';
 
 function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = null }) {
   const [step, setStep] = useState(1);
