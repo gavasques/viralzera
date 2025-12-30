@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCanvas } from '@/components/canvas/CanvasProvider';
 import ReactMarkdown from 'react-markdown';
 
-export default function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitialPrompt }) {
+export default function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitialPrompt, promptLog, isAdmin, onShowLog }) {
     const [copied, setCopied] = React.useState(false);
     const [sentToCanvas, setSentToCanvas] = React.useState(false);
     const { sendToCanvas } = useCanvas();
