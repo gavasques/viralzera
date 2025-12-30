@@ -1,35 +1,66 @@
 /**
  * Hook para envio de mensagens no Multi Chat
+ * Chamada direta à OpenRouter do frontend
  */
 
 import { useState, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 /**
- * Invoca função backend via fetch direto
- * O SDK não expõe base44.functions, então usamos fetch
+ * Busca API Key do usuário
  */
-async function invokeFunction(functionName, payload) {
-  const config = base44.getConfig?.() || {};
-  const token = config.token;
-  const appId = config.appId;
+async function getUserApiKey() {
+  const configs = await base44.entities.UserConfig.list();
+  const config = configs?.[0];
+  return config?.openrouter_api_key;
+}
+
+/**
+ * Chama OpenRouter diretamente
+ */
+async function callOpenRouter(apiKey, model, messages, options = {}) {
+  const body = {
+    model,
+    messages: messages.map(m => ({ role: m.role, content: m.content })),
+  };
   
-  // Monta a URL base correta
-  const baseUrl = `https://api.base44.com/v1/apps/${appId}/functions/${functionName}`;
+  // Adiciona reasoning se habilitado e modelo suporta
+  if (options.enableReasoning && model.includes('claude')) {
+    body.reasoning = { effort: options.reasoningEffort || 'high' };
+  }
   
-  const response = await fetch(baseUrl, {
+  // Adiciona web search se habilitado
+  if (options.enableWebSearch) {
+    body.plugins = [{ id: 'web' }];
+  }
+
+  const startTime = Date.now();
+  
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': window.location.origin,
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
-  
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `OpenRouter error: ${response.status}`);
+  }
+
   const data = await response.json();
-  return { data, status: response.status };
+  const duration = Date.now() - startTime;
+  
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    usage: data.usage,
+    duration,
+  };
 }
 
 
