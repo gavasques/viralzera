@@ -150,6 +150,8 @@ export default function TitanosRouter() {
         }
       }
 
+      console.log('base44:', base44);
+      console.log('base44.functions:', base44?.functions);
       const res = await base44.functions.invoke('titanosChat', {
         message: currentInput.trim(),
         conversationId: activeConversationId,
