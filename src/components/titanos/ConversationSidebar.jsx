@@ -223,7 +223,7 @@ function ConversationSidebar({ conversations, activeId, onNew, onNewInGroup, onD
                 </div>
                 
                 {/* Filters */}
-                <ConversationFilters filters={filters} onChange={setFilters} />
+                <ConversationFilters filters={filters} onChange={setFilters} conversations={conversations} />
             </div>
             
             <ScrollArea className="flex-1 px-2 pb-4">

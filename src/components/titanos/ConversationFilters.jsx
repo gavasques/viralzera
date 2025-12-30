@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Filter, X, Wand2, MessageSquare } from 'lucide-react';
@@ -12,11 +12,40 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 
-const CHANNELS = ['Instagram', 'Youtube', 'TikTok', 'Twitter', 'LinkedIn'];
-const FORMATS = ['Carrossel', 'Reels', 'Story', 'Post', 'Shorts', 'Video', 'Thread', 'Article'];
-
-export default function ConversationFilters({ filters, onChange }) {
+export default function ConversationFilters({ filters, onChange, conversations = [] }) {
   const { source, channel, format } = filters;
+  
+  // Extract available options from conversations
+  const availableOptions = useMemo(() => {
+    const sources = new Set();
+    const channels = new Set();
+    const formats = new Set();
+    
+    conversations.forEach(c => {
+      // Source
+      if (c.source === 'multiscript_wizard') {
+        sources.add('multiscript_wizard');
+      } else {
+        sources.add('manual');
+      }
+      
+      // Channel
+      if (c.post_channel) {
+        channels.add(c.post_channel);
+      }
+      
+      // Format
+      if (c.post_format) {
+        formats.add(c.post_format);
+      }
+    });
+    
+    return {
+      sources: Array.from(sources),
+      channels: Array.from(channels).sort(),
+      formats: Array.from(formats).sort()
+    };
+  }, [conversations]);
   
   const hasActiveFilters = source || channel || format;
   const activeFilterCount = [source, channel, format].filter(Boolean).length;
@@ -46,48 +75,58 @@ export default function ConversationFilters({ filters, onChange }) {
         <DropdownMenuContent align="start" className="w-56">
           {/* Source Filter */}
           <DropdownMenuLabel className="text-[10px] text-slate-400 uppercase">Origem</DropdownMenuLabel>
-          <DropdownMenuCheckboxItem
-            checked={source === 'multiscript_wizard'}
-            onCheckedChange={(checked) => onChange({ ...filters, source: checked ? 'multiscript_wizard' : null })}
-          >
-            <Wand2 className="w-3.5 h-3.5 mr-2 text-indigo-500" />
-            Wizard
-          </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            checked={source === 'manual'}
-            onCheckedChange={(checked) => onChange({ ...filters, source: checked ? 'manual' : null })}
-          >
-            <MessageSquare className="w-3.5 h-3.5 mr-2 text-slate-400" />
-            Manual
-          </DropdownMenuCheckboxItem>
-
-          <DropdownMenuSeparator />
-
-          {/* Channel Filter */}
-          <DropdownMenuLabel className="text-[10px] text-slate-400 uppercase">Canal</DropdownMenuLabel>
-          {CHANNELS.map(ch => (
+          {availableOptions.sources.includes('multiscript_wizard') && (
             <DropdownMenuCheckboxItem
-              key={ch}
-              checked={channel === ch}
-              onCheckedChange={(checked) => onChange({ ...filters, channel: checked ? ch : null })}
+              checked={source === 'multiscript_wizard'}
+              onCheckedChange={(checked) => onChange({ ...filters, source: checked ? 'multiscript_wizard' : null })}
             >
-              {ch}
+              <Wand2 className="w-3.5 h-3.5 mr-2 text-indigo-500" />
+              Wizard
             </DropdownMenuCheckboxItem>
-          ))}
-
-          <DropdownMenuSeparator />
-
-          {/* Format Filter */}
-          <DropdownMenuLabel className="text-[10px] text-slate-400 uppercase">Formato</DropdownMenuLabel>
-          {FORMATS.map(fmt => (
+          )}
+          {availableOptions.sources.includes('manual') && (
             <DropdownMenuCheckboxItem
-              key={fmt}
-              checked={format === fmt}
-              onCheckedChange={(checked) => onChange({ ...filters, format: checked ? fmt : null })}
+              checked={source === 'manual'}
+              onCheckedChange={(checked) => onChange({ ...filters, source: checked ? 'manual' : null })}
             >
-              {fmt}
+              <MessageSquare className="w-3.5 h-3.5 mr-2 text-slate-400" />
+              Manual
             </DropdownMenuCheckboxItem>
-          ))}
+          )}
+
+          {/* Channel Filter - only show if there are channels */}
+          {availableOptions.channels.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] text-slate-400 uppercase">Canal</DropdownMenuLabel>
+              {availableOptions.channels.map(ch => (
+                <DropdownMenuCheckboxItem
+                  key={ch}
+                  checked={channel === ch}
+                  onCheckedChange={(checked) => onChange({ ...filters, channel: checked ? ch : null })}
+                >
+                  {ch}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </>
+          )}
+
+          {/* Format Filter - only show if there are formats */}
+          {availableOptions.formats.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] text-slate-400 uppercase">Formato</DropdownMenuLabel>
+              {availableOptions.formats.map(fmt => (
+                <DropdownMenuCheckboxItem
+                  key={fmt}
+                  checked={format === fmt}
+                  onCheckedChange={(checked) => onChange({ ...filters, format: checked ? fmt : null })}
+                >
+                  {fmt}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </>
+          )}
 
           {hasActiveFilters && (
             <>
