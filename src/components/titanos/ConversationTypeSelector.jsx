@@ -64,11 +64,8 @@ export default function ConversationTypeSelector({
                         const colors = colorClasses[option.color];
 
                         return (
-                            <motion.button
+                            <button
                                 key={option.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.1 }}
                                 onClick={() => {
                                     onOpenChange(false);
                                     option.onClick();
@@ -86,7 +83,7 @@ export default function ConversationTypeSelector({
                                     <p className="text-sm text-slate-500 mt-0.5">{option.description}</p>
                                 </div>
                                 <ArrowRight className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${colors.arrow}`} />
-                            </motion.button>
+                            </button>
                         );
                     })}
                 </div>
