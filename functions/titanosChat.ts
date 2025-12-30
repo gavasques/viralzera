@@ -70,10 +70,15 @@ Deno.serve(async (req) => {
       { role: 'user', content: message.trim() },
     ];
 
+    console.log('[titanosChat] Sending to models:', selectedModels);
+    console.log('[titanosChat] API Key present:', !!userConfig.openrouter_api_key);
+    console.log('[titanosChat] Messages payload length:', messagesPayload.length);
+
     // Envia para todos os modelos em paralelo
     const responses = await Promise.allSettled(
       selectedModels.map(async (modelId) => {
         const modelStart = Date.now();
+        console.log(`[titanosChat] Starting request for model: ${modelId}`);
         
         try {
           const requestBody = {
@@ -98,6 +103,8 @@ Deno.serve(async (req) => {
             requestBody.plugins = [{ id: 'web' }];
           }
 
+          console.log(`[titanosChat] Request body for ${modelId}:`, JSON.stringify(requestBody));
+
           const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -109,16 +116,23 @@ Deno.serve(async (req) => {
             body: JSON.stringify(requestBody),
           });
 
+          console.log(`[titanosChat] Response status for ${modelId}:`, response.status);
+
           if (!response.ok) {
             const errorText = await response.text();
+            console.error(`[titanosChat] OpenRouter error for ${modelId}:`, errorText);
             throw new Error(`OpenRouter error (${response.status}): ${errorText}`);
           }
 
           const data = await response.json();
           const duration = Date.now() - modelStart;
           
+          console.log(`[titanosChat] Response data for ${modelId}:`, JSON.stringify(data).substring(0, 500));
+          
           const assistantContent = data.choices?.[0]?.message?.content || '';
           const usage = data.usage || {};
+
+          console.log(`[titanosChat] Saving message for ${modelId}, content length: ${assistantContent.length}`);
 
           // Salva resposta do modelo
           await base44.entities.TitanosMessage.create({
@@ -136,6 +150,8 @@ Deno.serve(async (req) => {
             },
           });
 
+          console.log(`[titanosChat] Message saved for ${modelId}`);
+
           // Log de uso
           await base44.entities.UsageLog.create({
             user_email: user.email,
@@ -150,23 +166,31 @@ Deno.serve(async (req) => {
             session_id: conversationId,
           });
 
+          console.log(`[titanosChat] Success for ${modelId}, duration: ${duration}ms`);
           return { modelId, success: true, duration };
         } catch (error) {
-          console.error(`Error for model ${modelId}:`, error);
+          console.error(`[titanosChat] Error for model ${modelId}:`, error.message);
+          console.error(`[titanosChat] Error stack:`, error.stack);
           
           // Salva mensagem de erro
-          await base44.entities.TitanosMessage.create({
-            conversation_id: conversationId,
-            role: 'assistant',
-            content: `Erro ao processar: ${error.message}`,
-            model_id: modelId,
-            metrics: { error: true },
-          });
+          try {
+            await base44.entities.TitanosMessage.create({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: `Erro ao processar: ${error.message}`,
+              model_id: modelId,
+              metrics: { error: true },
+            });
+          } catch (saveError) {
+            console.error(`[titanosChat] Failed to save error message:`, saveError.message);
+          }
 
           return { modelId, success: false, error: error.message };
         }
       })
     );
+    
+    console.log('[titanosChat] All responses:', JSON.stringify(responses));
 
     const totalDuration = Date.now() - startTime;
     const successCount = responses.filter(r => r.status === 'fulfilled' && r.value?.success).length;
