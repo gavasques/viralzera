@@ -1,7 +1,5 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { Copy, Check, User, Bot, FileText } from 'lucide-react';
-
-const ReactMarkdown = lazy(() => import('react-markdown'));
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCanvas } from '@/components/canvas/CanvasProvider';
 

@@ -21,9 +21,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { lazy, Suspense } from 'react';
 
-const ReactMarkdown = lazy(() => import('react-markdown'));
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 const STATUS_OPTIONS = [
