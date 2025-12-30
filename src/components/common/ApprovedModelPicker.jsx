@@ -139,3 +139,5 @@ function ApprovedModelPicker({
     </ScrollArea>
   );
 }
+
+export default memo(ApprovedModelPicker);
