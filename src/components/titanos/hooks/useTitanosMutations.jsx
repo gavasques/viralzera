@@ -1,11 +1,18 @@
 /**
  * Hooks para mutações do Multi Chat
  * Centraliza todas as operações de escrita
+ * 
+ * Princípios:
+ * - Invalidação otimista de cache
+ * - Feedback de sucesso/erro via toast
+ * - Operações atômicas quando possível
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { TITANOS_QUERY_KEYS } from '../constants';
+import { sanitizeTitle, sanitizeSystemPrompt } from '../utils/sanitize';
 
 /**
  * Hook para mutações de conversa
