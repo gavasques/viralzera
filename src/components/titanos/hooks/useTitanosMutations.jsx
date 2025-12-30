@@ -157,17 +157,30 @@ export function useChatMutations() {
   const queryClient = useQueryClient();
 
   const updateChat = useMutation({
-    mutationFn: ({ chatId, data }) => base44.entities.TitanosConversation.update(chatId, data),
-    onSuccess: () => {
+    mutationFn: ({ chatId, data }) => {
+      if (!chatId) throw new Error('ID do chat inválido');
+      return base44.entities.TitanosConversation.update(chatId, data);
+    },
+    onSuccess: (_, { chatId }) => {
       queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(chatId) });
     },
   });
 
   const renameChat = useMutation({
-    mutationFn: ({ id, title }) => base44.entities.TitanosConversation.update(id, { title }),
-    onSuccess: () => {
+    mutationFn: ({ id, title }) => {
+      if (!id) throw new Error('ID do chat inválido');
+      const sanitizedTitle = sanitizeTitle(title);
+      if (!sanitizedTitle) throw new Error('Título inválido');
+      return base44.entities.TitanosConversation.update(id, { title: sanitizedTitle });
+    },
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(id) });
       toast.success('Chat renomeado!');
+    },
+    onError: (err) => {
+      toast.error('Erro ao renomear: ' + (err.message || 'Erro desconhecido'));
     },
   });
 
