@@ -116,9 +116,10 @@ export function useConversationVotes(conversationId) {
  */
 export function useSavedPrompts() {
   return useQuery({
-    queryKey: ['titanos-prompts'],
+    queryKey: TITANOS_QUERY_KEYS.PROMPTS,
     queryFn: () => base44.entities.Prompt.list('-created_date', 100),
     staleTime: STALE_TIMES.PROMPTS,
+    gcTime: 10 * 60 * 1000,
     select: (data) => data || [],
   });
 }
