@@ -140,22 +140,46 @@ async function callOpenRouter(apiKey, model, messages, options = {}) {
 export function useSendMessage(conversationId, activeConversation, messages, groups) {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  const abortRef = useRef(false);
 
   const sendMessage = useCallback(async (input, selectedModels) => {
-    if (!input?.trim() || !conversationId || selectedModels.length === 0) {
-      return { success: false };
+    // Validações iniciais
+    if (!input?.trim()) {
+      return { success: false, error: 'Mensagem vazia' };
+    }
+    
+    if (!conversationId) {
+      return { success: false, error: 'Nenhuma conversa selecionada' };
+    }
+    
+    if (!selectedModels || selectedModels.length === 0) {
+      toast.warning('Selecione pelo menos um modelo');
+      return { success: false, error: 'Nenhum modelo selecionado' };
+    }
+
+    // Previne múltiplos envios simultâneos
+    if (isLoading) {
+      return { success: false, error: 'Envio em andamento' };
     }
 
     setIsLoading(true);
+    abortRef.current = false;
 
     try {
+      // Busca API Key do usuário
+      const apiKey = await getUserApiKey();
+      if (!apiKey) {
+        toast.error('Configure sua API Key do OpenRouter em Configurações');
+        return { success: false, error: 'API Key não configurada' };
+      }
+
       // Prepara histórico efetivo
       let effectiveHistory = messages.filter(
         m => m.model_id === null || selectedModels.includes(m.model_id)
       );
 
       // Verifica system prompt do grupo
-      if (activeConversation?.group_id) {
+      if (activeConversation?.group_id && groups) {
         const group = groups.find(g => g.id === activeConversation.group_id);
         if (group?.default_system_prompt) {
           const hasOwnSystemPrompt = messages.some(m => m.role === 'system');
@@ -168,36 +192,36 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
         }
       }
 
-      // Busca API Key do usuário
-      const apiKey = await getUserApiKey();
-      if (!apiKey) {
-        toast.error('Configure sua API Key do OpenRouter em Configurações');
-        return { success: false };
-      }
+      const trimmedInput = input.trim();
 
       // Salva mensagem do usuário no banco
       await base44.entities.TitanosMessage.create({
         conversation_id: conversationId,
         role: 'user',
-        content: input.trim(),
+        content: trimmedInput,
         model_id: null,
       });
 
       // Prepara mensagens para envio
       const historyMessages = [
         ...effectiveHistory.map(m => ({ role: m.role, content: m.content })),
-        { role: 'user', content: input.trim() },
+        { role: 'user', content: trimmedInput },
       ];
 
-      // Chama cada modelo em paralelo
+      // Configurações da conversa
       const options = {
         enableReasoning: activeConversation?.enable_reasoning || false,
         reasoningEffort: activeConversation?.reasoning_effort || 'high',
         enableWebSearch: activeConversation?.enable_web_search || false,
       };
 
+      // Chama cada modelo em paralelo
       const results = await Promise.allSettled(
         selectedModels.map(async (modelId) => {
+          if (abortRef.current) {
+            return { modelId, success: false, error: 'Abortado' };
+          }
+          
           try {
             const result = await callOpenRouter(apiKey, modelId, historyMessages, options);
             
@@ -218,39 +242,48 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
             
             return { modelId, success: true };
           } catch (err) {
-            console.error(`[useSendMessage] Error for ${modelId}:`, err);
+            console.error(`[useSendMessage] Error for ${modelId}:`, err.message);
             return { modelId, success: false, error: err.message };
           }
         })
       );
 
+      // Conta falhas
       const failures = results.filter(r => r.status === 'rejected' || !r.value?.success);
-      if (failures.length === selectedModels.length) {
+      const successes = results.length - failures.length;
+      
+      if (successes === 0) {
         toast.error('Falha em todos os modelos');
-        return { success: false };
+        return { success: false, error: 'Todos os modelos falharam' };
       }
       
       if (failures.length > 0) {
         toast.warning(`${failures.length} modelo(s) falharam`);
       }
 
-      // Invalida queries para forçar refetch das mensagens
-      console.log('[useSendMessage] Invalidating queries for conversation:', conversationId);
-      await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
-      await queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
-      await queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
+      // Invalida queries para forçar refetch
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] }),
+        queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] }),
+        queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] }),
+      ]);
 
-      return { success: true };
+      return { success: true, successCount: successes, failureCount: failures.length };
     } catch (err) {
+      console.error('[useSendMessage] Error:', err);
       toast.error('Falha ao enviar mensagem');
-      console.error(err);
-      return { success: false };
+      return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, activeConversation, messages, groups, queryClient]);
+  }, [conversationId, activeConversation, messages, groups, queryClient, isLoading]);
 
-  return { sendMessage, isLoading };
+  // Função para abortar envio em andamento
+  const abort = useCallback(() => {
+    abortRef.current = true;
+  }, []);
+
+  return { sendMessage, isLoading, abort };
 }
 
 /**
