@@ -1,6 +1,6 @@
 /**
  * Hook para envio de mensagens no Multi Chat
- * Chamada direta à OpenRouter do frontend (sem backend)
+ * Chamada direta à OpenRouter do frontend
  */
 
 import { useState, useCallback } from 'react';
@@ -9,15 +9,12 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 /**
- * Busca API Key do usuário (com cache)
+ * Busca API Key do usuário
  */
-let cachedApiKey = null;
 async function getUserApiKey() {
-  if (cachedApiKey) return cachedApiKey;
   const configs = await base44.entities.UserConfig.list();
   const config = configs?.[0];
-  cachedApiKey = config?.openrouter_api_key;
-  return cachedApiKey;
+  return config?.openrouter_api_key;
 }
 
 /**
@@ -63,7 +60,6 @@ async function callOpenRouter(apiKey, model, messages, options = {}) {
     content: data.choices?.[0]?.message?.content || '',
     usage: data.usage,
     duration,
-    rawResponse: data,
   };
 }
 
@@ -71,6 +67,7 @@ async function callOpenRouter(apiKey, model, messages, options = {}) {
 
 /**
  * Hook principal para envio de mensagens
+ * Chama OpenRouter diretamente do frontend e salva no banco
  */
 export function useSendMessage(conversationId, activeConversation, messages, groups) {
   const queryClient = useQueryClient();
@@ -84,9 +81,24 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
     setIsLoading(true);
 
     try {
+      // Busca API Key do usuário
+      const apiKey = await getUserApiKey();
+      if (!apiKey) {
+        toast.error('Configure sua API Key do OpenRouter nas configurações');
+        return { success: false };
+      }
+
+      // Salva mensagem do usuário
+      await base44.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'user',
+        content: input.trim(),
+        model_id: null,
+      });
+
       // Prepara histórico efetivo
       let effectiveHistory = messages.filter(
-        m => m.model_id === null || selectedModels.includes(m.model_id)
+        m => m.role === 'system' || m.role === 'user'
       );
 
       // Verifica system prompt do grupo
@@ -103,32 +115,71 @@ export function useSendMessage(conversationId, activeConversation, messages, gro
         }
       }
 
-      const res = await invokeFunction('titanosChat', {
-        message: input.trim(),
-        conversationId,
-        selectedModels,
-        history: effectiveHistory,
+      // Adiciona mensagem atual ao histórico
+      const fullHistory = [
+        ...effectiveHistory,
+        { role: 'user', content: input.trim() },
+      ];
+
+      const options = {
         enableReasoning: activeConversation?.enable_reasoning || false,
         reasoningEffort: activeConversation?.reasoning_effort || 'high',
         enableWebSearch: activeConversation?.enable_web_search || false,
-      });
+      };
 
-      console.log('[useSendMessage] Response:', res);
+      // Envia para todos os modelos em paralelo
+      const results = await Promise.allSettled(
+        selectedModels.map(async (modelId) => {
+          try {
+            const result = await callOpenRouter(apiKey, modelId, fullHistory, options);
+            
+            // Salva resposta no banco
+            await base44.entities.TitanosMessage.create({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: result.content,
+              model_id: modelId,
+              metrics: {
+                prompt_tokens: result.usage?.prompt_tokens || 0,
+                completion_tokens: result.usage?.completion_tokens || 0,
+                total_tokens: result.usage?.total_tokens || 0,
+                duration_ms: result.duration,
+              },
+            });
+
+            return { modelId, success: true };
+          } catch (err) {
+            console.error(`[useSendMessage] Error for ${modelId}:`, err);
+            
+            // Salva mensagem de erro
+            await base44.entities.TitanosMessage.create({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: `Erro: ${err.message}`,
+              model_id: modelId,
+              metrics: { error: true },
+            });
+
+            return { modelId, success: false, error: err.message };
+          }
+        })
+      );
+
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
       
-      if (res.data?.error) {
-        toast.error(`Erro: ${res.data.error}`);
-        return { success: false };
+      if (successCount === 0) {
+        toast.error('Todos os modelos falharam');
+      } else if (successCount < selectedModels.length) {
+        toast.warning(`${successCount}/${selectedModels.length} modelos responderam`);
       }
 
       // Invalida queries para forçar refetch das mensagens
-      console.log('[useSendMessage] Invalidating queries for conversation:', conversationId);
       await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
       await queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
-      await queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
 
-      return { success: true };
+      return { success: successCount > 0 };
     } catch (err) {
-      toast.error('Falha ao enviar mensagem');
+      toast.error('Falha ao enviar mensagem: ' + err.message);
       console.error(err);
       return { success: false };
     } finally {
