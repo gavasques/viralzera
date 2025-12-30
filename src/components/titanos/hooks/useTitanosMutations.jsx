@@ -99,30 +99,51 @@ export function useGroupMutations() {
 
   const save = useMutation({
     mutationFn: async ({ id, data }) => {
+      // Sanitiza título do grupo
+      const sanitizedData = {
+        ...data,
+        title: sanitizeTitle(data.title) || 'Novo Grupo',
+        default_system_prompt: data.default_system_prompt 
+          ? sanitizeSystemPrompt(data.default_system_prompt) 
+          : null,
+      };
+
       if (id) {
-        return base44.entities.TitanosChatGroup.update(id, data);
+        return base44.entities.TitanosChatGroup.update(id, sanitizedData);
       }
-      return base44.entities.TitanosChatGroup.create(data);
+      return base44.entities.TitanosChatGroup.create(sanitizedData);
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['titanos-groups'] });
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.GROUPS });
       toast.success(id ? 'Grupo atualizado!' : 'Grupo criado!');
+    },
+    onError: (err) => {
+      toast.error('Erro: ' + (err.message || 'Erro desconhecido'));
     },
   });
 
   const remove = useMutation({
     mutationFn: async (id) => {
+      if (!id) throw new Error('ID do grupo inválido');
+      
       // Move conversas do grupo para "sem grupo"
       const conversations = await base44.entities.TitanosConversation.filter({ group_id: id });
-      await Promise.all(
-        conversations.map(c => base44.entities.TitanosConversation.update(c.id, { group_id: null }))
-      );
+      
+      if (conversations.length > 0) {
+        await Promise.all(
+          conversations.map(c => base44.entities.TitanosConversation.update(c.id, { group_id: null }))
+        );
+      }
+      
       return base44.entities.TitanosChatGroup.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['titanos-groups'] });
+      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.GROUPS });
       queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
       toast.success('Grupo excluído!');
+    },
+    onError: (err) => {
+      toast.error('Erro ao excluir grupo: ' + (err.message || 'Erro desconhecido'));
     },
   });
 
