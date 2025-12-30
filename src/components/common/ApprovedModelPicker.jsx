@@ -74,12 +74,13 @@ export default function ApprovedModelPicker({
     <ScrollArea className="h-full">
       <div className="space-y-2 p-2">
         {filteredModels.map(model => {
-          const isSelected = selectedModels.includes(model.model_id);
+          // Usa model.id (ID único) para identificação, não model.model_id
+          const isSelected = selectedModels.includes(model.id);
           
           return (
             <div
               key={model.id}
-              onClick={() => handleSelect(model.model_id)}
+              onClick={() => handleSelect(model.id)}
               className={`
                 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
                 ${isSelected 
