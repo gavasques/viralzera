@@ -364,6 +364,7 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
                                         onSelectionChange={setSelectedModels} 
                                         maxSelection={6}
                                         category="chat"
+                                        models={approvedModels}
                                     />
                                 </div>
                                 <div className="text-center mt-2 text-xs text-slate-400">
