@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSavedPrompts } from './hooks/useTitanosData';
 import { useConversationMutations } from './hooks/useTitanosMutations';
 
-function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = null }) {
+function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = null, approvedModels = null }) {
   const [step, setStep] = useState(1);
   
   // Form State
