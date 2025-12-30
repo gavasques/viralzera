@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { User, Sparkles } from "lucide-react";
+import { Package, Sparkles } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   ChatMessage, 
@@ -12,15 +12,32 @@ import { useChatPanel } from '@/components/hooks/useChatPanel';
 import { QUERY_KEYS, FEATURES, ENTITIES } from '@/components/constants/queryKeys';
 
 /**
- * Panel de chat para geração de personas
+ * Panel de chat para análise de produtos
  */
-export default function PersonaChatPanel({
+export default function ProductChatPanel({
   session,
   onUpdateSession,
   focusId,
-  onNewSession
+  onNewSession,
+  personas = []
 }) {
   const queryClient = useQueryClient();
+
+  // Build system prompt with persona placeholder
+  const buildSystemPrompt = useCallback((config) => {
+    let prompt = config?.prompt || '';
+    
+    const persona = personas.find(p => p.id === session?.persona_id);
+    if (persona) {
+      prompt = prompt.replace('{{PERSONA_DATA}}', JSON.stringify(persona, null, 2));
+    }
+    
+    if (session?.other_products_context) {
+      prompt += '\n\n' + session.other_products_context;
+    }
+    
+    return prompt;
+  }, [personas, session]);
 
   const {
     isLoading,
@@ -34,20 +51,20 @@ export default function PersonaChatPanel({
     session,
     onUpdateSession,
     focusId,
-    configEntity: ENTITIES.PERSONA_CONFIG,
-    configQueryKey: QUERY_KEYS.CONFIGS.PERSONA,
-    feature: FEATURES.PERSONA_CHAT,
-    buildSystemPrompt: (cfg) => cfg?.prompt || ''
+    configEntity: ENTITIES.PRODUCT_CONFIG,
+    configQueryKey: QUERY_KEYS.CONFIGS.PRODUCT,
+    feature: FEATURES.PRODUCT_CHAT,
+    buildSystemPrompt
   });
 
   // Empty state
   if (!session) {
     return (
       <ChatEmptyState
-        icon={User}
-        title="Gerador de Personas"
-        description="Selecione uma conversa do histórico ou inicie uma nova para criar sua persona através de uma entrevista guiada."
-        buttonLabel="Nova Entrevista"
+        icon={Package}
+        title="Analisador de Produtos"
+        description="Selecione uma conversa do histórico ou inicie uma nova para analisar e otimizar seu produto."
+        buttonLabel="Nova Análise"
         onAction={onNewSession}
       />
     );
@@ -63,7 +80,7 @@ export default function PersonaChatPanel({
           {messages.length === 0 && (
             <div className="text-center py-12 text-slate-400">
               <Sparkles className="w-8 h-8 mx-auto mb-3 text-indigo-400" />
-              <p>Vamos começar a entrevista para criar sua persona.</p>
+              <p>Vamos analisar seu produto. Descreva o que você oferece.</p>
             </div>
           )}
           
@@ -73,7 +90,7 @@ export default function PersonaChatPanel({
               message={msg}
               showUsage={index === messages.length - 1 && msg.role === 'assistant'}
               focusId={focusId}
-              onDataSaved={() => queryClient.invalidateQueries({ queryKey: ['personas'] })}
+              onDataSaved={() => queryClient.invalidateQueries({ queryKey: ['products'] })}
             />
           ))}
           
@@ -93,7 +110,7 @@ export default function PersonaChatPanel({
           <ChatInput
             onSend={handleSend}
             isLoading={isLoading}
-            placeholder="Responda às perguntas para construir sua persona..."
+            placeholder="Descreva seu produto ou responda às perguntas..."
             enableFileUpload={true}
           />
         </div>

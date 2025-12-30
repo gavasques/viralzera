@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 
 /**
- * Sidebar específica para o chat de persona
+ * Sidebar específica para o chat de produtos
  * Wrapper do ChatSidebar unificado com configurações
  */
-export default function PersonaChatSidebar({
+export default function ProductChatSidebar({
   sessions,
   activeSessionId,
   onSelectSession,
@@ -27,8 +27,8 @@ export default function PersonaChatSidebar({
         onDeleteSession={onDeleteSession}
         onRenameSession={onRenameSession}
         onToggleFavorite={onToggleFavorite}
-        title="Entrevistas"
-        newButtonLabel="Nova Entrevista"
+        title="Análises"
+        newButtonLabel="Nova Análise"
       />
       
       {/* Settings Button */}

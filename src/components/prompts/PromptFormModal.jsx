@@ -1,233 +1,228 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Plus } from 'lucide-react';
+import { Loader2, Bot, MessageCircle, Folder, Tag, Layers } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import MultiValueInput from '@/components/forms/MultiValueInput';
 
 export default function PromptFormModal({ open, onOpenChange, prompt }) {
-  const queryClient = useQueryClient();
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    content: '',
-    type: 'system_prompt',
-    category: '',
-    tags: [],
-    folder_id: null
-  });
-  const [tagInput, setTagInput] = useState('');
+    const queryClient = useQueryClient();
+    const isEditing = !!prompt;
 
-  // Fetch folders
-  const { data: folders = [] } = useQuery({
-    queryKey: ['promptFolders'],
-    queryFn: () => base44.entities.PromptFolder.list('name', 100),
-  });
+    // Fetch folders for selection
+    const { data: folders = [] } = useQuery({
+        queryKey: ['promptFolders'],
+        queryFn: () => base44.entities.PromptFolder.list('name', 100),
+        enabled: open
+    });
 
-  useEffect(() => {
-    if (prompt) {
-      setFormData({
-        title: prompt.title || '',
-        description: prompt.description || '',
-        content: prompt.content || '',
-        type: prompt.type || 'system_prompt',
-        category: prompt.category || '',
-        tags: prompt.tags || [],
-        folder_id: prompt.folder_id || null
-      });
-    } else {
-      setFormData({
+    const [form, setForm] = useState({
         title: '',
-        description: '',
-        content: '',
         type: 'system_prompt',
+        content: '',
+        description: '',
+        folder_id: '',
         category: '',
-        tags: [],
-        folder_id: null
-      });
-    }
-  }, [prompt, open]);
+        tags: []
+    });
 
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (prompt?.id) {
-        return base44.entities.Prompt.update(prompt.id, data);
-      }
-      return base44.entities.Prompt.create(data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prompts'] });
-      toast.success(prompt?.id ? 'Prompt atualizado!' : 'Prompt criado!');
-      onOpenChange(false);
-    },
-    onError: (err) => toast.error('Erro: ' + err.message)
-  });
+    useEffect(() => {
+        if (open) {
+            if (prompt) {
+                setForm({
+                    title: prompt.title || '',
+                    type: prompt.type || 'system_prompt',
+                    content: prompt.content || '',
+                    description: prompt.description || '',
+                    folder_id: prompt.folder_id || '',
+                    category: prompt.category || '',
+                    tags: prompt.tags || []
+                });
+            } else {
+                setForm({
+                    title: '',
+                    type: 'system_prompt',
+                    content: '',
+                    description: '',
+                    folder_id: '',
+                    category: '',
+                    tags: []
+                });
+            }
+        }
+    }, [open, prompt]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.title.trim() || !formData.content.trim()) {
-      toast.error('Título e conteúdo são obrigatórios');
-      return;
-    }
-    saveMutation.mutate(formData);
-  };
+    const mutation = useMutation({
+        mutationFn: async (data) => {
+            if (isEditing) {
+                return base44.entities.Prompt.update(prompt.id, data);
+            }
+            return base44.entities.Prompt.create(data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['prompts'] });
+            toast.success(isEditing ? 'Prompt atualizado!' : 'Prompt criado!');
+            onOpenChange(false);
+        },
+        onError: () => toast.error('Erro ao salvar prompt')
+    });
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }));
-      setTagInput('');
-    }
-  };
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!form.title.trim() || !form.content.trim()) {
+            toast.warning('Preencha o título e o conteúdo');
+            return;
+        }
+        mutation.mutate(form);
+    };
 
-  const handleRemoveTag = (tag) => {
-    setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
-  };
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle>{isEditing ? 'Editar Prompt' : 'Novo Prompt'}</DialogTitle>
+                </DialogHeader>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Nome do Prompt</Label>
+                            <Input 
+                                value={form.title}
+                                onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
+                                placeholder="Ex: Assistente Sarcástico"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Tipo</Label>
+                            <Select value={form.type} onValueChange={(v) => setForm(f => ({ ...f, type: v }))}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="system_prompt">
+                                        <div className="flex items-center gap-2">
+                                            <Bot className="w-4 h-4 text-purple-600" />
+                                            <span>System Prompt</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="user_prompt">
+                                        <div className="flex items-center gap-2">
+                                            <MessageCircle className="w-4 h-4 text-blue-600" />
+                                            <span>User Prompt</span>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{prompt?.id ? 'Editar Prompt' : 'Novo Prompt'}</DialogTitle>
-        </DialogHeader>
+                    <div className="space-y-2">
+                        <Label>Descrição (opcional)</Label>
+                        <Input 
+                            value={form.description}
+                            onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
+                            placeholder="Breve descrição do que o prompt faz..."
+                        />
+                    </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Título *</Label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Nome do prompt..."
-              />
-            </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <Folder className="w-3.5 h-3.5 text-slate-500" /> Pasta
+                            </Label>
+                            <Select value={form.folder_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, folder_id: v === "none" ? null : v }))}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione uma pasta" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Sem pasta</SelectItem>
+                                    {folders.map(folder => (
+                                        <SelectItem key={folder.id} value={folder.id}>
+                                            <div className="flex items-center gap-2">
+                                                <Folder className="w-3.5 h-3.5 text-indigo-500" />
+                                                {folder.name}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <Layers className="w-3.5 h-3.5 text-slate-500" /> Categoria
+                            </Label>
+                            <Input 
+                                value={form.category}
+                                onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
+                                placeholder="Ex: Marketing, Copy..."
+                            />
+                        </div>
+                    </div>
 
-            <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, type: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="system_prompt">Prompt de Sistema</SelectItem>
-                  <SelectItem value="user_prompt">Prompt de Usuário</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                            <Tag className="w-3.5 h-3.5 text-slate-500" /> Tags
+                        </Label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {form.tags.map((tag, i) => (
+                                <span key={i} className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs flex items-center gap-1 border border-indigo-100">
+                                    {tag}
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setForm(f => ({...f, tags: f.tags.filter((_, idx) => idx !== i)}))}
+                                        className="hover:text-red-500"
+                                    >
+                                        &times;
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                        <Input 
+                            placeholder="Digite uma tag e pressione Enter"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const val = e.currentTarget.value.trim();
+                                    if (val && !form.tags.includes(val)) {
+                                        setForm(f => ({...f, tags: [...f.tags, val]}));
+                                        e.currentTarget.value = '';
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
 
-          <div className="space-y-2">
-            <Label>Descrição</Label>
-            <Input
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Breve descrição do uso deste prompt..."
-            />
-          </div>
+                    <div className="space-y-2">
+                        <Label>Conteúdo do Prompt</Label>
+                        <Textarea 
+                            value={form.content}
+                            onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))}
+                            placeholder={form.type === 'system_prompt' 
+                                ? "Você é um assistente especializado em..." 
+                                : "Analise o seguinte texto e..."}
+                            className="min-h-[200px] font-mono text-sm"
+                        />
+                    </div>
 
-          <div className="space-y-2">
-            <Label>Conteúdo *</Label>
-            <Textarea
-              value={formData.content}
-              onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-              placeholder="O prompt em si..."
-              rows={8}
-              className="font-mono text-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Categoria</Label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                placeholder="Ex: Roteiro, Análise..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Pasta</Label>
-              <Select
-                value={formData.folder_id || 'none'}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, folder_id: v === 'none' ? null : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sem pasta" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem pasta</SelectItem>
-                  {folders.map(folder => (
-                    <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-2">
-            <Label>Tags</Label>
-            <div className="flex gap-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                placeholder="Adicionar tag..."
-                className="flex-1"
-              />
-              <Button type="button" variant="outline" onClick={handleAddTag}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.tags.map((tag, idx) => (
-                  <Badge key={idx} variant="secondary" className="pl-2 pr-1 py-1">
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="ml-1 hover:bg-slate-200 rounded p-0.5"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Salvando...' : (prompt?.id ? 'Atualizar' : 'Criar')}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" disabled={mutation.isPending}>
+                            {mutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            {isEditing ? 'Salvar' : 'Criar'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
 }
