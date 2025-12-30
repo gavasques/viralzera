@@ -182,6 +182,15 @@ function TitanosContent({
         cancelRemoveModel={cancelRemoveModel}
         handleRemoveModel={handleRemoveModel}
       />
+
+      {/* Prompt Log Modal (Admin only) */}
+      {isAdmin && (
+        <PromptLogModal 
+          open={showPromptLog}
+          onOpenChange={setShowPromptLog}
+          logData={promptLog}
+        />
+      )}
     </div>
   );
 }
