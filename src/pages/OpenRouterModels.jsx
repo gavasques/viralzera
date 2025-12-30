@@ -268,8 +268,9 @@ export default function OpenRouterModels() {
              Nenhum modelo encontrado para "{searchTerm}"
            </div>
         )}
+      </div>
         </div>
-        </AdminLayout>
-        </AdminProtection>
-        );
-        }
+      </AdminLayout>
+    </AdminProtection>
+  );
+}
