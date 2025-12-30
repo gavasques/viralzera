@@ -17,9 +17,10 @@ import { STALE_TIMES, DEFAULT_CONVERSATION_LIMIT, TITANOS_QUERY_KEYS } from '../
  */
 export function useTitanosUser() {
   return useQuery({
-    queryKey: ['titanos-user'],
+    queryKey: TITANOS_QUERY_KEYS.USER,
     queryFn: () => base44.auth.me(),
     staleTime: STALE_TIMES.USER,
+    gcTime: 10 * 60 * 1000, // 10 min garbage collection
   });
 }
 
