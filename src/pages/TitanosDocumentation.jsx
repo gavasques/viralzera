@@ -87,7 +87,7 @@ O **Titanos Router** é uma aplicação de chat avançada que permite interagir 
                         prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
                         prose-pre:bg-slate-900 prose-pre:text-slate-50
                     ">
-                        <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                        <div className="whitespace-pre-wrap">{markdownContent}</div>
                     </article>
                 </div>
             </div>
