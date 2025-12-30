@@ -1,23 +1,11 @@
 /**
  * Hooks para mutações do Multi Chat
  * Centraliza todas as operações de escrita
- * Refatorado com tratamento de erros e validações
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { TITANOS_QUERY_KEYS } from '../constants';
-
-/**
- * Invalida queries relacionadas a conversas
- */
-function invalidateConversationQueries(queryClient, conversationId = null) {
-  queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
-  if (conversationId) {
-    queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
-  }
-}
 
 /**
  * Hook para mutações de conversa
@@ -26,55 +14,23 @@ export function useConversationMutations(activeConversationId) {
   const queryClient = useQueryClient();
 
   const update = useMutation({
-    mutationFn: async (data) => {
-      if (!activeConversationId) {
-        throw new Error('ID da conversa não fornecido');
-      }
-      return base44.entities.TitanosConversation.update(activeConversationId, data);
-    },
+    mutationFn: (data) => base44.entities.TitanosConversation.update(activeConversationId, data),
     onSuccess: () => {
-      invalidateConversationQueries(queryClient, activeConversationId);
-    },
-    onError: (err) => {
-      console.error('[useConversationMutations] Erro ao atualizar:', err);
-      toast.error('Erro ao atualizar conversa');
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversation', activeConversationId] });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
     },
   });
 
   const remove = useMutation({
-    mutationFn: async (id) => {
-      if (!id) {
-        throw new Error('ID da conversa não fornecido');
-      }
-      return base44.entities.TitanosConversation.delete(id);
-    },
-    onSuccess: (_, deletedId) => {
-      invalidateConversationQueries(queryClient);
-      // Remove do cache imediatamente
-      queryClient.removeQueries({ queryKey: ['titanos-conversation', deletedId] });
-      queryClient.removeQueries({ queryKey: ['titanos-messages', deletedId] });
-    },
-    onError: (err) => {
-      console.error('[useConversationMutations] Erro ao deletar:', err);
-      toast.error('Erro ao excluir conversa');
+    mutationFn: (id) => base44.entities.TitanosConversation.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
     },
   });
 
   const create = useMutation({
     mutationFn: async (data) => {
-      // Validação básica
-      if (!data.title?.trim()) {
-        throw new Error('Título é obrigatório');
-      }
-      
-      const conversation = await base44.entities.TitanosConversation.create({
-        title: data.title.trim(),
-        selected_models: data.selected_models || [],
-        group_id: data.group_id || null,
-        enable_reasoning: data.enable_reasoning || false,
-        reasoning_effort: data.reasoning_effort || 'high',
-        enable_web_search: data.enable_web_search || false,
-      });
+      const conversation = await base44.entities.TitanosConversation.create(data);
       
       // Adiciona system prompt se fornecido
       if (data.systemPrompt?.trim()) {
@@ -89,11 +45,10 @@ export function useConversationMutations(activeConversationId) {
       return conversation;
     },
     onSuccess: () => {
-      invalidateConversationQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
       toast.success('Conversa criada com sucesso!');
     },
     onError: (err) => {
-      console.error('[useConversationMutations] Erro ao criar:', err);
       toast.error('Erro ao criar conversa: ' + (err.message || 'Erro desconhecido'));
     },
   });
@@ -109,57 +64,30 @@ export function useGroupMutations() {
 
   const save = useMutation({
     mutationFn: async ({ id, data }) => {
-      // Validação
-      if (!data.name?.trim()) {
-        throw new Error('Nome do grupo é obrigatório');
-      }
-      
-      const groupData = {
-        name: data.name.trim(),
-        default_system_prompt: data.default_system_prompt?.trim() || null,
-        color: data.color || null,
-        order: data.order || 0,
-      };
-      
       if (id) {
-        return base44.entities.TitanosChatGroup.update(id, groupData);
+        return base44.entities.TitanosChatGroup.update(id, data);
       }
-      return base44.entities.TitanosChatGroup.create(groupData);
+      return base44.entities.TitanosChatGroup.create(data);
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.GROUPS });
+      queryClient.invalidateQueries({ queryKey: ['titanos-groups'] });
       toast.success(id ? 'Grupo atualizado!' : 'Grupo criado!');
-    },
-    onError: (err) => {
-      console.error('[useGroupMutations] Erro:', err);
-      toast.error('Erro ao salvar grupo');
     },
   });
 
   const remove = useMutation({
     mutationFn: async (id) => {
-      if (!id) {
-        throw new Error('ID do grupo não fornecido');
-      }
-      
       // Move conversas do grupo para "sem grupo"
       const conversations = await base44.entities.TitanosConversation.filter({ group_id: id });
-      if (conversations?.length > 0) {
-        await Promise.all(
-          conversations.map(c => base44.entities.TitanosConversation.update(c.id, { group_id: null }))
-        );
-      }
-      
+      await Promise.all(
+        conversations.map(c => base44.entities.TitanosConversation.update(c.id, { group_id: null }))
+      );
       return base44.entities.TitanosChatGroup.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.GROUPS });
-      invalidateConversationQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['titanos-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
       toast.success('Grupo excluído!');
-    },
-    onError: (err) => {
-      console.error('[useGroupMutations] Erro ao excluir:', err);
-      toast.error('Erro ao excluir grupo');
     },
   });
 
@@ -173,35 +101,17 @@ export function useChatMutations() {
   const queryClient = useQueryClient();
 
   const updateChat = useMutation({
-    mutationFn: async ({ chatId, data }) => {
-      if (!chatId) {
-        throw new Error('ID do chat não fornecido');
-      }
-      return base44.entities.TitanosConversation.update(chatId, data);
-    },
-    onSuccess: (_, { chatId }) => {
-      invalidateConversationQueries(queryClient, chatId);
-    },
-    onError: (err) => {
-      console.error('[useChatMutations] Erro:', err);
-      toast.error('Erro ao atualizar chat');
+    mutationFn: ({ chatId, data }) => base44.entities.TitanosConversation.update(chatId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
     },
   });
 
   const renameChat = useMutation({
-    mutationFn: async ({ id, title }) => {
-      if (!id || !title?.trim()) {
-        throw new Error('ID e título são obrigatórios');
-      }
-      return base44.entities.TitanosConversation.update(id, { title: title.trim() });
-    },
+    mutationFn: ({ id, title }) => base44.entities.TitanosConversation.update(id, { title }),
     onSuccess: () => {
-      invalidateConversationQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
       toast.success('Chat renomeado!');
-    },
-    onError: (err) => {
-      console.error('[useChatMutations] Erro ao renomear:', err);
-      toast.error('Erro ao renomear chat');
     },
   });
 
@@ -216,17 +126,13 @@ export function useVoteMutations(conversationId) {
 
   const vote = useMutation({
     mutationFn: async ({ modelId, modelAlias, existingVote, allVotes, context }) => {
-      if (!conversationId || !modelId) {
-        throw new Error('Dados de voto incompletos');
-      }
-      
       // Se já votou neste modelo, remove
       if (existingVote) {
         await base44.entities.ModelVote.delete(existingVote.id);
         return { action: 'removed' };
       }
       
-      // Remove votos anteriores do mesmo contexto
+      // Remove votos anteriores
       if (allVotes?.length > 0) {
         await Promise.all(allVotes.map(v => base44.entities.ModelVote.delete(v.id)));
       }
@@ -235,15 +141,15 @@ export function useVoteMutations(conversationId) {
       await base44.entities.ModelVote.create({
         conversation_id: conversationId,
         model_id: modelId,
-        model_alias: modelAlias || modelId,
+        model_alias: modelAlias,
         vote_type: 'best',
-        context: context || 'multi_chat',
+        context,
       });
       
       return { action: 'voted', modelAlias };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION_VOTES(conversationId) });
+      queryClient.invalidateQueries({ queryKey: ['titanos-votes', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['modelVotes'] });
       
       if (result.action === 'voted') {
@@ -252,8 +158,7 @@ export function useVoteMutations(conversationId) {
         toast.success('Voto removido');
       }
     },
-    onError: (err) => {
-      console.error('[useVoteMutations] Erro:', err);
+    onError: () => {
       toast.error('Erro ao registrar voto');
     },
   });

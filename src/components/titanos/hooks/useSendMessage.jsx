@@ -1,118 +1,184 @@
 /**
- * Hooks para envio de mensagens no Multi Chat
- * Responsabilidade: orquestrar envio de mensagens para múltiplos modelos
+ * Hook para envio de mensagens no Multi Chat
+ * Chamada direta à OpenRouter do frontend (sem backend)
  */
 
 import { useState, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-import { 
-  getUserApiKey, 
-  callOpenRouter, 
-  validateApiKey 
-} from '../services/openRouterService';
-import { 
-  saveUserMessage, 
-  saveAssistantMessage, 
-  prepareMessageHistory,
-  injectGroupSystemPrompt,
-  prepareRegenerateHistory,
-  prepareSingleModelHistory,
-} from '../services/messageService';
-import { TITANOS_QUERY_KEYS } from '../constants';
+/**
+ * Busca API Key do usuário (com cache)
+ */
+let cachedApiKey = null;
+async function getUserApiKey() {
+  if (cachedApiKey) return cachedApiKey;
+  const configs = await base44.entities.UserConfig.list();
+  const config = configs?.[0];
+  cachedApiKey = config?.openrouter_api_key;
+  return cachedApiKey;
+}
 
 /**
- * Hook principal para envio de mensagens a múltiplos modelos
+ * Chama OpenRouter diretamente
+ */
+async function callOpenRouter(apiKey, model, messages, options = {}) {
+  const body = {
+    model,
+    messages: messages.map(m => ({ role: m.role, content: m.content })),
+  };
+  
+  // Adiciona reasoning se habilitado e modelo suporta
+  if (options.enableReasoning && model.includes('claude')) {
+    body.reasoning = { effort: options.reasoningEffort || 'high' };
+  }
+  
+  // Adiciona web search se habilitado
+  if (options.enableWebSearch) {
+    body.plugins = [{ id: 'web' }];
+  }
+
+  const startTime = Date.now();
+  
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': window.location.origin,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `OpenRouter error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const duration = Date.now() - startTime;
+  
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    usage: data.usage,
+    duration,
+    rawResponse: data,
+  };
+}
+
+
+
+/**
+ * Hook principal para envio de mensagens
  */
 export function useSendMessage(conversationId, activeConversation, messages, groups) {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = useCallback(async (input, selectedModels) => {
-    // Validação de entrada
-    if (!input?.trim()) {
-      toast.error('Digite uma mensagem');
-      return { success: false };
-    }
-    if (!conversationId) {
-      toast.error('Selecione uma conversa');
-      return { success: false };
-    }
-    if (!selectedModels?.length) {
-      toast.error('Selecione pelo menos um modelo');
+    if (!input?.trim() || !conversationId || selectedModels.length === 0) {
       return { success: false };
     }
 
     setIsLoading(true);
 
     try {
-      // Valida API key
-      const { isValid, apiKey } = await validateApiKey();
-      if (!isValid) {
+      // Prepara histórico efetivo
+      let effectiveHistory = messages.filter(
+        m => m.model_id === null || selectedModels.includes(m.model_id)
+      );
+
+      // Verifica system prompt do grupo
+      if (activeConversation?.group_id) {
+        const group = groups.find(g => g.id === activeConversation.group_id);
+        if (group?.default_system_prompt) {
+          const hasOwnSystemPrompt = messages.some(m => m.role === 'system');
+          if (!hasOwnSystemPrompt) {
+            effectiveHistory = [
+              { role: 'system', content: group.default_system_prompt },
+              ...effectiveHistory.filter(m => m.role !== 'system'),
+            ];
+          }
+        }
+      }
+
+      // Busca API Key do usuário
+      const apiKey = await getUserApiKey();
+      if (!apiKey) {
         toast.error('Configure sua API Key do OpenRouter em Configurações');
         return { success: false };
       }
 
-      // Prepara histórico
-      let history = prepareMessageHistory(messages, selectedModels, input);
-      history = injectGroupSystemPrompt(history, messages, activeConversation, groups);
+      // Salva mensagem do usuário no banco
+      await base44.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'user',
+        content: input.trim(),
+        model_id: null,
+      });
 
-      // Salva mensagem do usuário primeiro
-      await saveUserMessage(conversationId, input.trim());
+      // Prepara mensagens para envio
+      const historyMessages = [
+        ...effectiveHistory.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: input.trim() },
+      ];
 
-      // Prepara opções
+      // Chama cada modelo em paralelo
       const options = {
         enableReasoning: activeConversation?.enable_reasoning || false,
         reasoningEffort: activeConversation?.reasoning_effort || 'high',
         enableWebSearch: activeConversation?.enable_web_search || false,
       };
 
-      // Chama cada modelo em paralelo
       const results = await Promise.allSettled(
         selectedModels.map(async (modelId) => {
           try {
-            const result = await callOpenRouter(apiKey, modelId, history, options);
+            const result = await callOpenRouter(apiKey, modelId, historyMessages, options);
             
-            // Salva resposta
-            await saveAssistantMessage(conversationId, modelId, result.content, {
-              prompt_tokens: result.usage?.prompt_tokens || 0,
-              completion_tokens: result.usage?.completion_tokens || 0,
-              total_tokens: result.usage?.total_tokens || 0,
-              duration_ms: result.duration,
-              cost: result.usage?.cost || 0,
+            // Salva resposta no banco
+            await base44.entities.TitanosMessage.create({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: result.content,
+              model_id: modelId,
+              metrics: {
+                prompt_tokens: result.usage?.prompt_tokens || 0,
+                completion_tokens: result.usage?.completion_tokens || 0,
+                total_tokens: result.usage?.total_tokens || 0,
+                duration_ms: result.duration,
+                cost: result.usage?.cost || 0,
+              },
             });
             
             return { modelId, success: true };
           } catch (err) {
-            console.error(`[useSendMessage] Error for ${modelId}:`, err.message);
+            console.error(`[useSendMessage] Error for ${modelId}:`, err);
             return { modelId, success: false, error: err.message };
           }
         })
       );
 
-      // Analisa resultados
       const failures = results.filter(r => r.status === 'rejected' || !r.value?.success);
-      
       if (failures.length === selectedModels.length) {
         toast.error('Falha em todos os modelos');
         return { success: false };
       }
       
       if (failures.length > 0) {
-        const failedModels = failures
-          .map(f => f.value?.modelId || 'Unknown')
-          .join(', ');
-        toast.warning(`${failures.length} modelo(s) falharam: ${failedModels}`);
+        toast.warning(`${failures.length} modelo(s) falharam`);
       }
 
-      // Invalida queries
-      await invalidateConversationQueries(queryClient, conversationId);
+      // Invalida queries para forçar refetch das mensagens
+      console.log('[useSendMessage] Invalidating queries for conversation:', conversationId);
+      await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      await queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
+      await queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] });
 
       return { success: true };
     } catch (err) {
-      console.error('[useSendMessage] Error:', err);
-      toast.error('Falha ao enviar mensagem: ' + (err.message || 'Erro desconhecido'));
+      toast.error('Falha ao enviar mensagem');
+      console.error(err);
       return { success: false };
     } finally {
       setIsLoading(false);
@@ -129,41 +195,53 @@ export function useRegenerateResponse(conversationId) {
   const queryClient = useQueryClient();
   const [regeneratingModel, setRegeneratingModel] = useState(null);
 
-  const regenerate = useCallback(async (modelId, allMessages) => {
-    // Prepara histórico
-    const preparedHistory = prepareRegenerateHistory(allMessages);
-    if (!preparedHistory) {
+  const regenerate = useCallback(async (modelId, messages) => {
+    const userMessages = messages.filter(m => m.role === 'user' && !m.model_id);
+    if (userMessages.length === 0) {
       toast.error('Nenhuma mensagem do usuário encontrada');
-      return { success: false };
+      return;
     }
+
+    const firstUserMessage = userMessages[0];
+    const history = messages
+      .filter(m => m.role === 'system')
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 
     setRegeneratingModel(modelId);
 
     try {
-      const { isValid, apiKey } = await validateApiKey();
-      if (!isValid) {
+      const apiKey = await getUserApiKey();
+      if (!apiKey) {
         toast.error('Configure sua API Key do OpenRouter');
-        return { success: false };
+        return;
       }
 
-      const result = await callOpenRouter(apiKey, modelId, preparedHistory.history, {});
+      const historyMessages = [
+        ...history.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: firstUserMessage.content },
+      ];
 
-      // Salva nova resposta
-      await saveAssistantMessage(conversationId, modelId, result.content, {
-        prompt_tokens: result.usage?.prompt_tokens || 0,
-        completion_tokens: result.usage?.completion_tokens || 0,
-        total_tokens: result.usage?.total_tokens || 0,
-        duration_ms: result.duration,
+      const result = await callOpenRouter(apiKey, modelId, historyMessages, {});
+
+      // Salva nova resposta no banco
+      await base44.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'assistant',
+        content: result.content,
+        model_id: modelId,
+        metrics: {
+          prompt_tokens: result.usage?.prompt_tokens || 0,
+          completion_tokens: result.usage?.completion_tokens || 0,
+          total_tokens: result.usage?.total_tokens || 0,
+          duration_ms: result.duration,
+        },
       });
 
       toast.success('Resposta regenerada!');
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) });
-      
-      return { success: true };
+      queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
     } catch (err) {
-      console.error('[useRegenerateResponse] Error:', err);
       toast.error('Falha ao regenerar: ' + err.message);
-      return { success: false };
+      console.error(err);
     } finally {
       setRegeneratingModel(null);
     }
@@ -179,58 +257,62 @@ export function useSingleModelChat(conversationId, modelId, allMessages) {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
+  const getHistoryForModel = useCallback(() => {
+    return allMessages
+      .filter(m => m.role === 'system' || m.role === 'user' || m.model_id === modelId)
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+  }, [allMessages, modelId]);
+
   const sendMessage = useCallback(async (message) => {
     if (!message?.trim() || isLoading) return { success: false };
 
     setIsLoading(true);
 
     try {
-      const { isValid, apiKey } = await validateApiKey();
-      if (!isValid) {
+      const apiKey = await getUserApiKey();
+      if (!apiKey) {
         toast.error('Configure sua API Key do OpenRouter');
         return { success: false };
       }
 
       // Salva mensagem do usuário
-      await saveUserMessage(conversationId, message.trim());
+      await base44.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'user',
+        content: message.trim(),
+        model_id: null,
+      });
 
-      // Prepara histórico
-      const history = [
-        ...prepareSingleModelHistory(allMessages, modelId),
+      const historyMessages = [
+        ...getHistoryForModel().map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: message.trim() },
       ];
 
-      const result = await callOpenRouter(apiKey, modelId, history, {});
+      const result = await callOpenRouter(apiKey, modelId, historyMessages, {});
 
       // Salva resposta
-      await saveAssistantMessage(conversationId, modelId, result.content, {
-        prompt_tokens: result.usage?.prompt_tokens || 0,
-        completion_tokens: result.usage?.completion_tokens || 0,
-        total_tokens: result.usage?.total_tokens || 0,
-        duration_ms: result.duration,
+      await base44.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'assistant',
+        content: result.content,
+        model_id: modelId,
+        metrics: {
+          prompt_tokens: result.usage?.prompt_tokens || 0,
+          completion_tokens: result.usage?.completion_tokens || 0,
+          total_tokens: result.usage?.total_tokens || 0,
+          duration_ms: result.duration,
+        },
       });
 
-      queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) });
+      queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
       return { success: true };
     } catch (err) {
-      console.error('[useSingleModelChat] Error:', err);
       toast.error('Erro ao enviar: ' + err.message);
       return { success: false };
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, modelId, allMessages, isLoading, queryClient]);
+  }, [conversationId, modelId, isLoading, getHistoryForModel, queryClient]);
 
   return { sendMessage, isLoading };
-}
-
-/**
- * Invalida queries relacionadas à conversa
- */
-async function invalidateConversationQueries(queryClient, conversationId) {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.MESSAGES(conversationId) }),
-    queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] }),
-    queryClient.invalidateQueries({ queryKey: TITANOS_QUERY_KEYS.CONVERSATION(conversationId) }),
-  ]);
 }

@@ -1,8 +1,4 @@
-/**
- * Modal para chat expandido com modelo único
- */
-
-import React, { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,8 +6,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Bot, Loader2, X } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import { useSingleModelChat } from './hooks/useSendMessage';
-import { getMessagesForModel } from './services/messageService';
 
+/**
+ * Modal para chat expandido com modelo único
+ */
 function SingleModelChatModal({ 
   open, 
   onOpenChange, 
@@ -26,33 +24,18 @@ function SingleModelChatModal({
   
   const { sendMessage, isLoading } = useSingleModelChat(conversationId, modelId, allMessages);
 
-  // Filtra mensagens para este modelo
-  const filteredMessages = useMemo(() => 
-    getMessagesForModel(allMessages, modelId),
-    [allMessages, modelId]
-  );
-
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [filteredMessages.length, isLoading]);
+  }, [messages.length, isLoading]);
 
-  const handleSend = useCallback(async () => {
+  const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     
     const message = input;
     setInput('');
     await sendMessage(message);
-  }, [input, isLoading, sendMessage]);
-
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
-
-  const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,7 +62,7 @@ function SingleModelChatModal({
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleClose}
+              onClick={() => onOpenChange(false)}
               className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full"
             >
               <X className="w-5 h-5" />
@@ -90,17 +73,17 @@ function SingleModelChatModal({
         {/* Messages */}
         <ScrollArea className="flex-1 bg-slate-50/30">
           <div className="p-4 space-y-4">
-            {filteredMessages.length === 0 ? (
+            {messages.length === 0 ? (
               <EmptyMessages />
             ) : (
-              filteredMessages.map((msg, idx) => (
+              messages.map((msg, idx) => (
                 <MessageBubble 
                   key={msg.id || idx}
                   role={msg.role}
                   content={msg.content}
                   metrics={msg.metrics}
                   modelName={msg.role === 'assistant' ? modelName : 'Você'}
-                  isInitialPrompt={msg.role === 'user' && idx === 0 && filteredMessages.length > 1}
+                  isInitialPrompt={msg.role === 'user' && idx === 0 && messages.length > 1}
                   chatTitle={modelName}
                 />
               ))
@@ -119,7 +102,12 @@ function SingleModelChatModal({
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={`Converse exclusivamente com ${modelName || modelId}...`}
                 className="min-h-[80px] pr-16 py-4 pl-5 w-full resize-none bg-transparent border-0 focus:ring-0 text-base placeholder:text-slate-400"
-                onKeyDown={handleKeyDown}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
               />
               <div className="absolute bottom-3 right-3">
                 <Button

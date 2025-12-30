@@ -1,15 +1,13 @@
-/**
- * Coluna de chat para um modelo específico
- * Exibe mensagens e controles para um modelo de IA
- */
-
-import React, { useRef, useEffect, useMemo, memo, useCallback } from 'react';
+import React, { useRef, useEffect, useMemo, memo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MessageBubble from './MessageBubble';
 import ChatColumnHeader from './ChatColumnHeader';
 import { Loader2, Bot } from 'lucide-react';
 import { calculateMetrics } from './utils';
 
+/**
+ * Coluna de chat para um modelo específico
+ */
 function ChatColumn({ 
   modelId, 
   modelName, 
@@ -24,21 +22,15 @@ function ChatColumn({
 }) {
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll suave quando mensagens mudam
+  // Auto-scroll suave
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length, isLoading]);
 
-  // Calcula métricas (memoizado)
+  // Calcula métricas
   const metrics = useMemo(() => calculateMetrics(messages), [messages]);
 
-  // Verifica se há mensagens do usuário
-  const hasUserMessages = useMemo(() => 
-    messages.some(m => m.role === 'user'), 
-    [messages]
-  );
+  const hasUserMessages = messages.some(m => m.role === 'user');
 
   return (
     <div className="flex flex-col h-full bg-slate-50 flex-1 min-w-[400px] relative group border-r border-slate-200/50 last:border-r-0">

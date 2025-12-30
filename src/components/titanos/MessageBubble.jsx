@@ -1,70 +1,44 @@
-/**
- * Componente de bolha de mensagem
- * Renderiza mensagens do usuário, sistema ou assistente com Markdown
- */
-
-import React, { memo, useCallback, useMemo } from 'react';
-import { Copy, Check, Bot, FileText } from 'lucide-react';
+import React from 'react';
+import { Copy, Check, User, Bot, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCanvas } from '@/components/canvas/CanvasProvider';
 import ReactMarkdown from 'react-markdown';
 
-// Configuração de componentes Markdown (memoizado fora do componente)
-const markdownComponents = {
-  h1: ({children}) => <h1 className="text-lg font-bold mt-4 mb-2">{children}</h1>,
-  h2: ({children}) => <h2 className="text-base font-bold mt-3 mb-2">{children}</h2>,
-  h3: ({children}) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
-  p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
-  ul: ({children}) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-  ol: ({children}) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-  li: ({children}) => <li className="text-sm">{children}</li>,
-  strong: ({children}) => <strong className="font-semibold">{children}</strong>,
-  em: ({children}) => <em className="italic">{children}</em>,
-  code: ({inline, children}) => inline 
-    ? <code className="bg-slate-100 text-pink-600 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
-    : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-xs my-2"><code>{children}</code></pre>,
-  blockquote: ({children}) => <blockquote className="border-l-2 border-indigo-300 pl-3 italic text-slate-600 my-2">{children}</blockquote>,
-  hr: () => <div className="my-4 flex items-center gap-2"><div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" /></div>,
-};
+export default function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitialPrompt }) {
+    const [copied, setCopied] = React.useState(false);
+    const [sentToCanvas, setSentToCanvas] = React.useState(false);
+    const { sendToCanvas } = useCanvas();
+    const isUser = role === 'user';
+    const isSystem = role === 'system';
+    
+    // Display simplified text for initial prompt
+    const displayContent = isInitialPrompt 
+        ? "Com base nos dados enviados, gere o conteúdo" 
+        : content;
 
-function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitialPrompt }) {
-  const [copied, setCopied] = React.useState(false);
-  const [sentToCanvas, setSentToCanvas] = React.useState(false);
-  const { sendToCanvas } = useCanvas();
-  
-  const isUser = role === 'user';
-  const isSystem = role === 'system';
-  
-  // Display simplified text for initial prompt
-  const displayContent = useMemo(() => 
-    isInitialPrompt ? "Com base nos dados enviados, gere o conteúdo" : content,
-    [isInitialPrompt, content]
-  );
+    const handleCopy = () => {
+        navigator.clipboard.writeText(content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [content]);
+    const handleSendToCanvas = () => {
+        sendToCanvas(content, chatTitle || modelName || 'Multi Chat', 'chat');
+        setSentToCanvas(true);
+        setTimeout(() => setSentToCanvas(false), 2000);
+    };
 
-  const handleSendToCanvas = useCallback(() => {
-    sendToCanvas(content, chatTitle || modelName || 'Multi Chat', 'chat');
-    setSentToCanvas(true);
-    setTimeout(() => setSentToCanvas(false), 2000);
-  }, [content, chatTitle, modelName, sendToCanvas]);
-
-  // System message
-  if (isSystem) {
-    return (
-      <div className="flex justify-center my-4">
-        <div className="bg-slate-100 text-slate-500 text-xs px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-2">
-          <Bot className="w-3 h-3" />
-          <span className="font-medium">System Prompt:</span>
-          <span className="truncate max-w-[200px]">{content}</span>
-        </div>
-      </div>
-    );
-  }
+    if (isSystem) {
+        return (
+            <div className="flex justify-center my-4">
+                <div className="bg-slate-100 text-slate-500 text-xs px-3 py-1.5 rounded-full border border-slate-200 flex items-center gap-2">
+                    <Bot className="w-3 h-3" />
+                    <span className="font-medium">System Prompt:</span>
+                    <span className="truncate max-w-[200px]">{content}</span>
+                </div>
+            </div>
+        )
+    }
 
 
 
@@ -95,7 +69,24 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
                         {isUser ? (
                             <span className="whitespace-pre-wrap">{displayContent}</span>
                         ) : (
-                            <ReactMarkdown components={markdownComponents}>
+                            <ReactMarkdown
+                                components={{
+                                    h1: ({children}) => <h1 className="text-lg font-bold mt-4 mb-2">{children}</h1>,
+                                    h2: ({children}) => <h2 className="text-base font-bold mt-3 mb-2">{children}</h2>,
+                                    h3: ({children}) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
+                                    p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                                    ul: ({children}) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                                    ol: ({children}) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                                    li: ({children}) => <li className="text-sm">{children}</li>,
+                                    strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                                    em: ({children}) => <em className="italic">{children}</em>,
+                                    code: ({inline, children}) => inline 
+                                        ? <code className="bg-slate-100 text-pink-600 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
+                                        : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-xs my-2"><code>{children}</code></pre>,
+                                    blockquote: ({children}) => <blockquote className="border-l-2 border-indigo-300 pl-3 italic text-slate-600 my-2">{children}</blockquote>,
+                                    hr: () => <div className="my-4 flex items-center gap-2"><div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" /></div>,
+                                }}
+                            >
                                 {displayContent}
                             </ReactMarkdown>
                         )}
@@ -124,14 +115,14 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
                 {/* Metrics Footer */}
                 {!isUser && metrics && (
                     <div className="flex items-center gap-2 mt-1.5 ml-1 text-[10px] text-slate-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                        {(metrics.duration_ms || metrics.duration) && (
+                        {metrics.duration && (
                             <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 border border-slate-200">
-                                {((metrics.duration_ms || metrics.duration) / 1000).toFixed(2)}s
+                                {(metrics.duration / 1000).toFixed(2)}s
                             </span>
                         )}
-                        {(metrics.total_tokens || metrics.usage?.total_tokens) && (
+                        {metrics.usage?.total_tokens && (
                             <span className="flex items-center gap-1">
-                                <span>•</span> {metrics.total_tokens || metrics.usage?.total_tokens} tokens
+                                <span>•</span> {metrics.usage.total_tokens} tokens
                             </span>
                         )}
                     </div>
@@ -140,5 +131,3 @@ function MessageBubble({ role, content, metrics, modelName, chatTitle, isInitial
         </div>
     );
 }
-
-export default memo(MessageBubble);
