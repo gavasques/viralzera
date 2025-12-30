@@ -162,6 +162,7 @@ function TitanosContent({
         closeNewModal={closeNewModal}
         handleConversationCreated={handleConversationCreated}
         newConversationGroup={newConversationGroup}
+        approvedModels={approvedModels}
         isMultiScriptOpen={isMultiScriptOpen}
         closeMultiScript={closeMultiScript}
         expandedModel={expandedModel}
