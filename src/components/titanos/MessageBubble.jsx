@@ -65,8 +65,31 @@ export default function MessageBubble({ role, content, metrics, modelName, chatT
                         ? 'bg-slate-700 text-white rounded-2xl rounded-tr-sm shadow-md' 
                         : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm shadow-sm hover:shadow-md hover:border-indigo-100/50'}
                 `}>
-                    <div className={`${isUser ? 'text-slate-100 marker:text-slate-400' : 'text-slate-700'} whitespace-pre-wrap`}>
-                        {displayContent}
+                    <div className={`${isUser ? 'text-slate-100' : 'text-slate-700'} prose prose-sm max-w-none ${isUser ? 'prose-invert' : ''}`}>
+                        {isUser ? (
+                            <span className="whitespace-pre-wrap">{displayContent}</span>
+                        ) : (
+                            <ReactMarkdown
+                                components={{
+                                    h1: ({children}) => <h1 className="text-lg font-bold mt-4 mb-2">{children}</h1>,
+                                    h2: ({children}) => <h2 className="text-base font-bold mt-3 mb-2">{children}</h2>,
+                                    h3: ({children}) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
+                                    p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                                    ul: ({children}) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                                    ol: ({children}) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                                    li: ({children}) => <li className="text-sm">{children}</li>,
+                                    strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                                    em: ({children}) => <em className="italic">{children}</em>,
+                                    code: ({inline, children}) => inline 
+                                        ? <code className="bg-slate-100 text-pink-600 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
+                                        : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-xs my-2"><code>{children}</code></pre>,
+                                    blockquote: ({children}) => <blockquote className="border-l-2 border-indigo-300 pl-3 italic text-slate-600 my-2">{children}</blockquote>,
+                                    hr: () => <hr className="my-3 border-slate-200" />,
+                                }}
+                            >
+                                {displayContent}
+                            </ReactMarkdown>
+                        )}
                     </div>
 
                     {!isUser && (
