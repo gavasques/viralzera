@@ -36,9 +36,13 @@ export function useConversationHandlers({
   );
 
   // Obter mensagens filtradas para um modelo
+  // Recebe o recordId (ID único) e converte para model_id do OpenRouter
   const getModelMessages = useCallback(
-    (modelId) => getMessagesForModel(messages, modelId),
-    [messages]
+    (recordId) => {
+      const openRouterId = getOpenRouterId(recordId, approvedModels);
+      return getMessagesForModel(messages, openRouterId);
+    },
+    [messages, approvedModels]
   );
 
   // Handler: Ocultar modelo
