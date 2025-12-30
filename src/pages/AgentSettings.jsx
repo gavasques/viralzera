@@ -5,7 +5,7 @@ import AgentCardGrid from "@/components/settings/AgentCardGrid";
 import ChatSettingsModal from "@/components/chat/ChatSettingsModal";
 import PostTypeSettingsModal from "@/components/instagram/PostTypeSettingsModal";
 import { AGENT_CARDS } from "@/components/constants/agentCards";
-import { useAgentSettings } from "@/hooks/useAgentSettings";
+import { useAgentSettings } from "@/components/hooks/useAgentSettings";
 
 export default function AgentSettings() {
   const {
