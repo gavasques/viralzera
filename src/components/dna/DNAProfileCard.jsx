@@ -28,7 +28,7 @@ export default function DNAProfileCard({ profile, onView, onDelete }) {
             <div>
               <h3 className="font-semibold text-slate-900">{profile.title}</h3>
               <p className="text-xs text-slate-500">
-                {profile.content_ids?.length || 0} conteúdos • {moment(profile.created_date).format('DD/MM/YYYY')}
+                {profile.content_ids?.length || 0} conteúdos • {format(new Date(profile.created_date), 'dd/MM/yyyy')}
               </p>
             </div>
           </div>
