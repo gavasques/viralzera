@@ -42,6 +42,7 @@ import {
 import { useConversationMutations } from '@/components/titanos/hooks/useTitanosMutations';
 import { useRegenerateResponse } from '@/components/titanos/hooks/useSendMessage';
 import { useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 // Utils
 import { getMessagesForModel, getModelAlias } from '@/components/titanos/utils';
@@ -131,7 +132,6 @@ export default function TitanosRouter() {
     setIsLoading(true);
     
     try {
-      const { base44 } = await import('@/api/base44Client');
       
       let effectiveHistory = messages.filter(
         m => m.model_id === null || selectedModels.includes(m.model_id)
