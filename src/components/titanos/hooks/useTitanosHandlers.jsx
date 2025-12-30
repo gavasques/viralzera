@@ -95,12 +95,9 @@ export function useConversationHandlers({
     
     clearInput();
     
-    // Converte IDs de registro para model_ids do OpenRouter
-    const openRouterIds = selectedModels.map(recordId => 
-      getOpenRouterId(recordId, approvedModels)
-    );
-    
-    const result = await sendMessage(sanitizedInput, openRouterIds);
+    // Passa os recordIds e os approvedModels para o sendMessage
+    // O sendMessage vai converter para openRouterIds internamente e salvar com recordId
+    const result = await sendMessage(sanitizedInput, selectedModels, approvedModels);
     
     if (!result.success) {
       restoreInput(inputValue);
