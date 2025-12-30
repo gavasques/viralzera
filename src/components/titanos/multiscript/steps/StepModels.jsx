@@ -1,7 +1,7 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Bot } from 'lucide-react';
-import ApprovedModelPicker from '@/components/common/ApprovedModelPicker';
+import SimpleModelPicker from '@/components/common/SimpleModelPicker';
 
 export function StepModels({ value, onChange }) {
     return (
@@ -17,7 +17,7 @@ export function StepModels({ value, onChange }) {
             </div>
 
             <div className="flex-1 border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50 min-h-[300px]">
-                <ApprovedModelPicker 
+                <SimpleModelPicker 
                     selectedModels={value.selectedModels || []} 
                     onSelectionChange={(models) => onChange({ ...value, selectedModels: models })} 
                     maxSelection={6}
