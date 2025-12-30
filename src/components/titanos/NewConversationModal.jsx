@@ -396,7 +396,7 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
                         className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px] shadow-lg shadow-indigo-200"
                     >
                         {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {step === 4 ? (
+                        {step === 3 ? (
                             'Criar Chat'
                         ) : (
                             <>Próximo <ArrowRight className="w-4 h-4 ml-2" /></>
