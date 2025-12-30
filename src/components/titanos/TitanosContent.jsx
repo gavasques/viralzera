@@ -3,7 +3,7 @@
  * Separado da página para melhor organização e testabilidade
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 
 import PageHeader from "@/components/common/PageHeader";
@@ -110,7 +110,6 @@ function TitanosContent({
               messages={messages}
               selectedModels={selectedModels}
               onModelsChange={handleModelsChange}
-              isAdmin={isAdmin}
             />
           )}
 
