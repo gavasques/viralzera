@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useSelectedFocus } from '@/components/hooks/useSelectedFocus';
+import { useSelectedFocus } from '@/components/hooks/useSelectedFocus.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   Users, FileText, Layers, TrendingUp, Calendar, Sparkles, 
