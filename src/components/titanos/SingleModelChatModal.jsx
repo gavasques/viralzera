@@ -1,4 +1,8 @@
-import React, { useState, useRef, useEffect, memo } from 'react';
+/**
+ * Modal para chat expandido com modelo único
+ */
+
+import React, { useState, useRef, useEffect, memo, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,10 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Bot, Loader2, X } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import { useSingleModelChat } from './hooks/useSendMessage';
+import { getMessagesForModel } from './services/messageService';
 
-/**
- * Modal para chat expandido com modelo único
- */
 function SingleModelChatModal({ 
   open, 
   onOpenChange, 
@@ -24,18 +26,33 @@ function SingleModelChatModal({
   
   const { sendMessage, isLoading } = useSingleModelChat(conversationId, modelId, allMessages);
 
+  // Filtra mensagens para este modelo
+  const filteredMessages = useMemo(() => 
+    getMessagesForModel(allMessages, modelId),
+    [allMessages, modelId]
+  );
+
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, isLoading]);
+  }, [filteredMessages.length, isLoading]);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading) return;
     
     const message = input;
     setInput('');
     await sendMessage(message);
-  };
+  }, [input, isLoading, sendMessage]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }, [handleSend]);
+
+  const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
