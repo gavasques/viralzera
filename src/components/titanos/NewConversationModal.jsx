@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Loader2, ArrowRight, ArrowLeft, Check, Sparkles, MessageSquare, Bot, ScrollText, Search, Brain, Globe, Settings2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,40 +13,39 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 
-export default function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = null }) {
-    const queryClient = useQueryClient();
-    const [step, setStep] = useState(1);
-    
-    // Form State
-    const [title, setTitle] = useState('');
-    const [systemPrompt, setSystemPrompt] = useState('');
-    const [selectedModels, setSelectedModels] = useState([]);
-    const [promptMode, setPromptMode] = useState('write'); // 'write' or 'library'
-    const [promptSearch, setPromptSearch] = useState('');
-    const [selectedPromptId, setSelectedPromptId] = useState(null);
-    const [usingGroupPrompt, setUsingGroupPrompt] = useState(false);
-    const [titleError, setTitleError] = useState(false);
-    const [isContextExpanded, setIsContextExpanded] = useState(false);
-    
-    // Advanced settings
-    const [enableReasoning, setEnableReasoning] = useState(false);
-    const [reasoningEffort, setReasoningEffort] = useState('high');
-    const [enableWebSearch, setEnableWebSearch] = useState(false);
-    
-    // Derive groupId from defaultGroup
-    const groupId = defaultGroup?.id || null;
+import { useSavedPrompts } from './hooks/useTitanosData';
+import { useConversationMutations } from './hooks/useTitanosMutations';
+import { REASONING_LEVELS } from './constants';
 
-    // Fetch saved prompts
-    const { data: savedPrompts = [] } = useQuery({
-        queryKey: ['prompts'],
-        queryFn: () => base44.entities.Prompt.list('-created_date', 100),
-        staleTime: 1000 * 60 * 5
-    });
+function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = null }) {
+  const [step, setStep] = useState(1);
+  
+  // Form State
+  const [title, setTitle] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('');
+  const [selectedModels, setSelectedModels] = useState([]);
+  const [promptMode, setPromptMode] = useState('write');
+  const [promptSearch, setPromptSearch] = useState('');
+  const [selectedPromptId, setSelectedPromptId] = useState(null);
+  const [usingGroupPrompt, setUsingGroupPrompt] = useState(false);
+  const [titleError, setTitleError] = useState(false);
+  const [isContextExpanded, setIsContextExpanded] = useState(false);
+  
+  // Advanced settings
+  const [enableReasoning, setEnableReasoning] = useState(false);
+  const [reasoningEffort, setReasoningEffort] = useState('high');
+  const [enableWebSearch, setEnableWebSearch] = useState(false);
+  
+  const groupId = defaultGroup?.id || null;
 
-    const systemPrompts = savedPrompts.filter(p => 
-        p.type === 'system_prompt' && 
-        (!promptSearch || p.title.toLowerCase().includes(promptSearch.toLowerCase()) || p.content.toLowerCase().includes(promptSearch.toLowerCase()))
-    );
+  // Hooks
+  const { data: savedPrompts = [] } = useSavedPrompts();
+  const { create: createMutation } = useConversationMutations(null);
+
+  const systemPrompts = savedPrompts.filter(p => 
+    p.type === 'system_prompt' && 
+    (!promptSearch || p.title.toLowerCase().includes(promptSearch.toLowerCase()) || p.content.toLowerCase().includes(promptSearch.toLowerCase()))
+  );
 
     // Reset form when opening
     React.useEffect(() => {
@@ -83,87 +80,61 @@ export default function NewConversationModal({ open, onOpenChange, onCreated, de
         }
     }, [open, defaultGroup]);
 
-    const handleSelectPrompt = (prompt) => {
-        setSelectedPromptId(prompt.id);
-        setSystemPrompt(prompt.content);
-    };
+  const handleSelectPrompt = useCallback((prompt) => {
+    setSelectedPromptId(prompt.id);
+    setSystemPrompt(prompt.content);
+  }, []);
 
-    const createMutation = useMutation({
-        mutationFn: async () => {
-            console.log('Creating conversation with models:', selectedModels);
-            // 1. Create Conversation
-            const finalTitle = title.trim() || 'Nova Conversa';
-            const modelsToUse = selectedModels;
-            const conversation = await base44.entities.TitanosConversation.create({
-                title: finalTitle,
-                selected_models: modelsToUse,
-                metrics: {},
-                group_id: groupId || null,
-                enable_reasoning: enableReasoning,
-                reasoning_effort: reasoningEffort,
-                enable_web_search: enableWebSearch
-            });
-            console.log('Conversation created:', conversation);
-
-            // 2. Add System Prompt (if provided) as first message
-            // Only add if conversation has its own prompt (not using group's master prompt)
-            if (systemPrompt.trim() && !usingGroupPrompt) {
-                await base44.entities.TitanosMessage.create({
-                    conversation_id: conversation.id,
-                    role: 'system',
-                    content: systemPrompt.trim(),
-                    model_id: null
-                });
-            }
-
-            return conversation;
-        },
-        onSuccess: (newConv) => {
-            console.log('onSuccess called:', newConv);
-            toast.success('Conversa criada com sucesso!');
-            queryClient.invalidateQueries({ queryKey: ['titanosConversations'] });
-            if (onCreated) onCreated(newConv);
-            onOpenChange(false);
-        },
-        onError: (err) => {
-            console.error('Erro ao criar conversa:', err);
-            toast.error('Erro ao criar conversa: ' + (err.message || 'Erro desconhecido'));
-        }
+  const handleCreate = useCallback(() => {
+    createMutation.mutate({
+      title: title.trim() || 'Nova Conversa',
+      selected_models: selectedModels,
+      metrics: {},
+      group_id: groupId || null,
+      enable_reasoning: enableReasoning,
+      reasoning_effort: reasoningEffort,
+      enable_web_search: enableWebSearch,
+      systemPrompt: usingGroupPrompt ? '' : systemPrompt.trim(),
+    }, {
+      onSuccess: (newConv) => {
+        if (onCreated) onCreated(newConv);
+        onOpenChange(false);
+      },
     });
+  }, [title, selectedModels, groupId, enableReasoning, reasoningEffort, enableWebSearch, usingGroupPrompt, systemPrompt, createMutation, onCreated, onOpenChange]);
 
-    const handleNext = () => {
-        if (step === 1) {
-            if (!title.trim()) {
-                setTitleError(true);
-                toast.warning('Por favor, dê um nome para a conversa.');
-                return;
-            }
-            setTitleError(false);
-            setStep(2);
-        } else if (step === 2) {
-            setStep(3);
-        } else if (step === 3) {
-            setStep(4);
-        } else {
-            // Submit - validate models
-            if (selectedModels.length === 0) {
-                toast.warning('Por favor, selecione pelo menos um modelo.');
-                return;
-            }
-            createMutation.mutate();
-        }
-    };
+  const handleNext = useCallback(() => {
+    if (step === 1) {
+      if (!title.trim()) {
+        setTitleError(true);
+        toast.warning('Por favor, dê um nome para a conversa.');
+        return;
+      }
+      setTitleError(false);
+      setStep(2);
+    } else if (step === 2) {
+      setStep(3);
+    } else if (step === 3) {
+      setStep(4);
+    } else {
+      if (selectedModels.length === 0) {
+        toast.warning('Por favor, selecione pelo menos um modelo.');
+        return;
+      }
+      handleCreate();
+    }
+  }, [step, title, selectedModels, handleCreate]);
 
-    const handleBack = () => {
-        if (step > 1) setStep(step - 1);
-    };
+  const handleBack = useCallback(() => {
+    if (step > 1) setStep(step - 1);
+  }, [step]);
 
-    const steps = [
-        { number: 1, title: 'Nome', icon: MessageSquare },
-        { number: 2, title: 'Contexto', icon: Sparkles },
-        { number: 3, title: 'Modelos', icon: Bot },
-        { number: 4, title: 'Avançado', icon: Settings2 },
-    ];
+  const steps = [
+    { number: 1, title: 'Nome', icon: MessageSquare },
+    { number: 2, title: 'Contexto', icon: Sparkles },
+    { number: 3, title: 'Modelos', icon: Bot },
+    { number: 4, title: 'Avançado', icon: Settings2 },
+  ];
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -464,9 +435,9 @@ export default function NewConversationModal({ open, onOpenChange, onCreated, de
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="low">Baixo - Respostas mais rápidas</SelectItem>
-                                                    <SelectItem value="medium">Médio - Balanceado</SelectItem>
-                                                    <SelectItem value="high">Alto - Raciocínio profundo</SelectItem>
+                                                    {REASONING_LEVELS.map(level => (
+                                                      <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -522,5 +493,7 @@ export default function NewConversationModal({ open, onOpenChange, onCreated, de
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-    );
+  );
 }
+
+export default memo(NewConversationModal);
