@@ -115,7 +115,6 @@ function NewConversationModal({ open, onOpenChange, onCreated, defaultGroup = nu
     { number: 1, title: 'Nome', icon: MessageSquare },
     { number: 2, title: 'Contexto', icon: Sparkles },
     { number: 3, title: 'Modelos', icon: Bot },
-    { number: 4, title: 'Avançado', icon: Settings2 },
   ];
 
     return (
