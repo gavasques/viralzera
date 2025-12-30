@@ -48,7 +48,7 @@ import ThemeMatrix from "./ThemeMatrix";
 
 import TitanosDocumentation from "./TitanosDocumentation";
 
-import TitanosRouter from "./TitanosRouter";
+import TitanosRouter from "./TitanosRouter.jsx";
 
 import Trends from "./Trends";
 
