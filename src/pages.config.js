@@ -23,7 +23,6 @@ import Prompts from './pages/Prompts';
 import ScriptGenerator from './pages/ScriptGenerator';
 import ThemeMatrix from './pages/ThemeMatrix';
 import TitanosDocumentation from './pages/TitanosDocumentation';
-import TitanosRouter from './pages/TitanosRouter';
 import Trends from './pages/Trends';
 import TwitterGenerator from './pages/TwitterGenerator';
 import TwitterProjects from './pages/TwitterProjects';
@@ -59,7 +58,6 @@ export const PAGES = {
     "ScriptGenerator": ScriptGenerator,
     "ThemeMatrix": ThemeMatrix,
     "TitanosDocumentation": TitanosDocumentation,
-    "TitanosRouter": TitanosRouter,
     "Trends": Trends,
     "TwitterGenerator": TwitterGenerator,
     "TwitterProjects": TwitterProjects,
