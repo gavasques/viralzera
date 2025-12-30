@@ -9,9 +9,17 @@ import { toast } from 'sonner';
 
 /**
  * Invoca função backend usando o SDK
+ * A chamada correta é base44.functions.invoke(name, payload)
  */
 async function invokeFunction(functionName, payload) {
-  // Usa o método correto do SDK
+  // Verifica se o método existe
+  if (typeof base44.functions?.invoke !== 'function') {
+    console.error('[invokeFunction] base44.functions.invoke não disponível');
+    console.log('[invokeFunction] base44 keys:', Object.keys(base44 || {}));
+    console.log('[invokeFunction] base44.functions:', base44?.functions);
+    throw new Error('SDK functions não configurado corretamente');
+  }
+  
   return base44.functions.invoke(functionName, payload);
 }
 
