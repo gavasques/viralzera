@@ -8,34 +8,11 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 /**
- * Helper para invocar funções backend
- * Usa base44.functions.invoke se disponível, senão faz fetch direto
+ * Invoca função backend usando o SDK
  */
 async function invokeFunction(functionName, payload) {
-  // Tenta usar o SDK primeiro
-  if (base44?.functions?.invoke) {
-    return base44.functions.invoke(functionName, payload);
-  }
-  
-  // Fallback: usa o método correto do SDK
-  // O SDK expõe funções através de base44.functions
-  // Se não disponível, tenta acessar via API interna
-  try {
-    const response = await fetch(`https://api.base44.com/v1/functions/${functionName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
-    
-    const data = await response.json();
-    return { data, status: response.status };
-  } catch (err) {
-    console.error('[invokeFunction] Fallback failed:', err);
-    throw err;
-  }
+  // Usa o método correto do SDK
+  return base44.functions.invoke(functionName, payload);
 }
 
 
