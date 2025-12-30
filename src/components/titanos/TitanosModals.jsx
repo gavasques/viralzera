@@ -67,6 +67,7 @@ function TitanosModals({
         onOpenChange={(open) => !open && closeNewModal()}
         onCreated={handleConversationCreated}
         defaultGroup={newConversationGroup}
+        approvedModels={approvedModels}
       />
 
       {/* Multi Script Wizard */}
