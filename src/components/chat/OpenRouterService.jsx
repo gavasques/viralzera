@@ -86,7 +86,7 @@ function extractCitations(responseData) {
 }
 
 /**
- * Envia mensagem para OpenRouter via backend
+ * Envia mensagem para OpenRouter (chamada direta à API)
  * 
  * @param {Object} params
  * @param {string} params.model - ID do modelo
@@ -104,29 +104,51 @@ export async function sendMessage({
     throw new Error('Modelo não selecionado');
   }
 
+  // Busca API Key do usuário
+  const configs = await base44.entities.UserConfig.list();
+  const apiKey = configs?.[0]?.openrouter_api_key;
+  
+  if (!apiKey) {
+    throw new Error('Configure sua API Key do OpenRouter em Configurações');
+  }
+
   // Formata mensagens com arquivos se houver
   const formattedMessages = formatMessagesWithFiles(messages, options.files);
 
-  // Chama backend function (API key protegida no servidor)
-  const response = await base44.functions.invoke('openrouter', {
-    action: 'chat',
-    messages: formattedMessages,
+  const body = {
     model,
-    model_name: options.modelName,
-    enableWebSearch: options.enableWebSearch,
+    messages: formattedMessages.map(m => ({ role: m.role, content: m.content })),
     temperature: options.temperature || 0.7,
     max_tokens: options.maxTokens || 4000,
-    // Logging params
-    feature: options.feature,
-    session_id: options.sessionId,
-    focus_id: options.focusId
+  };
+
+  // Adiciona web search se habilitado
+  if (options.enableWebSearch) {
+    body.plugins = [{ id: 'web' }];
+  }
+
+  // Adiciona reasoning se habilitado e modelo suporta
+  if (options.enableReasoning && model.includes('claude')) {
+    body.reasoning = { effort: options.reasoningEffort || 'high' };
+  }
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': window.location.origin,
+      'X-Title': options.feature || 'ContentAI',
+    },
+    body: JSON.stringify(body),
   });
 
-  const data = response.data;
-
-  if (data.error) {
-    throw new Error(data.error);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
   }
+
+  const data = await response.json();
 
   if (!data.choices?.[0]?.message) {
     throw new Error('Resposta inválida da IA');

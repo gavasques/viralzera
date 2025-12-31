@@ -131,18 +131,43 @@ export default function CanvasAIPanel({
         ...newMessages.map(m => ({ role: m.role, content: m.content }))
       ];
 
-      const response = await base44.functions.invoke('openrouter', {
-        action: 'chat',
+      // Busca API Key do usuário
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs?.[0]?.openrouter_api_key;
+      
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter em Configurações');
+      }
+
+      const body = {
         model: config?.model || 'openai/gpt-4o-mini',
-        model_name: config?.model_name || 'GPT-4o Mini',
         messages: apiMessages,
         temperature: 0.7,
         max_tokens: 4096,
-        feature: 'canvas_ai',
-        enableWebSearch: config?.enable_web_search || false
+      };
+
+      if (config?.enable_web_search) {
+        body.plugins = [{ id: 'web' }];
+      }
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Canvas AI',
+        },
+        body: JSON.stringify(body),
       });
 
-      const assistantContent = response.data?.choices?.[0]?.message?.content;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const assistantContent = data?.choices?.[0]?.message?.content;
       
       if (assistantContent) {
         const finalMessages = [...newMessages, { role: 'assistant', content: assistantContent }];
