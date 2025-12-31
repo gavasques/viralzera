@@ -17,7 +17,7 @@ export default function SectionWithAI({
         sectionKey={sectionKey}
         title={title}
         description={description}
-        value={value}
+        content={value}
         onChange={onChange}
       />
       
