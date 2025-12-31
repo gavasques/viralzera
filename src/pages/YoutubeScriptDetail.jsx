@@ -43,12 +43,11 @@ export default function YoutubeScriptDetail() {
     enabled: !!scriptId,
   });
 
-  // Parse script when data loads
+  // Load script when data loads
   useEffect(() => {
     if (script) {
       setTitle(script.title || '');
-      const parsedSections = parseScript(script.corpo);
-      setSections(parsedSections);
+      setContent(script.corpo || '');
       setInitialData({
         title: script.title || '',
         corpo: script.corpo || ''
@@ -59,17 +58,15 @@ export default function YoutubeScriptDetail() {
   // Check if there are unsaved changes
   const hasChanges = useMemo(() => {
     if (!initialData) return false;
-    const currentCorpo = rebuildScript(sections);
-    return title !== initialData.title || currentCorpo !== initialData.corpo;
-  }, [title, sections, initialData]);
+    return title !== initialData.title || content !== initialData.corpo;
+  }, [title, content, initialData]);
 
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const corpo = rebuildScript(sections);
       return base44.entities.YoutubeScript.update(scriptId, {
         title,
-        corpo
+        corpo: content
       });
     },
     onSuccess: () => {
@@ -77,7 +74,7 @@ export default function YoutubeScriptDetail() {
       queryClient.invalidateQueries({ queryKey: ['youtube-scripts'] });
       setInitialData({
         title,
-        corpo: rebuildScript(sections)
+        corpo: content
       });
       toast.success('Roteiro salvo com sucesso!');
     },
@@ -86,40 +83,25 @@ export default function YoutubeScriptDetail() {
     }
   });
 
-  // Handle section content change
-  const handleSectionChange = (key, value) => {
-    setSections(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
   // Handle save
   const handleSave = () => {
     saveMutation.mutate();
   };
 
   // Handle refiner drawer
-  const handleOpenRefiner = (sectionKey) => {
-    setRefinerSection(sectionKey);
+  const handleOpenRefiner = () => {
     setRefinerOpen(true);
   };
 
   // Handle replace from refiner
   const handleRefinerReplace = (sectionKey, newContent) => {
-    setSections(prev => ({
-      ...prev,
-      [sectionKey]: newContent
-    }));
+    setContent(newContent);
     toast.success('Conteúdo substituído');
   };
 
   // Handle insert below from refiner
   const handleRefinerInsertBelow = (sectionKey, newContent) => {
-    setSections(prev => ({
-      ...prev,
-      [sectionKey]: prev[sectionKey] + '\n\n' + newContent
-    }));
+    setContent(prev => prev + '\n\n' + newContent);
     toast.success('Conteúdo inserido');
   };
 
