@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
+import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
 
 // Basic Markdown to HTML converter
 const markdownToHtml = (text) => {

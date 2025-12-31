@@ -161,6 +161,7 @@ export default function YoutubeScriptDetail() {
           content={content}
           onChange={(_, val) => setContent(val)}
           onOpenRefiner={handleOpenRefiner}
+          scriptTitle={title}
         />
       </div>
 
