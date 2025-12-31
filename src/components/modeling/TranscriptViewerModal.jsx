@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, Check, Hash, FileText, ExternalLink } from "lucide-react";
+import { Copy, Check, Hash, FileText, ExternalLink, Download } from "lucide-react";
 
 export default function TranscriptViewerModal({ open, onOpenChange, video }) {
   const [copied, setCopied] = useState(false);
@@ -16,6 +16,19 @@ export default function TranscriptViewerModal({ open, onOpenChange, video }) {
     setCopied(true);
     toast.success('Transcrição copiada!');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([video.transcript || ''], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${video.title || 'transcricao'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    toast.success('Transcrição baixada!');
   };
 
   return (
@@ -62,19 +75,25 @@ export default function TranscriptViewerModal({ open, onOpenChange, video }) {
               ~{(video.token_estimate || 0).toLocaleString()} tokens
             </Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            {copied ? (
-              <>
-                <Check className="w-3 h-3 mr-1 text-green-600" />
-                Copiado!
-              </>
-            ) : (
-              <>
-                <Copy className="w-3 h-3 mr-1" />
-                Copiar
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleCopy}>
+              {copied ? (
+                <>
+                  <Check className="w-3 h-3 mr-1 text-green-600" />
+                  Copiado!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3 mr-1" />
+                  Copiar
+                </>
+              )}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="w-3 h-3 mr-1" />
+              Baixar TXT
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="flex-1 mt-2">
