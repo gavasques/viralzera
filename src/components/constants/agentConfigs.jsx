@@ -331,19 +331,10 @@ Responda de forma clara e direta. Quando gerar conteúdo editado, formate-o de f
 
   modeling: {
     configEntity: 'ModelingConfig',
-    title: 'Configurações de Modelagem (Transcrição)',
-    defaultPrompt: `You are a Video Transcription Specialist.
-
-Output language: Brazilian Portuguese (pt-BR).
-Return ONLY the transcript text, clean and normalized.
-
-Task:
-- Transcribe the entire video content accurately
-- Keep the original language and expressions used by the speaker
-- Preserve slang, filler words (tipo, né, mano, tá ligado, etc.)
-- Keep natural speech patterns
-- Mark [RISOS] for laughter, [PAUSA] for pauses
-- Do NOT rewrite into formal Portuguese - preserve the voice`,
+    title: 'Configurações de Modelagem (Transcrição via Transkriptor)',
+    defaultPrompt: `Este agente utiliza o serviço Transkriptor para realizar transcrições de alta precisão.
+    
+As configurações de modelo e prompt abaixo não se aplicam, pois o Transkriptor processa o áudio diretamente.`,
     promptPlaceholders: []
   },
 
