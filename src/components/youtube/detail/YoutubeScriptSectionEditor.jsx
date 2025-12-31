@@ -2,13 +2,15 @@ import React from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 
 export default function YoutubeScriptSectionEditor({ 
   sectionKey,
   title, 
   description,
   content, 
-  onChange 
+  onChange,
+  onOpenRefiner
 }) {
   const charCount = content?.length || 0;
   
@@ -22,13 +24,15 @@ export default function YoutubeScriptSectionEditor({
     <Card className="border-slate-200">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-semibold text-slate-900">
-              {title}
-            </CardTitle>
-            {description && (
-              <p className="text-sm text-slate-500 mt-0.5">{description}</p>
-            )}
+          <div className="flex items-center gap-2">
+            <div>
+              <CardTitle className="text-base font-semibold text-slate-900">
+                {title}
+              </CardTitle>
+              {description && (
+                <p className="text-sm text-slate-500 mt-0.5">{description}</p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs font-normal">
@@ -39,6 +43,7 @@ export default function YoutubeScriptSectionEditor({
                 {estimatedTime}
               </Badge>
             )}
+            <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
           </div>
         </div>
       </CardHeader>
