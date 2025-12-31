@@ -29,6 +29,7 @@ import UsageAnalytics from './pages/UsageAnalytics';
 import UserSettings from './pages/UserSettings';
 import YoutubeScripts from './pages/YoutubeScripts';
 import index from './pages/index';
+import YoutubeScriptDetail from './pages/YoutubeScriptDetail';
 
 
 export const PAGES = {
@@ -63,6 +64,7 @@ export const PAGES = {
     "UserSettings": UserSettings,
     "YoutubeScripts": YoutubeScripts,
     "index": index,
+    "YoutubeScriptDetail": YoutubeScriptDetail,
 }
 
 export const pagesConfig = {
