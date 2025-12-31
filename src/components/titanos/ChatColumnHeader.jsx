@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { Bot, EyeOff, Trash2, Clock, Hash, Coins, RefreshCw, Maximize2, Info } from 'lucide-react';
+import { Bot, EyeOff, Trash2, Clock, Hash, Coins, Maximize2, Info } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -73,17 +73,6 @@ function ChatColumnHeader({
           )}
 
           <ActionButton icon={Maximize2} tooltip="Expandir conversa" onClick={onExpand} />
-
-          {hasMessages && (
-            <ActionButton 
-              icon={RefreshCw} 
-              tooltip="Regenerar resposta" 
-              onClick={onRegenerate}
-              disabled={isLoading}
-              className={isLoading ? 'animate-spin' : ''}
-              hoverColor="green"
-            />
-          )}
           
           <ActionButton icon={EyeOff} tooltip="Ocultar coluna" onClick={onHide} hoverColor="amber" />
           <ActionButton icon={Trash2} tooltip="Remover modelo" onClick={onRemove} hoverColor="red" />
