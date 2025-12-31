@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ScrollText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import AdminProtection from "@/components/admin/AdminProtection";
+import { AdminProtection } from "@/components/admin/AdminProtection";
 import PageHeader from "@/components/common/PageHeader";
 import EmptyState from "@/components/common/EmptyState";
 import { PageSkeleton } from "@/components/common/LoadingSkeleton";
