@@ -33,8 +33,56 @@ export default function YoutubeScriptSectionEditor({
   description,
   content, 
   onChange,
-  onOpenRefiner
+  onOpenRefiner,
+  scriptTitle = ""
 }) {
+  const quillRef = useRef(null);
+  const [selection, setSelection] = useState(null);
+
+  // Handle selection change
+  const handleSelectionChange = (range, source, editor) => {
+    if (range && range.length > 0) {
+      const bounds = editor.getBounds(range.index, range.length);
+      const text = editor.getText(range.index, range.length);
+      
+      // Get the editor container position to calculate absolute position
+      const editorContainer = editor.container;
+      const editorRect = editorContainer.getBoundingClientRect();
+      
+      setSelection({
+        range,
+        text,
+        position: {
+          x: editorRect.left + bounds.left + (bounds.width / 2),
+          y: editorRect.top + bounds.top,
+          bottom: editorRect.top + bounds.bottom
+        }
+      });
+    } else {
+      setSelection(null);
+    }
+  };
+
+  const handleReplaceText = (newText) => {
+    if (quillRef.current && selection) {
+      const editor = quillRef.current.getEditor();
+      editor.deleteText(selection.range.index, selection.range.length);
+      editor.insertText(selection.range.index, newText);
+      setSelection(null);
+      // Trigger onChange manually as Quill might not trigger it for API calls sometimes
+      // onChange(sectionKey, editor.root.innerHTML); // ReactQuill onChange should handle it
+    }
+  };
+
+  // Close selection on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (selection) setSelection(null);
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [selection]);
+
   // Memoize initial content conversion to avoid re-rendering issues/loops with Quill
   // But we need to handle external updates if content changes from outside (e.g. refiner)
   // Quill handles value prop changes, but we need to be careful not to convert HTML back to Markdown here
@@ -83,7 +131,7 @@ export default function YoutubeScriptSectionEditor({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 relative">
         <style>{`
           .ql-container {
             font-size: 1.1rem;
@@ -95,9 +143,11 @@ export default function YoutubeScriptSectionEditor({
         `}</style>
         <div className="h-[600px] mb-12">
           <ReactQuill
+            ref={quillRef}
             theme="snow"
             value={displayContent}
             onChange={(val) => onChange(sectionKey, val)}
+            onChangeSelection={handleSelectionChange}
             placeholder={`Escreva o conteúdo da seção ${title}...`}
             className="h-full"
             modules={{
@@ -110,6 +160,15 @@ export default function YoutubeScriptSectionEditor({
             }}
           />
         </div>
+        
+        <ScriptTextSelectionPopover
+          selectedText={selection?.text}
+          position={selection?.position}
+          onClose={() => setSelection(null)}
+          onReplaceText={handleReplaceText}
+          fullContent={content}
+          scriptTitle={scriptTitle}
+        />
       </CardContent>
     </Card>
   );
