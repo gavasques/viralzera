@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import YoutubeScriptHeader from "@/components/youtube/detail/YoutubeScriptHeader";
 import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScriptSectionEditor";
 import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
+import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
 import { 
   parseScript, 
   rebuildScript, 
@@ -32,6 +33,9 @@ export default function YoutubeScriptDetail() {
   // Refiner drawer state
   const [refinerOpen, setRefinerOpen] = useState(false);
   const [refinerSection, setRefinerSection] = useState(null);
+  
+  // Title suggestions modal state
+  const [showTitleModal, setShowTitleModal] = useState(false);
 
   // Fetch script data
   const { data: script, isLoading, error } = useQuery({
@@ -160,6 +164,7 @@ export default function YoutubeScriptDetail() {
         onSave={handleSave}
         isSaving={saveMutation.isPending}
         hasChanges={hasChanges}
+        onSuggestTitles={() => setShowTitleModal(true)}
       />
 
       <div className="space-y-6 pb-12">
@@ -189,6 +194,17 @@ export default function YoutubeScriptDetail() {
         modelingIds={script?.modeling_ids}
         onReplace={handleRefinerReplace}
         onInsertBelow={handleRefinerInsertBelow}
+      />
+
+      {/* Title Suggestions Modal */}
+      <TitleSuggestionsModal
+        open={showTitleModal}
+        onOpenChange={setShowTitleModal}
+        scriptId={scriptId}
+        onTitleSelected={(newTitle) => {
+          setTitle(newTitle);
+          setInitialData(prev => ({ ...prev, title: newTitle }));
+        }}
       />
     </div>
   );
