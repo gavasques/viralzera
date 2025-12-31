@@ -84,7 +84,9 @@ export default function ChatSettingsModal({
                        id.includes('reasoning') ||
                        id.includes('o1') ||
                        id.includes('o3') ||
-                       id.includes('r1');
+                       id.includes('r1') ||
+                       id.includes('gemini-2') ||
+                       id.includes('gemini-3');
                        
     // Check supported parameters from OpenRouter
     const hasParam = model.supported_parameters?.includes('include_reasoning');
@@ -94,9 +96,12 @@ export default function ChatSettingsModal({
 
   const hasNativeWebSearch = (model) => {
     if (!model) return false;
-    return model.id?.includes('perplexity') || 
-           model.id?.includes('online') ||
-           model.id?.includes('search');
+    const id = model.id?.toLowerCase() || '';
+    return id.includes('perplexity') || 
+           id.includes('sonar') ||
+           id.includes('online') ||
+           id.includes('search') ||
+           id.includes('gemini');
   };
 
   // Load existing config
