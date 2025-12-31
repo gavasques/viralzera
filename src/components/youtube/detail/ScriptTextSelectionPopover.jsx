@@ -46,6 +46,18 @@ export default function ScriptTextSelectionPopover({
     }
   }, [showCustomInput]);
 
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
   const handleAction = async (actionPrompt) => {
     if (isLoading) return;
     setIsLoading(true);
