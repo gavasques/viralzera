@@ -42,9 +42,9 @@ export default function YoutubeScriptSectionEditor({
 
   // Handle selection change
   const handleSelectionChange = (range, source, editor) => {
-    if (source === 'user') {
-      if (range && range.length > 0) {
-        const bounds = editor.getBounds(range.index, range.length);
+    // Only update if we have a valid range (ignore blur/null range to keep popover open)
+    if (range) {
+      if (range.length > 0) {
         const text = editor.getText(range.index, range.length);
         
         if (!text.trim()) {
@@ -52,19 +52,26 @@ export default function YoutubeScriptSectionEditor({
            return;
         }
 
-        const editorContainer = editor.container;
-        const editorRect = editorContainer.getBoundingClientRect();
-        
-        setSelection({
-          range,
-          text,
-          position: {
-            x: editorRect.left + bounds.left + (bounds.width / 2),
-            y: editorRect.top + bounds.top,
-            bottom: editorRect.top + bounds.bottom
-          }
-        });
+        // Get bounds
+        try {
+          const bounds = editor.getBounds(range.index, range.length);
+          const editorContainer = editor.container;
+          const editorRect = editorContainer.getBoundingClientRect();
+          
+          setSelection({
+            range,
+            text,
+            position: {
+              x: editorRect.left + bounds.left + (bounds.width / 2),
+              y: editorRect.top + bounds.top,
+              bottom: editorRect.top + bounds.bottom
+            }
+          });
+        } catch (e) {
+          console.error("Error getting bounds:", e);
+        }
       } else {
+        // Cursor moved but no selection (caret only) - close popover
         setSelection(null);
       }
     }
