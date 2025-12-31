@@ -159,6 +159,7 @@ export default function Layout({ children }) {
               { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
               { name: 'Tipos de Postagem', icon: Layers, page: 'PostTypes' },
               { name: 'Modelagem', icon: Layers, page: 'Modelagem' },
+              { name: 'Dossiês', icon: FileText, page: 'ContentDossiers' },
             ]
           },
           {
