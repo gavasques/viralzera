@@ -16,6 +16,19 @@ export default function YoutubeScripts() {
   const navigate = useNavigate();
   const { selectedFocusId } = useSelectedFocus();
   const [showWizard, setShowWizard] = useState(false);
+  const [dossierId, setDossierId] = useState(null);
+
+  // Check URL params for wizard trigger
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const dossier = urlParams.get('dossierId');
+    
+    if (action === 'new') {
+      setDossierId(dossier);
+      setShowWizard(true);
+    }
+  }, []);
 
   const { data: scripts = [], isLoading } = useQuery({
     queryKey: ['youtube-scripts', selectedFocusId],
@@ -73,7 +86,8 @@ export default function YoutubeScripts() {
 
       <YoutubeScriptWizardModal 
         open={showWizard} 
-        onOpenChange={setShowWizard} 
+        onOpenChange={setShowWizard}
+        initialDossierId={dossierId}
       />
     </div>
   );
