@@ -12,6 +12,8 @@ import { getRefinerOptions } from './refinerConfig';
 import RefinerOptionButton from './RefinerOptionButton';
 import RefinerSuggestionCard from './RefinerSuggestionCard';
 import RefinerModelingSection from './RefinerModelingSection';
+import { AGENT_CONFIGS } from '@/components/constants/agentConfigs';
+import { toast } from "sonner";
 
 export default function RefinerDrawer({
   open,
@@ -39,8 +41,22 @@ export default function RefinerDrawer({
     try {
       const { base44 } = await import('@/api/base44Client');
       
-      // Buscar dados de modelagem se ativado
-      let modelings = [];
+      // 1. Get User API Key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        toast.error('Configure sua API Key do OpenRouter em Configurações');
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Get Refiner Config
+      const refinerConfigs = await base44.entities.YoutubeRefinerConfig.list();
+      const config = refinerConfigs?.[0];
+
+      // 3. Get Modelings if enabled
+      let modelingsContext = "";
       if (useModelings && modelingIds?.length > 0) {
         const [videos, texts, mainModelings] = await Promise.all([
           base44.entities.ModelingVideo.filter({ modeling_id: { $in: modelingIds } }),
@@ -48,32 +64,95 @@ export default function RefinerDrawer({
           base44.entities.Modeling.filter({ id: { $in: modelingIds } })
         ]);
         
-        // Combinar dados
-        modelings = mainModelings.map(m => ({
-          title: m.title,
-          creator_idea: m.creator_idea,
-          transcript: videos.find(v => v.modeling_id === m.id)?.transcript,
-          content: texts.find(t => t.modeling_id === m.id)?.content
-        }));
-        setModelingData(modelings);
+        // Format modelings for context
+        modelingsContext = "\n\nMODELAGENS DE REFERÊNCIA:\n";
+        mainModelings.forEach(m => {
+          modelingsContext += `\n# Título: ${m.title}`;
+          if (m.creator_idea) modelingsContext += `\nIdeia: ${m.creator_idea}`;
+          
+          const video = videos.find(v => v.modeling_id === m.id);
+          if (video?.transcript) modelingsContext += `\nTranscrição (trecho): ${video.transcript.substring(0, 1000)}...`;
+          
+          const text = texts.find(t => t.modeling_id === m.id);
+          if (text?.content) modelingsContext += `\nTexto (trecho): ${text.content.substring(0, 1000)}...`;
+        });
       }
 
-      const response = await base44.functions.invoke('youtubeScriptRefiner', {
-        action: option.id,
-        actionPrompt: option.prompt,
-        content: sectionContent,
-        sectionKey: sectionKey,
-        context: scriptContext,
-        modelingData: modelings
+      // 4. Build System Prompt
+      const systemPrompt = config?.prompt || AGENT_CONFIGS.youtubeScriptRefiner.defaultPrompt;
+      const fullSystemPrompt = `${systemPrompt}\n\nINSTRUÇÃO DE FORMATO: Você DEVE retornar APENAS um JSON válido contendo um array de strings chamado "suggestions". Exemplo: { "suggestions": ["Sugestão 1...", "Sugestão 2..."] }. Não inclua markdown, apenas o JSON puro.`;
+
+      // 5. Build User Prompt
+      const userPrompt = `
+CONTEXTO DO ROTEIRO:
+Título: ${scriptContext?.title || 'Sem título'}
+Tipo: ${scriptContext?.videoType || 'Não especificado'}
+
+SEÇÃO ATUAL (${sectionKey}):
+"${sectionContent}"
+
+AÇÃO DE REFINAMENTO:
+${option.prompt}
+
+${modelingsContext}
+
+Gere 3 sugestões refinadas seguindo as instruções acima.`;
+
+      // 6. Call OpenRouter Direct
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Refiner'
+        },
+        body: JSON.stringify({
+          model: config?.model || 'openai/gpt-4o-mini', // Default fallback
+          messages: [
+            { role: 'system', content: fullSystemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" } 
+        })
       });
 
-      if (response.data?.success) {
-        setSuggestions(response.data.suggestions || []);
-      } else {
-        console.error('Refiner error:', response.data?.error);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
       }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) throw new Error('Resposta vazia da IA');
+
+      // 7. Parse Response
+      let parsedSuggestions = [];
+      try {
+        const json = JSON.parse(content);
+        if (Array.isArray(json.suggestions)) {
+          parsedSuggestions = json.suggestions;
+        } else if (Array.isArray(json)) {
+          parsedSuggestions = json; // Fallback if returns array directly
+        } else {
+           // Fallback textual parsing if JSON structure is unexpected
+           console.warn('Estrutura JSON inesperada:', json);
+           parsedSuggestions = [content];
+        }
+      } catch (e) {
+        console.warn('Falha ao parsear JSON, usando texto bruto:', e);
+        // Tentar extrair lista de texto se falhar o JSON
+        parsedSuggestions = [content];
+      }
+
+      setSuggestions(parsedSuggestions);
+
     } catch (error) {
       console.error('Error calling refiner:', error);
+      toast.error(`Erro ao refinar: ${error.message}`);
+      setSuggestions([]); // Clear on error
     } finally {
       setIsLoading(false);
     }
