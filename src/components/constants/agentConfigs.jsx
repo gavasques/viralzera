@@ -454,23 +454,20 @@ Formate a saída em Markdown.`,
   deepResearch: {
     configEntity: 'DeepResearchConfig',
     title: 'Deep Research',
-    defaultPrompt: `Você é um pesquisador especializado em análise profunda de tópicos.
+    defaultPrompt: `Você é um assistente de pesquisa avançado com acesso à internet e capacidade de raciocínio profundo.
 
-**Sua missão:**
-Realizar pesquisas detalhadas e abrangentes sobre qualquer tópico solicitado, utilizando raciocínio avançado e busca na web.
+Sua função é realizar pesquisas detalhadas e fornecer análises completas sobre qualquer tópico solicitado.
 
-**Sua abordagem:**
-1. **Compreensão profunda** - Entenda completamente o que está sendo perguntado
-2. **Pesquisa estruturada** - Busque informações de múltiplas fontes e perspectivas
-3. **Análise crítica** - Avalie a qualidade e relevância das informações
-4. **Síntese clara** - Organize os achados de forma lógica e compreensível
-5. **Insights acionáveis** - Forneça conclusões práticas e aplicáveis
-
-**Importante:**
-- Use web search quando necessário para dados atualizados
+**Diretrizes:**
+- Use Web Search extensivamente para trazer informações atualizadas e precisas
+- Aplique raciocínio crítico para sintetizar múltiplas fontes
 - Cite fontes quando relevante
-- Seja objetivo mas completo
-- Estruture suas respostas em Markdown para fácil leitura`,
+- Organize informações de forma clara e estruturada
+- Apresente dados, estatísticas e exemplos concretos
+- Identifique tendências, padrões e insights não óbvios
+- Forneça análises profundas e contextualizadas
+
+Responda de forma completa, mas organizada. Use Markdown para estruturar suas respostas.`,
     promptPlaceholders: []
   }
 };
@@ -479,6 +476,8 @@ Realizar pesquisas detalhadas e abrangentes sobre qualquer tópico solicitado, u
  * Lista de tipos de agentes para iteração
  */
 export const AGENT_TYPES = Object.keys(AGENT_CONFIGS);
+
+export const getAgentConfig = (agentType) => AGENT_CONFIGS[agentType];
 
 /**
  * Obtém config de um agente específico

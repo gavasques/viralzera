@@ -1,0 +1,288 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
+import { Loader2, User, Globe, Trash2, Send, Copy, Save } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+
+export default function DeepResearchDrawer({ open, onOpenChange, modelingId }) {
+  const queryClient = useQueryClient();
+  const scrollRef = useRef(null);
+  const [message, setMessage] = useState('');
+  const [history, setHistory] = useState([]);
+  const [isResearching, setIsResearching] = useState(false);
+
+  // Auto scroll
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [history]);
+
+  const handleSend = async (e) => {
+    e?.preventDefault();
+    if (!message.trim() || isResearching) return;
+
+    const userMessage = message.trim();
+    setMessage('');
+    setIsResearching(true);
+
+    // Add user message
+    const newHistory = [...history, { role: 'user', content: userMessage }];
+    setHistory(newHistory);
+
+    try {
+      // Get config
+      const configs = await base44.entities.DeepResearchConfig.list();
+      const config = configs?.[0];
+
+      if (!config?.model) {
+        throw new Error('Configure o agente Deep Research em Configurações de Agentes');
+      }
+
+      const systemPrompt = config.prompt || `Você é um assistente de pesquisa avançado. Use Web Search para trazer informações atualizadas.`;
+
+      // Get API key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter');
+      }
+
+      // Build messages
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        ...newHistory.map(m => ({ role: m.role, content: m.content }))
+      ];
+
+      // Call OpenRouter
+      const requestBody = {
+        model: config.model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 8000
+      };
+
+      // Add reasoning if enabled
+      if (config.enable_reasoning) {
+        requestBody.reasoning = {
+          enabled: true,
+          effort: config.reasoning_effort || 'high'
+        };
+      }
+
+      // Add web search if enabled
+      if (config.enable_web_search) {
+        requestBody.tools = [{
+          type: 'web_search_ddg'
+        }];
+      }
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Deep Research'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const assistantMessage = data.choices?.[0]?.message?.content;
+
+      if (!assistantMessage) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      setHistory([...newHistory, { role: 'assistant', content: assistantMessage }]);
+    } catch (error) {
+      console.error('Erro no Deep Research:', error);
+      toast.error('Erro: ' + error.message);
+      setHistory(newHistory);
+    } finally {
+      setIsResearching(false);
+    }
+  };
+
+  const handleCopy = () => {
+    const text = history
+      .map(m => `**${m.role === 'user' ? 'Você' : 'Assistente'}:**\n${m.content}`)
+      .join('\n\n---\n\n');
+    navigator.clipboard.writeText(text);
+    toast.success('Conversa copiada!');
+  };
+
+  const handleSave = async () => {
+    if (history.length === 0) {
+      toast.error('Nenhuma conversa para salvar');
+      return;
+    }
+
+    try {
+      const content = history
+        .map(m => `**${m.role === 'user' ? 'Você' : 'Assistente'}:**\n${m.content}`)
+        .join('\n\n---\n\n');
+
+      await base44.entities.ModelingText.create({
+        modeling_id: modelingId,
+        title: `Deep Research - ${new Date().toLocaleString('pt-BR')}`,
+        description: 'Pesquisa avançada',
+        content,
+        text_type: 'research',
+        character_count: content.length,
+        token_estimate: Math.ceil(content.length / 4)
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
+      toast.success('Pesquisa salva como texto!');
+      setHistory([]);
+    } catch (error) {
+      toast.error('Erro ao salvar: ' + error.message);
+    }
+  };
+
+  const handleClear = () => {
+    if (!confirm('Limpar a conversa de Deep Research?')) return;
+    setHistory([]);
+    toast.success('Conversa limpa!');
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col">
+        <SheetHeader className="p-6 pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5 text-blue-600" />
+              Deep Research
+            </SheetTitle>
+            <div className="flex gap-2">
+              {history.length > 0 && (
+                <>
+                  <Button variant="ghost" size="sm" onClick={handleCopy}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleSave}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleClear}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Globe className="w-3 h-3 mr-1" />
+              Web Search + Reasoning
+            </Badge>
+          </div>
+        </SheetHeader>
+
+        {/* Chat Area */}
+        <div className="flex-1 overflow-hidden">
+          {history.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <Globe className="w-16 h-16 text-slate-300 mb-4" />
+              <h3 className="font-medium text-slate-900 mb-2">Pesquisa Avançada</h3>
+              <p className="text-sm text-slate-500 max-w-md">
+                Faça perguntas complexas que exigem pesquisa na internet. O assistente usa Web Search e raciocínio profundo para trazer respostas completas.
+              </p>
+            </div>
+          ) : (
+            <ScrollArea className="h-full" ref={scrollRef}>
+              <div className="p-6 space-y-4">
+                {history.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {msg.role === 'assistant' && (
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                        <Globe className="w-4 h-4 text-blue-600" />
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-[80%] rounded-xl p-4 ${
+                        msg.role === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-100 text-slate-900'
+                      }`}
+                    >
+                      {msg.role === 'assistant' ? (
+                        <div className="prose prose-sm max-w-none prose-headings:text-slate-900 prose-p:text-slate-700 prose-a:text-blue-600">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      )}
+                    </div>
+                    {msg.role === 'user' && (
+                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                        <User className="w-4 h-4 text-slate-600" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {isResearching && (
+                  <div className="flex gap-3 justify-start">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 animate-pulse">
+                      <Globe className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="bg-slate-100 rounded-xl p-3">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                        <span className="text-xs text-slate-500">Pesquisando na web...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="border-t p-4">
+          <form onSubmit={handleSend} className="flex gap-2">
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Digite sua pergunta para pesquisa avançada..."
+              className="min-h-[60px] max-h-[120px] resize-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(e);
+                }
+              }}
+            />
+            <Button 
+              type="submit" 
+              disabled={!message.trim() || isResearching}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </form>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}

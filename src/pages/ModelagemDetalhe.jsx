@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Layers, Youtube, FileText, Plus, Hash, 
-  Video, Loader2, PlayCircle, Settings, BrainCircuit, Link2, Sparkles
+  Video, Loader2, PlayCircle, Settings, BrainCircuit, Link2, Sparkles, Globe
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -25,6 +25,7 @@ import CreatorIdeaEditor from "@/components/modeling/CreatorIdeaEditor";
 import TranscriptViewerModal from "@/components/modeling/TranscriptViewerModal";
 import ModelingFormModal from "@/components/modeling/ModelingFormModal";
 import AssistantDrawer from "@/components/modeling/AssistantDrawer";
+import DeepResearchDrawer from "@/components/modeling/DeepResearchDrawer";
 
 export default function ModelagemDetalhe() {
   const queryClient = useQueryClient();
@@ -40,6 +41,7 @@ export default function ModelagemDetalhe() {
   const [transcribingId, setTranscribingId] = useState(null);
   const [processingLinkId, setProcessingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [showDeepResearch, setShowDeepResearch] = useState(false);
   const [generatingDossier, setGeneratingDossier] = useState(false);
   const [analyzingId, setAnalyzingId] = useState(null);
 
@@ -728,6 +730,14 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             <BrainCircuit className="w-4 h-4 mr-2" />
             Assistente
           </Button>
+          <Button 
+            variant="outline" 
+            className="bg-blue-50 hover:bg-blue-100 text-blue-600"
+            onClick={() => setShowDeepResearch(true)}
+          >
+            <Globe className="w-4 h-4 mr-2" />
+            Deep Research
+          </Button>
           <Button variant="outline" size="icon" onClick={() => setShowEditModeling(true)}>
             <Settings className="w-4 h-4" />
           </Button>
@@ -976,6 +986,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       <AssistantDrawer
         open={showAssistant}
         onOpenChange={setShowAssistant}
+        modelingId={modelingId}
+      />
+
+      <DeepResearchDrawer
+        open={showDeepResearch}
+        onOpenChange={setShowDeepResearch}
         modelingId={modelingId}
       />
       </div>
