@@ -32,6 +32,7 @@ import UserSettings from './pages/UserSettings';
 import YoutubeScriptDetail from './pages/YoutubeScriptDetail';
 import YoutubeScripts from './pages/YoutubeScripts';
 import index from './pages/index';
+import ContentDossiers from './pages/ContentDossiers';
 
 
 export const PAGES = {
@@ -69,6 +70,7 @@ export const PAGES = {
     "YoutubeScriptDetail": YoutubeScriptDetail,
     "YoutubeScripts": YoutubeScripts,
     "index": index,
+    "ContentDossiers": ContentDossiers,
 }
 
 export const pagesConfig = {
