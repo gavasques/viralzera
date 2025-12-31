@@ -68,6 +68,8 @@ import AdminScriptTypes from "./AdminScriptTypes";
 
 import UserContent from "./UserContent";
 
+import ContentDossiers from "./ContentDossiers";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import AppProviders from '@/components/providers/AppProviders';
 
@@ -140,6 +142,8 @@ const PAGES = {
     AdminScriptTypes: AdminScriptTypes,
 
     UserContent: UserContent,
+
+    ContentDossiers: ContentDossiers,
 
     }
 
@@ -235,6 +239,8 @@ function PagesContent() {
                 <Route path="/AdminScriptTypes" element={<AdminScriptTypes />} />
 
                 <Route path="/UserContent" element={<UserContent />} />
+
+                <Route path="/ContentDossiers" element={<ContentDossiers />} />
 
                 </Routes>
         </Layout>
