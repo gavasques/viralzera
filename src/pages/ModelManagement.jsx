@@ -29,11 +29,17 @@ export default function ModelManagement() {
     queryKey: ['openrouterModels'],
     queryFn: async () => {
       console.log('[ModelManagement] Fetching models...');
-      const models = await fetchModels();
-      console.log('[ModelManagement] Loaded models:', models.length);
-      return models;
+      try {
+        const models = await fetchModels();
+        console.log('[ModelManagement] Loaded models:', models.length);
+        return models;
+      } catch (err) {
+        console.error('[ModelManagement] Error fetching models:', err);
+        throw err;
+      }
     },
-    staleTime: 300000
+    staleTime: 300000,
+    retry: 1
   });
 
   // Fetch approved models
