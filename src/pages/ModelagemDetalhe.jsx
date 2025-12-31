@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { sendMessage } from "@/components/services/OpenRouterDirectService";
 import { CardGridSkeleton } from "@/components/common/LoadingSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import VideoCard from "@/components/modeling/VideoCard";
@@ -62,7 +63,7 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      base44.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      updateModelingTotals().catch(() => {});
       toast.success('Vídeo excluído!');
     }
   });
@@ -73,7 +74,7 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      base44.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      updateModelingTotals().catch(() => {});
       toast.success('Texto excluído!');
     }
   });
