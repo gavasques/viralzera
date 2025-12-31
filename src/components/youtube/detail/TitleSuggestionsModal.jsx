@@ -30,7 +30,7 @@ export default function TitleSuggestionsModal({
     setSelectedIndex(null);
 
     try {
-      const response = await base44.functions('youtubeTitleGenerator', {
+      const response = await base44.functions.invoke('youtubeTitleGenerator', {
         scriptId
       });
 

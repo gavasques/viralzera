@@ -58,7 +58,7 @@ export default function RefinerDrawer({
         setModelingData(modelings);
       }
 
-      const response = await base44.functions('youtubeScriptRefiner', {
+      const response = await base44.functions.invoke('youtubeScriptRefiner', {
         action: option.id,
         actionPrompt: option.prompt,
         content: sectionContent,
