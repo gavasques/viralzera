@@ -61,6 +61,25 @@ export default function DeepResearchDrawer({ open, onOpenChange, modelingId }) {
         ...newHistory.map(m => ({ role: m.role, content: m.content }))
       ];
 
+      // If web search enabled, get context from internet first
+      let webContext = '';
+      if (config.enable_web_search) {
+        try {
+          webContext = await base44.integrations.Core.InvokeLLM({
+            prompt: `Pesquise na internet sobre: ${userMessage}\n\nRetorne um resumo completo e estruturado das informações mais relevantes e atualizadas.`,
+            add_context_from_internet: true
+          });
+          
+          // Add web context to messages
+          messages.push({
+            role: 'system',
+            content: `Contexto adicional da web:\n\n${webContext}`
+          });
+        } catch (error) {
+          console.warn('Web search falhou, continuando sem contexto web:', error);
+        }
+      }
+
       // Call OpenRouter
       const requestBody = {
         model: config.model,
@@ -75,13 +94,6 @@ export default function DeepResearchDrawer({ open, onOpenChange, modelingId }) {
           enabled: true,
           effort: config.reasoning_effort || 'high'
         };
-      }
-
-      // Add web search if enabled
-      if (config.enable_web_search) {
-        requestBody.tools = [{
-          type: 'web_search'
-        }];
       }
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
