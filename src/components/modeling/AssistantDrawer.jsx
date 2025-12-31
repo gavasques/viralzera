@@ -35,100 +35,10 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
     enabled: !!modelingId && open
   });
 
-  // Send message mutation (Normal Mode)
+  // Send message mutation
   const sendMutation = useMutation({
     mutationFn: async (userMessage) => {
-      // Se está em modo Deep Research, processar separadamente
-      if (deepResearchMode) {
-        // Buscar config de Deep Research
-        const deepConfigs = await base44.entities.DeepResearchConfig.list();
-        const deepConfig = deepConfigs?.[0];
-
-        if (!deepConfig?.model) {
-          throw new Error('Configure o agente Deep Research em Configurações de Agentes');
-        }
-
-        // Buscar API key
-        const userConfigs = await base44.entities.UserConfig.list();
-        const apiKey = userConfigs[0]?.openrouter_api_key;
-
-        if (!apiKey) {
-          throw new Error('Configure sua API Key do OpenRouter');
-        }
-
-        const systemPrompt = deepConfig.prompt || `Você é um pesquisador especializado. Realize análises profundas e abrangentes.`;
-
-        // Montar histórico para o contexto
-        const messages = [
-          { role: 'system', content: systemPrompt },
-          ...chatHistory.map(m => ({ role: m.role, content: m.content })),
-          { role: 'user', content: userMessage }
-        ];
-
-        // Preparar request body
-        const requestBody = {
-          model: deepConfig.model,
-          messages,
-          temperature: 0.7,
-          max_tokens: 16000
-        };
-
-        // Adicionar web search se habilitado
-        if (deepConfig.enable_web_search) {
-          requestBody.tools = [{
-            type: "web_search_tool"
-          }];
-        }
-
-        // Adicionar reasoning se habilitado
-        if (deepConfig.enable_reasoning) {
-          requestBody.reasoning = {
-            effort: deepConfig.reasoning_effort || 'high'
-          };
-        }
-
-        // Chamar OpenRouter
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': window.location.origin,
-            'X-Title': 'ContentAI - Deep Research'
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const assistantMessage = data.choices?.[0]?.message?.content;
-
-        if (!assistantMessage) {
-          throw new Error('Resposta inválida da API');
-        }
-
-        // Salvar mensagens
-        await base44.entities.ModelingChat.create({
-          modeling_id: modelingId,
-          role: 'user',
-          content: userMessage
-        });
-
-        await base44.entities.ModelingChat.create({
-          modeling_id: modelingId,
-          role: 'assistant',
-          content: assistantMessage,
-          usage: data.usage
-        });
-
-        return { message: assistantMessage, usage: data.usage };
-      }
-
-      // Modo normal - Assistente de Ideias
+      // Assistente de Ideias
       const configs = await base44.entities.ModelingAssistantConfig.list();
       const config = configs?.[0];
 
@@ -144,33 +54,27 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
         status: 'completed'
       });
 
-      // Montar contexto - se useDossier e dossier existe, usar ele
+      // Montar contexto
       let contexto = '';
       
-      if (useDossier && dossier?.full_content) {
-        contexto = `# DOSSIÊ COMPLETO DA MODELAGEM\n\n${dossier.full_content}\n\n`;
-      } else {
-        // Contexto normal
-        contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
-        
-        if (modeling[0]?.description) {
-          contexto += `**Descrição:** ${modeling[0].description}\n\n`;
-        }
-        if (modeling[0]?.target_platform) {
-          contexto += `**Plataforma:** ${modeling[0].target_platform}\n`;
-        }
-        if (modeling[0]?.content_type) {
-          contexto += `**Tipo:** ${modeling[0].content_type}\n\n`;
-        }
-        if (modeling[0]?.creator_idea) {
-          contexto += `## 💡 Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
-        }
+      // Contexto normal
+      contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
+      
+      if (modeling[0]?.description) {
+        contexto += `**Descrição:** ${modeling[0].description}\n\n`;
+      }
+      if (modeling[0]?.target_platform) {
+        contexto += `**Plataforma:** ${modeling[0].target_platform}\n`;
+      }
+      if (modeling[0]?.content_type) {
+        contexto += `**Tipo:** ${modeling[0].content_type}\n\n`;
+      }
+      if (modeling[0]?.creator_idea) {
+        contexto += `## 💡 Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
       }
 
-      // Só adicionar materiais se não estiver usando dossiê
-      if (!useDossier || !dossier?.full_content) {
-        // Usar análises se disponíveis, senão usar materiais brutos
-        if (analyses.length > 0) {
+      // Usar análises se disponíveis, senão usar materiais brutos
+      if (analyses.length > 0) {
         contexto += `## 📊 ANÁLISES DOS MATERIAIS (${analyses.length})\n\n`;
         
         analyses.forEach((analysis, i) => {
@@ -222,7 +126,6 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
 
         if (transcribedVideos.length === 0 && texts.length === 0 && completedLinks.length === 0) {
           contexto += `_Nenhum material processado ainda. Adicione e processe vídeos, textos ou links para começar._\n\n`;
-        }
         }
       }
 
