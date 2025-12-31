@@ -70,6 +70,11 @@ export default function YoutubeScripts() {
           ))}
         </div>
       )}
+
+      <YoutubeScriptWizardModal 
+        open={showWizard} 
+        onOpenChange={setShowWizard} 
+      />
     </div>
   );
 }
