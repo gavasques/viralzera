@@ -81,22 +81,140 @@ export default function ModelagemDetalhe() {
   // Transcribe video
   const handleTranscribe = async (videoId) => {
     setTranscribingId(videoId);
+    
+    // Find the video
+    const video = videos.find(v => v.id === videoId);
+    if (!video) {
+      toast.error('Vídeo não encontrado');
+      setTranscribingId(null);
+      return;
+    }
+
     try {
-      console.log('Iniciando transcrição do vídeo:', videoId);
-      const response = await base44.functions.invoke('modelingTranscribe', {
-        action: 'transcribe',
-        videoId
+      // Update status to transcribing
+      await base44.entities.ModelingVideo.update(videoId, { 
+        status: 'transcribing',
+        error_message: null
       });
+      queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
+
+      // Get user config for API key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
       
-      console.log('Resposta da API:', response);
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter em Configurações');
+      }
+
+      // Get modeling config for model and prompt
+      const modelingConfigs = await base44.entities.ModelingConfig.list();
+      const config = modelingConfigs[0];
       
-      if (response.data.error) throw new Error(response.data.error);
+      if (!config?.model) {
+        throw new Error('Configure o modelo de transcrição em Configurações de Agentes > Modelagem');
+      }
+
+      const systemPrompt = config.prompt || `Você é um especialista em transcrição de vídeos.
+
+Tarefa:
+- Transcreva todo o conteúdo do vídeo com precisão
+- Mantenha a linguagem original e expressões usadas pelo palestrante
+- Preserve gírias, palavras de preenchimento (tipo, né, mano, tá ligado, etc.)
+- Mantenha padrões naturais de fala
+- Marque [RISOS] para risadas, [PAUSA] para pausas
+- NÃO reescreva em português formal - preserve a voz original
+
+Retorne APENAS o texto da transcrição, limpo e normalizado.`;
+
+      // Call OpenRouter API directly
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Modelagem'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Por favor, transcreva todo o conteúdo deste vídeo.'
+                },
+                {
+                  type: 'video_url',
+                  video_url: {
+                    url: video.url
+                  }
+                }
+              ]
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 16000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
       
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      const transcript = data.choices[0].message.content;
+      const charCount = transcript.length;
+      const tokenEstimate = Math.ceil(charCount / 4);
+
+      // Update video with transcript
+      await base44.entities.ModelingVideo.update(videoId, {
+        transcript,
+        character_count: charCount,
+        token_estimate: tokenEstimate,
+        status: 'transcribed',
+        error_message: null
+      });
+
+      // Update modeling totals
+      const allVideos = await base44.entities.ModelingVideo.filter({ modeling_id: modelingId });
+      const allTexts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
+      
+      const videoChars = allVideos.reduce((sum, v) => sum + (v.character_count || 0), 0);
+      const videoTokens = allVideos.reduce((sum, v) => sum + (v.token_estimate || 0), 0);
+      const textChars = allTexts.reduce((sum, t) => sum + (t.character_count || 0), 0);
+      const textTokens = allTexts.reduce((sum, t) => sum + (t.token_estimate || 0), 0);
+
+      await base44.entities.Modeling.update(modelingId, {
+        total_characters: videoChars + textChars,
+        total_tokens_estimate: videoTokens + textTokens
+      });
+
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Transcrição concluída!');
+
     } catch (error) {
       console.error('Erro na transcrição:', error);
+      
+      // Update status to error
+      await base44.entities.ModelingVideo.update(videoId, {
+        status: 'error',
+        error_message: error.message
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       toast.error('Erro na transcrição: ' + error.message);
     } finally {
       setTranscribingId(null);
