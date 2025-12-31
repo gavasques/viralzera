@@ -43,10 +43,6 @@ function TitanosHeader({ conversation, messages, selectedModels, onModelsChange,
               Ver Log
             </Button>
           )}
-          {messages.length > 0 && (
-            <ConversationMetricsButton messages={messages} selectedModels={selectedModels} />
-          )}
-          <div className="h-4 w-px bg-slate-200 mx-1" />
           <ModelSelector selectedModels={selectedModels} onSelectionChange={onModelsChange} />
         </div>
       </div>

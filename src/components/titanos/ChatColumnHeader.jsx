@@ -72,12 +72,6 @@ function ChatColumnHeader({
             />
           )}
 
-          <MetricsPopover 
-            totalTokens={totalTokens} 
-            totalCost={totalCost} 
-            avgDuration={avgDuration} 
-          />
-
           <ActionButton icon={Maximize2} tooltip="Expandir conversa" onClick={onExpand} />
 
           {hasMessages && (
