@@ -3,7 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, Plus, Search, ChevronLeft, ChevronRight, Archive, ArchiveRestore } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import PageHeader from "@/components/common/PageHeader";
 import { PageSkeleton } from "@/components/common/LoadingSkeleton";
@@ -19,6 +21,7 @@ export default function Canvas() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFolderId, setSelectedFolderId] = useState("all");
+  const [showArchived, setShowArchived] = useState(false);
   const [selectedCanvas, setSelectedCanvas] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -65,6 +68,14 @@ export default function Canvas() {
     mutationFn: ({ id, isPinned }) => base44.entities.Canvas.update(id, { is_pinned: !isPinned }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['canvas-items'] });
+    }
+  });
+
+  const toggleArchiveMutation = useMutation({
+    mutationFn: ({ id, isArchived }) => base44.entities.Canvas.update(id, { is_archived: !isArchived }),
+    onSuccess: (_, { isArchived }) => {
+      queryClient.invalidateQueries({ queryKey: ['canvas-items'] });
+      toast.success(isArchived ? "Canvas desarquivado" : "Canvas arquivado");
     }
   });
 
@@ -124,11 +135,20 @@ export default function Canvas() {
     
     const matchesFolder = selectedFolderId === "all" 
       ? true 
-      : selectedFolderId === null 
-        ? !item.folder_id 
-        : item.folder_id === selectedFolderId;
+      : selectedFolderId === "archived"
+        ? item.is_archived
+        : selectedFolderId === null 
+          ? !item.folder_id 
+          : item.folder_id === selectedFolderId;
 
-    return matchesSearch && matchesFolder;
+    // Filter by archived status (unless viewing archived folder)
+    const matchesArchived = selectedFolderId === "archived" 
+      ? true 
+      : showArchived 
+        ? true 
+        : !item.is_archived;
+
+    return matchesSearch && matchesFolder && matchesArchived;
   });
 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -147,7 +167,10 @@ export default function Canvas() {
   // Reset page when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedFolderId]);
+  }, [searchTerm, selectedFolderId, showArchived]);
+
+  // Count archived items
+  const archivedCount = canvasItems.filter(item => item.is_archived).length;
 
   if (isLoading) return <PageSkeleton />;
 
@@ -173,7 +196,7 @@ export default function Canvas() {
           </Button>
         </div>
 
-        {/* Search */}
+        {/* Search and Filters */}
         <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -184,6 +207,19 @@ export default function Canvas() {
               className="pl-10"
             />
           </div>
+          
+          {selectedFolderId !== "archived" && (
+            <div className="flex items-center gap-2 shrink-0">
+              <Switch
+                id="show-archived"
+                checked={showArchived}
+                onCheckedChange={setShowArchived}
+              />
+              <Label htmlFor="show-archived" className="text-sm text-slate-600 cursor-pointer whitespace-nowrap">
+                Mostrar arquivados {archivedCount > 0 && `(${archivedCount})`}
+              </Label>
+            </div>
+          )}
         </div>
 
         {/* Grid */}
@@ -214,6 +250,7 @@ export default function Canvas() {
                   onSendToKanban={handleSendToKanban}
                   onCopy={handleCopy}
                   onTogglePin={(c) => togglePinMutation.mutate({ id: c.id, isPinned: c.is_pinned })}
+                  onToggleArchive={(c) => toggleArchiveMutation.mutate({ id: c.id, isArchived: c.is_archived })}
                   onDelete={(id) => deleteMutation.mutate(id)}
                 />
               ))}

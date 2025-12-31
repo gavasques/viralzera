@@ -11,7 +11,9 @@ import {
   Trash2, 
   Clock, 
   Sparkles,
-  Folder
+  Folder,
+  Archive,
+  ArchiveRestore
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,7 +30,8 @@ export default function CanvasCard({
   onClick, 
   onSendToKanban, 
   onCopy, 
-  onTogglePin, 
+  onTogglePin,
+  onToggleArchive,
   onDelete 
 }) {
   return (
@@ -66,6 +69,12 @@ export default function CanvasCard({
                   AI
                 </Badge>
               )}
+              {canvas.is_archived && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-amber-200 text-amber-600 bg-amber-50">
+                  <Archive className="w-2.5 h-2.5 mr-1" />
+                  Arquivado
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -89,6 +98,13 @@ export default function CanvasCard({
                   <><PinOff className="w-4 h-4 mr-2" /> Desafixar</>
                 ) : (
                   <><Pin className="w-4 h-4 mr-2" /> Fixar no topo</>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleArchive?.(canvas); }}>
+                {canvas.is_archived ? (
+                  <><ArchiveRestore className="w-4 h-4 mr-2 text-green-500" /> Desarquivar</>
+                ) : (
+                  <><Archive className="w-4 h-4 mr-2 text-amber-500" /> Arquivar</>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem 
