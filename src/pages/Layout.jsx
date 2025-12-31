@@ -52,10 +52,10 @@ export default function Layout({ children }) {
   
   // State for collapsible sidebar groups
   const [expandedGroups, setExpandedGroups] = React.useState({
-    'Cadastros': true,
-    'Estratégia': true,
+    'Principal': true,
     'Criação': true,
-    'Relatórios': true
+    'Conteúdo': true,
+    'DNA': true
   });
 
   const toggleGroup = (label) => {
@@ -145,37 +145,37 @@ export default function Layout({ children }) {
 
   const navGroups = [
           {
-            label: null,
+            label: 'Principal',
             items: [
               { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
+              { name: 'Gestão de Postagens', icon: Calendar, page: 'PostManagement' },
             ]
           },
           {
             label: 'Criação',
             items: [
-              { name: 'Gestão de Postagens', icon: Calendar, page: 'PostManagement' },
               { name: 'Multi Chat', icon: Sparkles, page: 'TitanosRouter' },
               { name: 'Canvas', icon: FileText, page: 'Canvas' },
             ]
           },
           {
-            label: 'Estratégia',
+            label: 'Conteúdo',
             items: [
+              { name: 'Banco de Listas', icon: Library, page: 'MaterialBank' },
               { name: 'Tendências', icon: TrendingUp, page: 'Trends' },
-              { name: 'Tipos de Postagens', icon: Layers, page: 'PostTypes' },
               { name: 'Matriz de Temas', icon: FolderTree, page: 'ThemeMatrix' },
+              { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
+              { name: 'Tipos de Postagem', icon: Layers, page: 'PostTypes' },
               { name: 'Modelagem', icon: Layers, page: 'Modelagem' },
             ]
           },
           {
-            label: 'Cadastros',
+            label: 'DNA',
             items: [
               { name: 'Público-Alvo', icon: Users, page: 'Audiences' },
               { name: 'Minha Persona', icon: User, page: 'Personas' },
               { name: 'Produtos', icon: Package, page: 'Products' },
-              { name: 'Banco de Listas', icon: Library, page: 'MaterialBank' },
-              { name: 'DNA de Comunicação', icon: Dna, page: 'DNACommunication' },
-              { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
+              { name: 'DNA Comunicação', icon: Dna, page: 'DNACommunication' },
             ]
           },
         ];
