@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon } from 'lucide-react';
+import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminProtection } from '@/components/admin/AdminProtection';
@@ -94,6 +94,20 @@ const AGENT_CARDS = [
     icon: ImageIcon,
     color: 'bg-teal-500',
     customModal: true
+  },
+  {
+    key: 'youtubeScriptGenerator',
+    title: 'YouTube - Geração de Roteiro',
+    description: 'Agente principal que gera o corpo do roteiro com base no tipo e contexto.',
+    icon: Youtube,
+    color: 'bg-red-600'
+  },
+  {
+    key: 'youtubeScriptRefiner',
+    title: 'YouTube - Refinador de Seções',
+    description: 'Agente que refina seções específicas do roteiro (hook, cta, etc).',
+    icon: Sparkles,
+    color: 'bg-red-400'
   }
 ];
 
