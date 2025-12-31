@@ -15,6 +15,7 @@ import { StepContext } from "./steps/StepContext";
 import { StepModelings } from "./steps/StepModelings";
 import { StepUserContent } from "./steps/StepUserContent";
 import { buildYoutubePrompt } from "./buildYoutubePrompt";
+import { sendMessage } from "@/components/services/OpenRouterDirectService";
 
 const STEPS = [
   { id: 'tema', title: 'Tema Central', description: 'Assunto do vídeo', icon: Lightbulb },
@@ -137,20 +138,22 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         videoType: scriptType.title
       });
 
-      // 6. Chamar a função backend com o modelo configurado
-      const aiResponse = await base44.functions.invoke('youtubeScriptGenerator', {
-        prompt: finalPrompt,
+      // 6. Chamar OpenRouter diretamente
+      const aiResponse = await sendMessage({
         model: agentConfig.model,
-        enableReasoning: agentConfig.enable_reasoning || false,
-        reasoningEffort: agentConfig.reasoning_effort || 'medium',
-        enableWebSearch: agentConfig.enable_web_search || false
+        messages: [
+          { role: 'system', content: agentConfig.prompt || 'Você é um especialista em criar roteiros para YouTube.' },
+          { role: 'user', content: finalPrompt }
+        ],
+        options: {
+          enableReasoning: agentConfig.enable_reasoning || false,
+          reasoningEffort: agentConfig.reasoning_effort || 'medium',
+          enableWebSearch: agentConfig.enable_web_search || false,
+          feature: 'YoutubeScriptGenerator'
+        }
       });
 
-      if (!aiResponse.data?.success) {
-        throw new Error(aiResponse.data?.error || 'Erro ao gerar roteiro');
-      }
-
-      const generatedContent = aiResponse.data.content;
+      const generatedContent = aiResponse.content;
 
       // 7. Criar registro do YoutubeScript
       const newScript = await base44.entities.YoutubeScript.create({
