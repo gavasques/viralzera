@@ -24,11 +24,113 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
   // Send message mutation
   const sendMutation = useMutation({
     mutationFn: async (userMessage) => {
-      const response = await base44.functions.invoke('modelingAssistant', {
-        modeling_id: modelingId,
-        message: userMessage
+      // Buscar configuração do agente
+      const configs = await base44.entities.ModelingAssistantConfig.list();
+      const config = configs?.[0];
+
+      const model = config?.model || 'openai/gpt-4o-mini';
+      const systemPrompt = config?.prompt || `Você é um Assistente de Estratégia de Conteúdo para YouTube. Use o contexto fornecido (transcrições, textos, notas) para ajudar o usuário a ter ideias, analisar ângulos e estruturar tópicos para um novo vídeo. Seja um parceiro de brainstorming.`;
+
+      // Buscar contexto da modelagem
+      const modeling = await base44.entities.Modeling.filter({ id: modelingId });
+      const videos = await base44.entities.ModelingVideo.filter({ modeling_id: modelingId });
+      const texts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
+      const links = await base44.entities.ModelingLink.filter({ modeling_id: modelingId });
+
+      // Montar contexto
+      let contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
+      
+      if (modeling[0]?.creator_idea) {
+        contexto += `## Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
+      }
+
+      if (videos.length > 0) {
+        contexto += `## Vídeos (${videos.length})\n`;
+        videos.forEach((v, i) => {
+          contexto += `\n### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n`;
+          if (v.transcript) {
+            contexto += `${v.transcript.substring(0, 2000)}${v.transcript.length > 2000 ? '...' : ''}\n`;
+          }
+        });
+        contexto += '\n';
+      }
+
+      if (texts.length > 0) {
+        contexto += `## Textos (${texts.length})\n`;
+        texts.forEach((t, i) => {
+          contexto += `\n### Texto ${i + 1}: ${t.title || 'Sem título'}\n${t.content}\n`;
+        });
+      }
+
+      if (links.length > 0) {
+        contexto += `\n## Links Processados (${links.length})\n`;
+        links.filter(l => l.status === 'completed').forEach((l, i) => {
+          contexto += `\n### Link ${i + 1}: ${l.title || l.url}\n`;
+          if (l.summary) {
+            contexto += `${l.summary}\n`;
+          }
+        });
+      }
+
+      // Buscar API key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter');
+      }
+
+      // Preparar mensagens
+      const messages = [
+        { role: 'system', content: systemPrompt.replace(/\{\{contexto_modelagem\}\}/g, contexto).replace(/\{\{historico_chat\}\}/g, JSON.stringify(chatHistory.reverse())) },
+        ...chatHistory.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: userMessage }
+      ];
+
+      // Chamar OpenRouter
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Modeling Assistant'
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.7,
+          max_tokens: 2000
+        })
       });
-      return response.data;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const assistantMessage = data.choices?.[0]?.message?.content;
+
+      if (!assistantMessage) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      // Salvar mensagens
+      await base44.entities.ModelingChat.create({
+        modeling_id: modelingId,
+        role: 'user',
+        content: userMessage
+      });
+
+      await base44.entities.ModelingChat.create({
+        modeling_id: modelingId,
+        role: 'assistant',
+        content: assistantMessage,
+        usage: data.usage
+      });
+
+      return { message: assistantMessage, usage: data.usage };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingChat', modelingId] });

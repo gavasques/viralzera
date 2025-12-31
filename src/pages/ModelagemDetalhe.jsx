@@ -264,13 +264,102 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
   const handleProcessLink = async (linkId) => {
     setProcessingLinkId(linkId);
     
+    const link = links.find(l => l.id === linkId);
+    if (!link) {
+      toast.error('Link não encontrado');
+      setProcessingLinkId(null);
+      return;
+    }
+
     try {
-      await base44.functions.invoke('modelingScraper', { link_id: linkId });
+      // Atualizar status para processing
+      await base44.entities.ModelingLink.update(linkId, {
+        status: 'processing',
+        error_message: null
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
+
+      // Buscar configuração do agente
+      const scraperConfigs = await base44.entities.ModelingScraperConfig.list();
+      const config = scraperConfigs?.[0];
+      
+      const model = config?.model || 'openai/gpt-4o-mini';
+      const systemPrompt = config?.prompt || `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.`;
+
+      // Extrair conteúdo do link usando InvokeLLM
+      const articleContent = await base44.integrations.Core.InvokeLLM({
+        prompt: `Extraia o conteúdo principal deste artigo, removendo navegação, ads e elementos irrelevantes. Retorne apenas o texto do artigo de forma limpa e estruturada.\n\nURL: ${link.url}`,
+        add_context_from_internet: true
+      });
+
+      if (!articleContent || articleContent.length < 100) {
+        throw new Error('Não foi possível extrair conteúdo suficiente do link');
+      }
+
+      // Buscar API key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter');
+      }
+
+      // Chamar OpenRouter diretamente
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Link Scraper'
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt.replace(/\{\{conteudo_artigo\}\}/g, articleContent) },
+            { role: 'user', content: articleContent }
+          ],
+          temperature: 0.5,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const summary = data.choices?.[0]?.message?.content;
+
+      if (!summary) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      const charCount = summary.length;
+      const tokenEstimate = Math.ceil(charCount / 4);
+
+      // Atualizar link
+      await base44.entities.ModelingLink.update(linkId, {
+        summary,
+        content: articleContent,
+        character_count: charCount,
+        token_estimate: tokenEstimate,
+        status: 'completed',
+        error_message: null
+      });
+
       queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Link processado!');
+
     } catch (error) {
-      toast.error('Erro ao processar link: ' + error.message);
+      await base44.entities.ModelingLink.update(linkId, {
+        status: 'error',
+        error_message: error.message
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
+      toast.error('Erro ao processar: ' + error.message);
     } finally {
       setProcessingLinkId(null);
     }
@@ -294,15 +383,119 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     setGeneratingDossier(true);
     
     try {
-      const response = await base44.functions.invoke('generateDossier', { 
-        modeling_id: modelingId 
+      // Buscar configuração do agente
+      const dossierConfigs = await base44.entities.DossierGeneratorConfig.list();
+      const config = dossierConfigs?.[0];
+
+      const model = config?.model || 'openai/gpt-4o-mini';
+      const systemPrompt = config?.prompt || `Você é um organizador de conteúdo. Sua tarefa é pegar os diversos materiais brutos (transcrições, textos, notas) e organizá-los em um único documento coeso em formato Markdown, chamado 'Dossiê de Conteúdo'. Crie seções claras para cada tipo de material.`;
+
+      // Montar materiais brutos
+      let materiaisBrutos = `# DOSSIÊ DE CONTEÚDO: ${modeling.title}\n\n`;
+      
+      if (modeling.description) {
+        materiaisBrutos += `**Descrição:** ${modeling.description}\n\n`;
+      }
+      if (modeling.target_platform) {
+        materiaisBrutos += `**Plataforma:** ${modeling.target_platform}\n`;
+      }
+      if (modeling.content_type) {
+        materiaisBrutos += `**Tipo de Conteúdo:** ${modeling.content_type}\n\n`;
+      }
+      if (modeling.creator_idea) {
+        materiaisBrutos += `## 💡 Ideia do Criador\n\n${modeling.creator_idea}\n\n`;
+      }
+
+      // Vídeos transcritos
+      const transcribedVideos = videos.filter(v => v.status === 'transcribed' && v.transcript);
+      if (transcribedVideos.length > 0) {
+        materiaisBrutos += `---\n\n## 🎥 VÍDEOS ANALISADOS (${transcribedVideos.length})\n\n`;
+        transcribedVideos.forEach((v, i) => {
+          materiaisBrutos += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
+          if (v.channel_name) materiaisBrutos += `**Canal:** ${v.channel_name}\n`;
+          if (v.url) materiaisBrutos += `**URL:** ${v.url}\n\n`;
+          if (v.notes) materiaisBrutos += `**Notas:** ${v.notes}\n\n`;
+          materiaisBrutos += `**Transcrição:**\n\n${v.transcript}\n\n---\n\n`;
+        });
+      }
+
+      // Textos
+      if (texts.length > 0) {
+        materiaisBrutos += `## 📄 TEXTOS DE REFERÊNCIA (${texts.length})\n\n`;
+        texts.forEach((t, i) => {
+          materiaisBrutos += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
+          if (t.description) materiaisBrutos += `**Descrição:** ${t.description}\n\n`;
+          materiaisBrutos += `${t.content}\n\n---\n\n`;
+        });
+      }
+
+      // Links processados
+      const completedLinks = links.filter(l => l.status === 'completed' && l.summary);
+      if (completedLinks.length > 0) {
+        materiaisBrutos += `## 🔗 ARTIGOS E LINKS PROCESSADOS (${completedLinks.length})\n\n`;
+        completedLinks.forEach((l, i) => {
+          materiaisBrutos += `### Link ${i + 1}: ${l.title || 'Sem título'}\n\n`;
+          materiaisBrutos += `**URL:** ${l.url}\n\n`;
+          if (l.notes) materiaisBrutos += `**Notas:** ${l.notes}\n\n`;
+          materiaisBrutos += `**Resumo:**\n\n${l.summary}\n\n---\n\n`;
+        });
+      }
+
+      // Verificar conteúdo
+      if (transcribedVideos.length === 0 && texts.length === 0 && completedLinks.length === 0) {
+        throw new Error('Não há conteúdo suficiente para gerar o dossiê');
+      }
+
+      // Buscar API key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter');
+      }
+
+      // Chamar OpenRouter
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Dossier Generator'
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt.replace(/\{\{materiais_brutos\}\}/g, materiaisBrutos) },
+            { role: 'user', content: 'Organize todos esses materiais em um Dossiê de Conteúdo bem estruturado em Markdown.' }
+          ],
+          temperature: 0.7,
+          max_tokens: 16000
+        })
       });
-      
-      const dossierId = response.data.dossier_id;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const dossierContent = data.choices?.[0]?.message?.content;
+
+      if (!dossierContent) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      // Criar dossiê
+      const dossier = await base44.entities.ContentDossier.create({
+        modeling_id: modelingId,
+        full_content: dossierContent,
+        character_count: dossierContent.length,
+        token_estimate: Math.ceil(dossierContent.length / 4)
+      });
+
       toast.success('Dossiê gerado! Redirecionando...');
-      
-      // Redirect to youtube script wizard with dossierId
-      window.location.href = createPageUrl('YoutubeScripts') + `?action=new&dossierId=${dossierId}`;
+      window.location.href = createPageUrl('YoutubeScripts') + `?action=new&dossierId=${dossier.id}`;
       
     } catch (error) {
       toast.error('Erro ao gerar dossiê: ' + error.message);
