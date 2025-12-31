@@ -84,6 +84,15 @@ export default function YoutubeScriptSectionEditor({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
+        <style>{`
+          .ql-container {
+            font-size: 1.1rem;
+          }
+          .ql-editor {
+            font-size: 1.1rem;
+            line-height: 1.75;
+          }
+        `}</style>
         <div className="h-[600px] mb-12">
           <ReactQuill
             theme="snow"
