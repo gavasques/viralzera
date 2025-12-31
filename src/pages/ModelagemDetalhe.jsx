@@ -83,6 +83,16 @@ export default function ModelagemDetalhe() {
     enabled: !!modelingId
   });
 
+  // Fetch dossier
+  const { data: dossier } = useQuery({
+    queryKey: ['modelingDossier', modelingId],
+    queryFn: async () => {
+      const dossiers = await base44.entities.ContentDossier.filter({ modeling_id: modelingId }, '-created_date', 1);
+      return dossiers[0] || null;
+    },
+    enabled: !!modelingId
+  });
+
   // Delete video mutation
   const deleteVideoMutation = useMutation({
     mutationFn: (id) => base44.entities.ModelingVideo.delete(id),
@@ -506,116 +516,79 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
-  // Generate dossier and redirect to script wizard
-  const handleCreateScript = async () => {
-    console.log('🚀 Iniciando geração de dossiê...');
+  // Generate complete dossier with all references
+  const handleGenerateDossier = async () => {
     setGeneratingDossier(true);
     
     try {
-      console.log('📋 Dados da modelagem:', { 
-        id: modelingId, 
-        title: modeling.title,
-        videosCount: videos.length,
-        textsCount: texts.length,
-        linksCount: links.length
-      });
-
-      // Buscar configuração do agente
-      const dossierConfigs = await base44.entities.DossierGeneratorConfig.list();
-      const config = dossierConfigs?.[0];
-      console.log('⚙️ Config do agente:', config);
-
-      const model = config?.model || 'openai/gpt-4o-mini';
-      const systemPrompt = config?.prompt || `Você é um Estrategista de Conteúdo. Sua tarefa é ler esta conversa de brainstorming entre um usuário e um assistente de IA e extrair um plano de ação claro para um vídeo de YouTube. Organize as ideias, decisões e estrutura do vídeo em um documento coeso em formato Markdown, chamado 'Dossiê de Conteúdo'.`;
-
-      // Buscar histórico do chat
-      const chatHistory = await base44.entities.ModelingChat.filter({ modeling_id: modelingId }, 'created_date', 100);
-
-      // Verificar se há conversa
-      if (chatHistory.length === 0) {
-        throw new Error('Nenhuma conversa encontrada. Use o Assistente de Ideias para desenvolver o conceito do vídeo antes de gerar o dossiê.');
-      }
-
-      // Montar materiais brutos a partir da conversa
-      let materiaisBrutos = `# CONVERSA DE BRAINSTORMING: ${modeling.title}\n\n`;
+      // Build complete Markdown dossier
+      let dossierContent = `# Dossiê de Conteúdo: ${modeling.title}\n\n`;
+      
+      dossierContent += `**Data de Criação:** ${new Date().toLocaleDateString('pt-BR')}\n`;
+      dossierContent += `**Plataforma:** ${modeling.target_platform}\n`;
+      dossierContent += `**Tipo de Conteúdo:** ${modeling.content_type}\n\n`;
       
       if (modeling.description) {
-        materiaisBrutos += `**Descrição da Modelagem:** ${modeling.description}\n\n`;
+        dossierContent += `**Descrição:** ${modeling.description}\n\n`;
       }
-      if (modeling.target_platform) {
-        materiaisBrutos += `**Plataforma:** ${modeling.target_platform}\n`;
-      }
-      if (modeling.content_type) {
-        materiaisBrutos += `**Tipo de Conteúdo:** ${modeling.content_type}\n\n`;
-      }
+
+      dossierContent += `---\n\n`;
+
+      // IDEIA DO CRIADOR
       if (modeling.creator_idea) {
-        materiaisBrutos += `## 💡 Ideia Inicial do Criador\n\n${modeling.creator_idea}\n\n`;
+        dossierContent += `## 💡 Ideia do Criador\n\n`;
+        dossierContent += `${modeling.creator_idea}\n\n`;
+        dossierContent += `---\n\n`;
       }
 
-      materiaisBrutos += `---\n\n## 💬 CONVERSA COMPLETA\n\n`;
-      
-      chatHistory.forEach((msg, i) => {
-        const role = msg.role === 'user' ? '**👤 Usuário**' : '**🤖 Assistente**';
-        materiaisBrutos += `### Mensagem ${i + 1}\n${role}\n\n${msg.content}\n\n---\n\n`;
-      });
-
-      console.log('📊 Informações da conversa:', {
-        totalMessages: chatHistory.length,
-        userMessages: chatHistory.filter(m => m.role === 'user').length,
-        assistantMessages: chatHistory.filter(m => m.role === 'assistant').length
-      });
-
-      // Buscar API key
-      console.log('🔑 Buscando API key...');
-      const userConfigs = await base44.entities.UserConfig.list();
-      const apiKey = userConfigs[0]?.openrouter_api_key;
-
-      if (!apiKey) {
-        throw new Error('Configure sua API Key do OpenRouter em Configurações');
-      }
-      console.log('✅ API key encontrada');
-
-      // Chamar OpenRouter
-      console.log('🤖 Chamando OpenRouter com modelo:', model);
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'ContentAI - Dossier Generator'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt.replace(/\{\{materiais_brutos\}\}/g, materiaisBrutos) },
-            { role: 'user', content: 'Organize todos esses materiais em um Dossiê de Conteúdo bem estruturado em Markdown.' }
-          ],
-          temperature: 0.7,
-          max_tokens: 16000
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Erro na API OpenRouter:', errorData);
-        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      // ANÁLISES DE VÍDEOS
+      const videoAnalyses = analyses.filter(a => a.material_type === 'video' && a.status === 'completed');
+      if (videoAnalyses.length > 0) {
+        dossierContent += `## 🎥 Análises de Vídeos de Referência\n\n`;
+        
+        for (const analysis of videoAnalyses) {
+          const video = videos.find(v => v.id === analysis.material_id);
+          if (video) {
+            dossierContent += `### ${analysis.material_title || video.title}\n\n`;
+            dossierContent += `**Canal:** ${video.channel_name}\n`;
+            dossierContent += `**URL:** ${video.url}\n\n`;
+            dossierContent += `${analysis.analysis_summary}\n\n`;
+            dossierContent += `---\n\n`;
+          }
+        }
       }
 
-      const data = await response.json();
-      console.log('📦 Resposta da API recebida, tokens:', data.usage);
-      
-      const dossierContent = data.choices?.[0]?.message?.content;
-
-      if (!dossierContent) {
-        console.error('❌ Conteúdo vazio na resposta:', data);
-        throw new Error('Resposta inválida da API');
+      // TEXTOS DE REFERÊNCIA
+      if (texts.length > 0) {
+        dossierContent += `## 📄 Textos de Referência\n\n`;
+        
+        for (const text of texts) {
+          dossierContent += `### ${text.title}\n\n`;
+          if (text.description) {
+            dossierContent += `**Descrição:** ${text.description}\n\n`;
+          }
+          dossierContent += `${text.content}\n\n`;
+          dossierContent += `---\n\n`;
+        }
       }
 
-      console.log('✅ Dossiê gerado, tamanho:', dossierContent.length, 'caracteres');
+      // CONTEÚDO DE LINKS
+      const completedLinks = links.filter(l => l.status === 'completed' && l.summary);
+      if (completedLinks.length > 0) {
+        dossierContent += `## 🔗 Conteúdo de Links\n\n`;
+        
+        for (const link of completedLinks) {
+          dossierContent += `### ${link.title || 'Link'}\n\n`;
+          dossierContent += `**URL:** ${link.url}\n\n`;
+          dossierContent += `**Resumo:**\n\n${link.summary}\n\n`;
+          if (link.notes) {
+            dossierContent += `**Notas:** ${link.notes}\n\n`;
+          }
+          dossierContent += `---\n\n`;
+        }
+      }
 
-      // Criar dossiê
-      console.log('💾 Salvando dossiê no banco...');
+      // Save dossier
       const dossier = await base44.entities.ContentDossier.create({
         modeling_id: modelingId,
         full_content: dossierContent,
@@ -623,16 +596,11 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         token_estimate: Math.ceil(dossierContent.length / 4)
       });
 
-      console.log('✅ Dossiê salvo com ID:', dossier.id);
-      toast.success('Dossiê gerado! Redirecionando...');
-      
-      const redirectUrl = createPageUrl('YoutubeScripts') + `?action=new&dossierId=${dossier.id}`;
-      console.log('🔄 Redirecionando para:', redirectUrl);
-      
-      window.location.href = redirectUrl;
+      queryClient.invalidateQueries({ queryKey: ['modelingDossier', modelingId] });
+      toast.success('Dossiê gerado com sucesso!');
       
     } catch (error) {
-      console.error('❌ ERRO COMPLETO:', error);
+      console.error('Erro ao gerar dossiê:', error);
       toast.error('Erro ao gerar dossiê: ' + error.message);
     } finally {
       setGeneratingDossier(false);
@@ -706,7 +674,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             <p className="text-xs text-slate-500">tokens estimados</p>
           </div>
           <Button 
-            onClick={handleCreateScript}
+            onClick={handleGenerateDossier}
             disabled={generatingDossier}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
           >
@@ -715,10 +683,15 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Gerando...
               </>
+            ) : dossier ? (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Atualizar Dossiê
+              </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4 mr-2" />
-                Criar Roteiro
+                Gerar Dossiê
               </>
             )}
           </Button>
@@ -743,6 +716,28 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
           </Button>
         </div>
       </div>
+
+      {/* Dossier Status */}
+      {dossier && (
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="font-medium text-slate-900">Dossiê Gerado</p>
+                <p className="text-sm text-slate-500">
+                  {formatNumber(dossier.character_count)} caracteres • {formatNumber(dossier.token_estimate)} tokens
+                </p>
+              </div>
+            </div>
+            <Link to={createPageUrl('ContentDossiers')}>
+              <Button variant="outline" size="sm">Ver Dossiês</Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
