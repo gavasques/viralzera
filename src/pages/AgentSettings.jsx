@@ -110,6 +110,13 @@ const AGENT_CARDS = [
     color: 'bg-red-400'
   },
   {
+    key: 'youtubeScriptEditor',
+    title: 'Edição - Roteiros Youtube',
+    description: 'Agente para edição de trechos selecionados (Melhorar, Expandir, Resumir).',
+    icon: ScrollText,
+    color: 'bg-red-500'
+  },
+  {
     key: 'youtubeTitleGenerator',
     title: 'YouTube - Gerador de Títulos',
     description: 'Agente especialista em criar títulos virais e magnéticos.',

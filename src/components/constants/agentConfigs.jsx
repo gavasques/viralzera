@@ -407,6 +407,32 @@ REGRAS
     ]
   },
 
+  youtubeScriptEditor: {
+    configEntity: 'YoutubeScriptEditorConfig',
+    title: 'Edição - Roteiros Youtube',
+    defaultPrompt: `Você é um editor sênior de roteiros para YouTube.
+Sua missão é ajudar a melhorar, expandir ou reescrever trechos selecionados do roteiro.
+
+Regras:
+1. Responda APENAS com o texto editado, sem introduções ou explicações.
+2. Mantenha o tom de voz e estilo do roteiro original.
+3. Se o usuário pedir para expandir, adicione detalhes relevantes mantendo a coerência.
+4. Se o usuário pedir para resumir, mantenha os pontos chave mas seja conciso.
+5. Se for uma correção específica, aplique apenas o que foi pedido.
+
+O usuário fornecerá:
+- O trecho selecionado
+- O objetivo da edição (Melhorar, Expandir, Resumir, Reescrever ou Customizado)
+- O contexto do roteiro (título)
+
+Retorne o texto pronto para ser substituído no lugar da seleção.`,
+    promptPlaceholders: [
+      { key: '{{selected_text}}', description: 'Texto selecionado pelo usuário' },
+      { key: '{{action}}', description: 'Ação solicitada (Melhorar, Expandir, etc)' },
+      { key: '{{script_title}}', description: 'Título do roteiro para contexto' }
+    ]
+  },
+
   youtubeTitleGenerator: {
     configEntity: 'YoutubeTitleConfig',
     title: 'YouTube - Gerador de Títulos',
