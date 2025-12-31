@@ -74,32 +74,14 @@ export default function Trends() {
         .replace("{ASSUNTO}", subject.trim())
         .replace("{PALAVRA_CHAVE}", keyword.trim() || subject.trim());
 
-      const response = await base44.functions.invoke('openrouter', {
-        action: 'chat',
+      const result = await searchTrends({
         model: trendConfig.search_model,
-        model_name: trendConfig.search_model_name,
-        enableWebSearch: true,
-        messages: [
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 4096,
-        feature: 'trends_search'
+        prompt,
       });
 
-      if (response.data.error) {
-        throw new Error(response.data.error);
-      }
-
-      const message = response.data.choices?.[0]?.message;
-      
-      if (!message?.content) {
-        throw new Error("Nenhum resultado retornado. Tente outro modelo ou refine sua busca.");
-      }
-
       setSearchResults({
-        content: message?.content || "",
-        annotations: message?.annotations || [],
+        content: result.content,
+        annotations: result.annotations,
         subject: subject.trim(),
         keyword: keyword.trim()
       });
