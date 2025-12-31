@@ -407,6 +407,36 @@ REGRAS
     ]
   },
 
+  youtubeTitleGenerator: {
+    configEntity: 'YoutubeTitleConfig',
+    title: 'YouTube - Gerador de Títulos',
+    defaultPrompt: `Analise o roteiro de vídeo do YouTube abaixo e sugira 5 títulos magnéticos e chamativos.
+
+Os títulos devem:
+- Ser curiosos e gerar cliques
+- Ter no máximo 60 caracteres
+- Usar gatilhos mentais (curiosidade, urgência, benefício)
+- Ser variados em estilo (alguns com números, alguns com perguntas, alguns diretos)
+
+## ROTEIRO:
+{{SCRIPT_CONTENT}}
+
+## FORMATO DE RESPOSTA:
+Retorne APENAS um JSON válido no formato:
+{
+  "titles": [
+    "Título 1",
+    "Título 2",
+    "Título 3",
+    "Título 4",
+    "Título 5"
+  ]
+}`,
+    promptPlaceholders: [
+      { key: '{{SCRIPT_CONTENT}}', description: 'Conteúdo completo do roteiro' }
+    ]
+  },
+
   modelingAssistant: {
     configEntity: 'ModelingAssistantConfig',
     title: 'Configurações do Assistente do Laboratório de Ideias',
@@ -448,36 +478,6 @@ REGRAS
 Formate a saída em Markdown.`,
     promptPlaceholders: [
       { key: '{{material_content}}', description: 'Conteúdo do vídeo, texto ou link' }
-    ]
-  },
-
-  youtubeTitleGenerator: {
-    configEntity: 'YoutubeTitleGeneratorConfig',
-    title: 'YouTube - Gerador de Títulos',
-    defaultPrompt: `Você é um especialista em copywriting e títulos virais para YouTube.
-    
-MISSÃO
-Analise o roteiro fornecido e sugira 5 títulos magnéticos e chamativos.
-
-REGRAS
-- Títulos curiosos que geram cliques (CTR alto)
-- Máximo de 60 caracteres
-- Use gatilhos mentais (curiosidade, urgência, benefício, polêmica)
-- Varie os estilos (listas, perguntas, afirmações fortes)
-- Retorne APENAS um JSON válido.
-
-FORMATO DE RESPOSTA (JSON):
-{
-  "titles": [
-    "Título 1",
-    "Título 2",
-    "Título 3",
-    "Título 4",
-    "Título 5"
-  ]
-}`,
-    promptPlaceholders: [
-      { key: '{{script_content}}', description: 'Conteúdo completo do roteiro' }
     ]
   },
 

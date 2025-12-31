@@ -110,6 +110,13 @@ const AGENT_CARDS = [
     color: 'bg-red-400'
   },
   {
+    key: 'youtubeTitleGenerator',
+    title: 'YouTube - Gerador de Títulos',
+    description: 'Agente especialista em criar títulos virais e magnéticos.',
+    icon: Youtube,
+    color: 'bg-red-500'
+  },
+  {
     key: 'modelingAssistant',
     title: 'Lab de Ideias - Assistente',
     description: 'Agente de brainstorming que conversa com o usuário dentro de uma Modelagem.',

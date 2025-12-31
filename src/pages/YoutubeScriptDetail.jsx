@@ -185,6 +185,7 @@ export default function YoutubeScriptDetail() {
         open={showTitleModal}
         onOpenChange={setShowTitleModal}
         scriptId={scriptId}
+        content={content}
         onTitleSelected={(newTitle) => {
           setTitle(newTitle);
           setInitialData(prev => ({ ...prev, title: newTitle }));

@@ -17,6 +17,7 @@ export default function TitleSuggestionsModal({
   open, 
   onOpenChange, 
   scriptId, 
+  content,
   onTitleSelected 
 }) {
   const queryClient = useQueryClient();
@@ -31,31 +32,47 @@ export default function TitleSuggestionsModal({
     setSelectedIndex(null);
 
     try {
-      // 1. Fetch config and script
-      const [configs, script] = await Promise.all([
-        base44.entities.YoutubeTitleGeneratorConfig.list(),
-        base44.entities.YoutubeScript.get(scriptId)
-      ]);
+      // 1. Buscar configuração do agente
+      const configs = await base44.entities.YoutubeTitleConfig.filter({});
+      const config = configs[0];
 
-      const config = configs?.[0];
       if (!config?.model) {
-        throw new Error('Agente de Títulos não configurado. Vá em Admin -> Agentes e configure o "YouTube - Gerador de Títulos".');
+        throw new Error('Modelo de IA não configurado para geração de títulos. Configure em Configurações de Agentes.');
       }
 
-      if (!script?.corpo) {
-        throw new Error('O roteiro precisa ter conteúdo para gerar títulos.');
-      }
+      // 2. Preparar prompt
+      const defaultPrompt = `Analise o roteiro de vídeo do YouTube abaixo e sugira 5 títulos magnéticos e chamativos.
 
-      // 2. Prepare prompt
-      const systemPrompt = config.prompt || `Você é um especialista em copywriting. Gere 5 títulos magnéticos para o roteiro abaixo. Retorne JSON: { "titles": [] }`;
-      const userPrompt = `Analise este roteiro e gere 5 títulos:\n\n${script.corpo.substring(0, 50000)}`;
+Os títulos devem:
+- Ser curiosos e gerar cliques
+- Ter no máximo 60 caracteres
+- Usar gatilhos mentais (curiosidade, urgência, benefício)
+- Ser variados em estilo (alguns com números, alguns com perguntas, alguns diretos)
 
-      // 3. Call AI
-      const response = await sendMessage({
+## ROTEIRO:
+{{SCRIPT_CONTENT}}
+
+## FORMATO DE RESPOSTA:
+Retorne APENAS um JSON válido no formato:
+{
+  "titles": [
+    "Título 1",
+    "Título 2",
+    "Título 3",
+    "Título 4",
+    "Título 5"
+  ]
+}`;
+
+      const systemPrompt = config.prompt || defaultPrompt;
+      const finalPrompt = systemPrompt.replace('{{SCRIPT_CONTENT}}', content || '(Roteiro vazio)');
+
+      // 3. Chamar IA
+      const aiResponse = await sendMessage({
         model: config.model,
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: 'system', content: 'Você é um especialista em copywriting para YouTube. Retorne apenas JSON.' },
+          { role: 'user', content: finalPrompt }
         ],
         options: {
           enableReasoning: config.enable_reasoning,
@@ -65,33 +82,39 @@ export default function TitleSuggestionsModal({
         }
       });
 
-      // 4. Parse JSON
+      // 4. Parsear resposta
       let generatedTitles = [];
-      const content = response.content;
+      const responseContent = aiResponse.content;
       
       try {
-        // Try to parse clean JSON first
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        const jsonStr = jsonMatch ? jsonMatch[0] : content;
+        // Tenta encontrar JSON no texto (caso venha com markdown ```json ... ```)
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+        const jsonStr = jsonMatch ? jsonMatch[0] : responseContent;
+        
         const parsed = JSON.parse(jsonStr);
-        if (Array.isArray(parsed.titles)) {
+        if (parsed.titles && Array.isArray(parsed.titles)) {
           generatedTitles = parsed.titles;
-        } else if (Array.isArray(parsed)) {
-          generatedTitles = parsed;
+        } else {
+           // Fallback se for array direto
+           if (Array.isArray(parsed)) generatedTitles = parsed;
         }
       } catch (e) {
-        // Fallback: extract lines that look like titles
-        generatedTitles = content
-          .split('\n')
-          .filter(line => /^\d+\.|^-/.test(line.trim()))
-          .map(line => line.replace(/^\d+\.|^-/, '').trim().replace(/^"|"$/g, ''));
+        console.warn('Falha ao parsear JSON, tentando extrair linhas', e);
+        // Fallback: tenta pegar linhas que parecem títulos (entre aspas ou bullets)
+        const lines = responseContent.split('\n');
+        generatedTitles = lines
+          .filter(l => l.trim().match(/^["\d-]/)) // Começa com aspas, numero ou hifen
+          .map(l => l.replace(/^[\d\-\.\s]+/, '').replace(/^"|"$/g, '').trim())
+          .filter(l => l.length > 5)
+          .slice(0, 5);
       }
 
       if (generatedTitles.length === 0) {
-        throw new Error('Não foi possível extrair títulos da resposta da IA.');
+        throw new Error('Não foi possível interpretar a resposta da IA. Tente novamente.');
       }
 
-      setTitles(generatedTitles.slice(0, 5));
+      setTitles(generatedTitles);
+
     } catch (error) {
       console.error('Error generating titles:', error);
       toast.error(error.message || 'Erro ao gerar títulos');
@@ -148,7 +171,9 @@ export default function TitleSuggestionsModal({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
-              <p className="text-sm text-slate-500">Gerando títulos...</p>
+              <p className="text-sm text-slate-500">
+                Lendo roteiro e gerando títulos...
+              </p>
             </div>
           ) : titles.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
