@@ -1,5 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { DeepResearchProvider } from './DeepResearchProvider';
 
 // Create a single QueryClient instance
 const queryClient = new QueryClient({
@@ -19,7 +20,9 @@ const queryClient = new QueryClient({
 export default function AppProviders({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <DeepResearchProvider>
+        {children}
+      </DeepResearchProvider>
     </QueryClientProvider>
   );
 }

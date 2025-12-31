@@ -44,6 +44,8 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CanvasProvider } from "@/components/canvas/CanvasProvider";
+import DeepResearchDrawer from "@/components/modeling/DeepResearchDrawer";
+import { useDeepResearch } from "@/components/providers/DeepResearchProvider";
 
 export default function Layout({ children }) {
   const location = useLocation();
@@ -68,6 +70,7 @@ export default function Layout({ children }) {
   };
 
   const { selectedFocusId, setFocus, currentFocus, allFocuses } = useSelectedFocus();
+  const { isOpen, modelingId, closeDeepResearch } = useDeepResearch();
 
   const { data: user, isLoading: isLoadingUser } = useQuery({
     queryKey: ['currentUser'],
@@ -420,6 +423,13 @@ export default function Layout({ children }) {
           </div>
         )}
       </main>
+
+      {/* Global Deep Research Drawer */}
+      <DeepResearchDrawer
+        open={isOpen}
+        onOpenChange={closeDeepResearch}
+        modelingId={modelingId}
+      />
     </div>
     </CanvasProvider>
   );

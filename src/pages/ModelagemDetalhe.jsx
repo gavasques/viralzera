@@ -25,7 +25,7 @@ import CreatorIdeaEditor from "@/components/modeling/CreatorIdeaEditor";
 import TranscriptViewerModal from "@/components/modeling/TranscriptViewerModal";
 import ModelingFormModal from "@/components/modeling/ModelingFormModal";
 import AssistantDrawer from "@/components/modeling/AssistantDrawer";
-import DeepResearchDrawer from "@/components/modeling/DeepResearchDrawer";
+import { useDeepResearch } from "@/components/providers/DeepResearchProvider";
 
 export default function ModelagemDetalhe() {
   const queryClient = useQueryClient();
@@ -41,9 +41,9 @@ export default function ModelagemDetalhe() {
   const [transcribingId, setTranscribingId] = useState(null);
   const [processingLinkId, setProcessingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
-  const [showDeepResearch, setShowDeepResearch] = useState(false);
   const [generatingDossier, setGeneratingDossier] = useState(false);
   const [analyzingId, setAnalyzingId] = useState(null);
+  const { openDeepResearch } = useDeepResearch();
 
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
@@ -733,7 +733,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
           <Button 
             variant="outline" 
             className="bg-blue-50 hover:bg-blue-100 text-blue-600"
-            onClick={() => setShowDeepResearch(true)}
+            onClick={() => openDeepResearch(modelingId)}
           >
             <Globe className="w-4 h-4 mr-2" />
             Deep Research
@@ -986,12 +986,6 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       <AssistantDrawer
         open={showAssistant}
         onOpenChange={setShowAssistant}
-        modelingId={modelingId}
-      />
-
-      <DeepResearchDrawer
-        open={showDeepResearch}
-        onOpenChange={setShowDeepResearch}
         modelingId={modelingId}
       />
       </div>
