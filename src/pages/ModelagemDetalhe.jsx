@@ -82,8 +82,9 @@ export default function ModelagemDetalhe() {
   const handleTranscribe = async (videoId) => {
     setTranscribingId(videoId);
     try {
+      // Use 'transcribe' action which handles both start and check status
       const response = await base44.functions.invoke('modelingTranscribe', {
-        action: 'start_transcription',
+        action: 'transcribe',
         videoId
       });
       
@@ -92,13 +93,13 @@ export default function ModelagemDetalhe() {
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       
       if (response.data.status === 'transcribing') {
-        toast.info('Transcrição iniciada! Isso pode levar alguns minutos.');
-      } else {
+        toast.info('Processando no Transkriptor...');
+      } else if (response.data.status === 'transcribed') {
         queryClient.invalidateQueries({ queryKey: ['modelings'] });
         toast.success('Transcrição concluída!');
       }
     } catch (error) {
-      toast.error('Erro ao iniciar: ' + error.message);
+      toast.error('Erro: ' + error.message);
     } finally {
       setTranscribingId(null);
     }
@@ -108,7 +109,7 @@ export default function ModelagemDetalhe() {
   const handleCheckStatus = async (videoId) => {
     try {
       const response = await base44.functions.invoke('modelingTranscribe', {
-        action: 'check_status',
+        action: 'transcribe', // Same action checks status if already processing
         videoId
       });
 
