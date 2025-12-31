@@ -59,6 +59,13 @@ export default function ModelagemDetalhe() {
     enabled: !!modelingId
   });
 
+  // Fetch analyses
+  const { data: analyses = [] } = useQuery({
+    queryKey: ['modelingAnalyses', modelingId],
+    queryFn: () => base44.entities.ModelingAnalysis.filter({ modeling_id: modelingId }),
+    enabled: !!modelingId
+  });
+
   // Fetch texts
   const { data: texts = [], isLoading: loadingTexts } = useQuery({
     queryKey: ['modelingTexts', modelingId],
@@ -233,15 +240,18 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
       // Executar análise individual do vídeo
       try {
+        toast.info('Analisando vídeo...');
         await base44.functions.invoke('runModelingAnalysis', {
           modeling_id: modelingId,
-          material_id: videoId,
-          material_type: 'video',
-          material_title: video.title,
+          materialId: videoId,
+          materialType: 'video',
           content: transcript
         });
+        queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
+        toast.success('Vídeo analisado!');
       } catch (analysisError) {
         console.error('Erro na análise individual:', analysisError);
+        toast.error('Transcrição OK, mas análise falhou: ' + analysisError.message);
       }
 
       } catch (error) {
@@ -368,15 +378,18 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
       // Executar análise individual do link
       try {
+        toast.info('Analisando link...');
         await base44.functions.invoke('runModelingAnalysis', {
           modeling_id: modelingId,
-          material_id: linkId,
-          material_type: 'link',
-          material_title: link.title,
+          materialId: linkId,
+          materialType: 'link',
           content: summary
         });
+        queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
+        toast.success('Link analisado!');
       } catch (analysisError) {
         console.error('Erro na análise individual:', analysisError);
+        toast.error('Link processado, mas análise falhou: ' + analysisError.message);
       }
 
       } catch (error) {
@@ -720,20 +733,24 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {videos.map(video => (
-                <VideoCard
-                  key={video.id}
-                  video={video}
-                  isTranscribing={transcribingId === video.id}
-                  onTranscribe={() => handleTranscribe(video.id)}
-                  onView={() => setViewingVideo(video)}
-                  onDelete={() => {
-                    if (confirm('Excluir este vídeo?')) {
-                      deleteVideoMutation.mutate(video.id);
-                    }
-                  }}
-                />
-              ))}
+              {videos.map(video => {
+                const analysis = analyses.find(a => a.material_id === video.id && a.material_type === 'video');
+                return (
+                  <VideoCard
+                    key={video.id}
+                    video={video}
+                    analysis={analysis}
+                    isTranscribing={transcribingId === video.id}
+                    onTranscribe={() => handleTranscribe(video.id)}
+                    onView={() => setViewingVideo(video)}
+                    onDelete={() => {
+                      if (confirm('Excluir este vídeo?')) {
+                        deleteVideoMutation.mutate(video.id);
+                      }
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
         </TabsContent>

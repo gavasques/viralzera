@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink
+  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Sparkles
 } from "lucide-react";
 
 const statusConfig = {
@@ -14,7 +14,8 @@ const statusConfig = {
   error: { label: "Erro", color: "bg-red-100 text-red-700", icon: AlertCircle }
 };
 
-export default function VideoCard({ video, onTranscribe, onView, onDelete, isTranscribing }) {
+export default function VideoCard({ video, analysis, onTranscribe, onView, onDelete, isTranscribing }) {
+  const [showAnalysis, setShowAnalysis] = React.useState(false);
   const status = statusConfig[video.status] || statusConfig.pending;
   const StatusIcon = status.icon;
 
@@ -88,6 +89,13 @@ export default function VideoCard({ video, onTranscribe, onView, onDelete, isTra
                 {status.label}
               </Badge>
               
+              {analysis?.status === 'completed' && (
+                <Badge className="bg-purple-100 text-purple-700 text-[10px]">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Analisado
+                </Badge>
+              )}
+              
               {video.status === 'transcribed' && (
                 <>
                   <Badge variant="outline" className="text-[10px]">
@@ -108,6 +116,24 @@ export default function VideoCard({ video, onTranscribe, onView, onDelete, isTra
 
             {video.notes && (
               <p className="text-xs text-slate-500 mt-2 line-clamp-1">{video.notes}</p>
+            )}
+
+            {/* Analysis Summary */}
+            {analysis?.status === 'completed' && (
+              <div className="mt-3 border-t pt-3">
+                <button
+                  onClick={() => setShowAnalysis(!showAnalysis)}
+                  className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {showAnalysis ? 'Ocultar' : 'Ver'} Análise
+                </button>
+                {showAnalysis && (
+                  <div className="mt-2 p-3 bg-purple-50 rounded-lg text-xs text-slate-700 max-h-40 overflow-y-auto">
+                    {analysis.analysis_summary}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Action Button */}
