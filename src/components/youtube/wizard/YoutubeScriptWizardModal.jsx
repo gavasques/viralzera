@@ -71,7 +71,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // Fetch full data needed for prompt
+      // 1. Fetch full data needed for prompt
       const [persona, audience, materials] = await Promise.all([
         formData.personaId ? base44.entities.Persona.get(formData.personaId) : null,
         formData.audienceId ? base44.entities.Audience.get(formData.audienceId) : null,
@@ -80,7 +80,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
           : []
       ]);
 
-      // Build prompt
+      // 2. Build prompt
       const prompt = buildYoutubePrompt({
         videoType: formData.videoType,
         title: formData.title,
@@ -90,28 +90,42 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         userNotes: formData.userNotes
       });
 
-      // Call onCreate with all data
-      await onCreate({
+      // 3. Call AI via backend function
+      const aiResponse = await base44.functions.invoke('youtubeScriptGenerator', {
+        prompt: prompt,
+        model: formData.model,
+        enableReasoning: formData.enableReasoning,
+        reasoningEffort: formData.reasoningEffort,
+        enableWebSearch: formData.enableWebSearch
+      });
+
+      if (!aiResponse.data?.success) {
+        throw new Error(aiResponse.data?.error || 'Erro ao gerar roteiro');
+      }
+
+      const generatedContent = aiResponse.data.content;
+
+      // 4. Get video type config for duration
+      const videoTypeConfig = getVideoTypeConfig(formData.videoType);
+
+      // 5. Create YoutubeScript record
+      await base44.entities.YoutubeScript.create({
         title: formData.title,
         video_type: formData.videoType,
-        persona_id: formData.personaId || null,
-        audience_id: formData.audienceId || null,
-        material_ids: formData.selectedMaterials,
+        corpo: generatedContent,
         duracao_estimada: formData.duracaoEstimada || null,
-        user_notes: formData.userNotes,
-        initialPrompt: prompt,
-        // Model Config
-        model: formData.model,
-        model_name: formData.modelName,
-        enable_reasoning: formData.enableReasoning,
-        reasoning_effort: formData.reasoningEffort,
-        enable_web_search: formData.enableWebSearch,
+        status: 'Rascunho',
         focus_id: selectedFocusId
       });
 
+      // 6. Close modal and redirect
       onOpenChange(false);
+      toast.success('Roteiro criado com sucesso!');
+      navigate(createPageUrl('YoutubeScripts'));
+
     } catch (error) {
       console.error("Error generating youtube script:", error);
+      toast.error(error.message || 'Erro ao gerar roteiro. Tente novamente.');
       setIsGenerating(false);
     }
   };
