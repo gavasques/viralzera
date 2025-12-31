@@ -40,13 +40,23 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
         status: 'completed'
       });
 
-      // Montar contexto com base nas análises
+      // Montar contexto
       let contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
       
+      if (modeling[0]?.description) {
+        contexto += `**Descrição:** ${modeling[0].description}\n\n`;
+      }
+      if (modeling[0]?.target_platform) {
+        contexto += `**Plataforma:** ${modeling[0].target_platform}\n`;
+      }
+      if (modeling[0]?.content_type) {
+        contexto += `**Tipo:** ${modeling[0].content_type}\n\n`;
+      }
       if (modeling[0]?.creator_idea) {
         contexto += `## 💡 Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
       }
 
+      // Usar análises se disponíveis, senão usar materiais brutos
       if (analyses.length > 0) {
         contexto += `## 📊 ANÁLISES DOS MATERIAIS (${analyses.length})\n\n`;
         
@@ -56,7 +66,51 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
           contexto += `---\n\n`;
         });
       } else {
-        contexto += `_Nenhuma análise de material disponível ainda. Os materiais precisam ser processados primeiro._\n\n`;
+        // Fallback: buscar materiais brutos
+        const videos = await base44.entities.ModelingVideo.filter({ modeling_id: modelingId });
+        const texts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
+        const links = await base44.entities.ModelingLink.filter({ modeling_id: modelingId });
+
+        const transcribedVideos = videos.filter(v => v.status === 'transcribed' && v.transcript);
+        if (transcribedVideos.length > 0) {
+          contexto += `## 🎥 VÍDEOS TRANSCRITOS (${transcribedVideos.length})\n\n`;
+          transcribedVideos.forEach((v, i) => {
+            contexto += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
+            if (v.channel_name) contexto += `**Canal:** ${v.channel_name}\n`;
+            if (v.notes) contexto += `**Notas:** ${v.notes}\n\n`;
+            // Limitar tamanho da transcrição para não estourar tokens
+            const transcriptPreview = v.transcript.length > 3000 
+              ? v.transcript.substring(0, 3000) + '\n\n_[transcrição truncada]_' 
+              : v.transcript;
+            contexto += `**Transcrição:**\n${transcriptPreview}\n\n---\n\n`;
+          });
+        }
+
+        if (texts.length > 0) {
+          contexto += `## 📄 TEXTOS (${texts.length})\n\n`;
+          texts.forEach((t, i) => {
+            contexto += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
+            if (t.description) contexto += `**Descrição:** ${t.description}\n\n`;
+            const contentPreview = t.content.length > 2000 
+              ? t.content.substring(0, 2000) + '\n\n_[texto truncado]_' 
+              : t.content;
+            contexto += `${contentPreview}\n\n---\n\n`;
+          });
+        }
+
+        const completedLinks = links.filter(l => l.status === 'completed' && l.summary);
+        if (completedLinks.length > 0) {
+          contexto += `## 🔗 LINKS PROCESSADOS (${completedLinks.length})\n\n`;
+          completedLinks.forEach((l, i) => {
+            contexto += `### Link ${i + 1}: ${l.title || l.url}\n\n`;
+            if (l.notes) contexto += `**Notas:** ${l.notes}\n\n`;
+            contexto += `**Resumo:**\n${l.summary}\n\n---\n\n`;
+          });
+        }
+
+        if (transcribedVideos.length === 0 && texts.length === 0 && completedLinks.length === 0) {
+          contexto += `_Nenhum material processado ainda. Adicione e processe vídeos, textos ou links para começar._\n\n`;
+        }
       }
 
       // Adicionar histórico do chat ao contexto
