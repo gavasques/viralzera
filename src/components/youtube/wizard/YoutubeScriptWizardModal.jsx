@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, FileText, Video, Users, Bot, Library } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
+import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
 
 import { StepName } from "./steps/StepName";
@@ -10,6 +11,7 @@ import { StepVideoType } from "./steps/StepVideoType";
 import { StepContext } from "./steps/StepContext";
 import { StepModel } from "./steps/StepModel";
 import { StepRefinement } from "./steps/StepRefinement";
+import { buildYoutubePrompt } from "./buildYoutubePrompt";
 
 const STEPS = [
   { id: 'name', title: 'Nome', description: 'Título do roteiro', icon: FileText },
@@ -65,6 +67,26 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange, onCreate 
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
+      // Fetch full data needed for prompt
+      const [persona, audience, materials] = await Promise.all([
+        formData.personaId ? base44.entities.Persona.get(formData.personaId) : null,
+        formData.audienceId ? base44.entities.Audience.get(formData.audienceId) : null,
+        formData.selectedMaterials.length > 0 
+          ? base44.entities.Material.filter({ id: { $in: formData.selectedMaterials } }) 
+          : []
+      ]);
+
+      // Build prompt
+      const prompt = buildYoutubePrompt({
+        videoType: formData.videoType,
+        title: formData.title,
+        persona: persona?.data || persona,
+        audience: audience?.data || audience,
+        materials: Array.isArray(materials) ? materials : (materials?.data || []),
+        userNotes: formData.userNotes
+      });
+
+      // Call onCreate with all data
       await onCreate({
         title: formData.title,
         video_type: formData.videoType,
@@ -73,6 +95,8 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange, onCreate 
         material_ids: formData.selectedMaterials,
         duracao_estimada: formData.duracaoEstimada || null,
         user_notes: formData.userNotes,
+        initialPrompt: prompt,
+        // Model Config
         model: formData.model,
         model_name: formData.modelName,
         enable_reasoning: formData.enableReasoning,
