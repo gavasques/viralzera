@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,12 @@ import PageHeader from "@/components/common/PageHeader";
 import EmptyState from "@/components/common/EmptyState";
 import { PageSkeleton } from "@/components/common/LoadingSkeleton";
 import YoutubeScriptCard from "@/components/youtube/YoutubeScriptCard";
+import YoutubeScriptWizardModal from "@/components/youtube/wizard/YoutubeScriptWizardModal";
 
 export default function YoutubeScripts() {
   const navigate = useNavigate();
   const { selectedFocusId } = useSelectedFocus();
+  const [showWizard, setShowWizard] = useState(false);
 
   const { data: scripts = [], isLoading } = useQuery({
     queryKey: ['youtube-scripts', selectedFocusId],
@@ -22,7 +24,7 @@ export default function YoutubeScripts() {
   });
 
   const handleNew = () => {
-    navigate(createPageUrl('YoutubeScriptDetail'));
+    setShowWizard(true);
   };
 
   const handleCardClick = (script) => {
