@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lightbulb, Database, Sparkles } from "lucide-react";
+import { Lightbulb, Database, Sparkles, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export function StepTema({ focusId, value, onChange }) {
   // Fetch modelings for selector
@@ -17,9 +18,6 @@ export function StepTema({ focusId, value, onChange }) {
 
   const handleModelingChange = (modelingId) => {
     if (modelingId === 'none') {
-      // Limpar seleção, mas manter tema se o usuário já digitou algo diferente (opcional, aqui vou manter o comportamento simples)
-      // Se quiser limpar o tema apenas se ele for igual ao da modelagem anterior, seria complexo.
-      // Vou apenas limpar a seleção de modelagem.
       onChange({ 
         ...value, 
         selectedModelings: [] 
@@ -29,41 +27,55 @@ export function StepTema({ focusId, value, onChange }) {
 
     const selectedModeling = modelings.find(m => m.id === modelingId);
     if (selectedModeling) {
-      const newTema = selectedModeling.creator_idea || value.tema;
+      const idea = selectedModeling.creator_idea;
+      const title = selectedModeling.title;
+      
+      // Use creator_idea if available, otherwise title
+      const newTema = idea || title || value.tema;
       
       onChange({ 
         ...value, 
         tema: newTema,
-        selectedModelings: [modelingId] // Define esta modelagem como selecionada
+        selectedModelings: [modelingId]
       });
+
+      if (idea) {
+        toast.success("Tema preenchido com a Ideia do Criador do Dossiê");
+      } else {
+        toast.info("Tema preenchido com o título da Modelagem");
+      }
     }
   };
 
-  // Find currently selected modeling (if any) to show in select
   const currentModelingId = value.selectedModelings?.[0] || '';
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
       
-      {/* Modeling Selector */}
-      <div className="space-y-3 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
-        <Label className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
-          <Database className="w-4 h-4 text-indigo-600" />
-          Basear em uma Modelagem (Opcional)
-        </Label>
-        <p className="text-xs text-indigo-600/80">
-          Selecione uma modelagem para preencher o tema automaticamente com a Ideia do Criador e usar os materiais como referência.
-        </p>
+      <div className="space-y-3 p-5 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-100 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="bg-white p-2 rounded-lg shadow-sm">
+            <FileText className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-sm font-bold text-indigo-900">
+              Carregar do Dossiê (Modelagem)
+            </Label>
+            <p className="text-xs text-indigo-700/80 leading-relaxed">
+              Selecione um dossiê existente para carregar a "Ideia do Criador" como tema e usar os materiais analisados como referência.
+            </p>
+          </div>
+        </div>
         
         <Select 
           value={currentModelingId} 
           onValueChange={handleModelingChange}
         >
-          <SelectTrigger className="bg-white border-indigo-200 focus:ring-indigo-500">
-            <SelectValue placeholder="Selecione uma modelagem..." />
+          <SelectTrigger className="bg-white border-indigo-200 focus:ring-indigo-500 h-10">
+            <SelectValue placeholder="Selecione um dossiê..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">-- Nenhuma (Começar do zero) --</SelectItem>
+            <SelectItem value="none">-- Começar do zero --</SelectItem>
             {modelings.map((m) => (
               <SelectItem key={m.id} value={m.id}>
                 {m.title}
@@ -71,37 +83,32 @@ export function StepTema({ focusId, value, onChange }) {
             ))}
           </SelectContent>
         </Select>
-
-        {currentModelingId && (
-          <div className="flex items-center gap-2 text-xs text-indigo-600 bg-indigo-100/50 p-2 rounded-lg">
-            <Sparkles className="w-3 h-3" />
-            <span>Modelagem selecionada e materiais vinculados para referência</span>
-          </div>
-        )}
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-base font-semibold text-slate-900 flex items-center gap-2">
-          <Lightbulb className="w-4 h-4 text-red-600" />
-          Tema Central do Vídeo
-        </Label>
-        <p className="text-sm text-slate-500">
-          Descreva sobre o que será o vídeo. Você pode editar a ideia trazida da modelagem.
-        </p>
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <Label className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+            Tema Central do Vídeo
+          </Label>
+          <p className="text-sm text-slate-500">
+            Descreva sobre o que será o vídeo ou refine a ideia importada do dossiê.
+          </p>
+        </div>
+
+        <Textarea
+          value={value.tema || ''}
+          onChange={(e) => onChange({ ...value, tema: e.target.value })}
+          placeholder="Ex: Como ganhar dinheiro vendendo na Amazon FBA em 2024..."
+          className="min-h-[140px] text-base resize-none p-4 shadow-sm border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+          autoFocus
+        />
       </div>
 
-      <Textarea
-        value={value.tema || ''}
-        onChange={(e) => onChange({ ...value, tema: e.target.value })}
-        placeholder="Ex: Como ganhar dinheiro vendendo na Amazon FBA em 2024, explicando os primeiros passos para iniciantes..."
-        className="min-h-[120px] text-base resize-none"
-        autoFocus
-      />
-
-      <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-        <p className="text-xs text-red-700 font-medium mb-1">💡 Dica</p>
-        <p className="text-xs text-red-600/80 leading-relaxed">
-          Quanto mais detalhes você fornecer sobre o tema, mais personalizado e relevante será o roteiro gerado.
+      <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
+        <Sparkles className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+        <p className="text-xs text-slate-500 leading-relaxed">
+          <strong>Dica Pro:</strong> A IA usará este tema junto com os materiais da modelagem selecionada para criar um roteiro único. Você pode editar o tema livremente acima.
         </p>
       </div>
     </div>
