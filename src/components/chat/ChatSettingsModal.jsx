@@ -51,14 +51,19 @@ export default function ChatSettingsModal({
     staleTime: 1000 * 60 * 5
   });
 
-  // Fetch ALL models via backend (cached globally)
+  // Fetch approved models from entity (admins pre-approved these)
   const { data: models = [], isLoading: loadingModels } = useQuery({
-    queryKey: ['openrouter-models-all'],
+    queryKey: ['approved-models-settings'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
-      return response.data?.models || [];
+      const approvedModels = await base44.entities.ApprovedModel.filter({ is_active: true }, 'order', 100);
+      // Transform to expected format
+      return approvedModels.map(m => ({
+        id: m.model_id,
+        name: m.alias || m.model_id,
+        supported_parameters: m.model_capabilities?.supportedParams || []
+      }));
     },
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5,
     enabled: open
   });
 
