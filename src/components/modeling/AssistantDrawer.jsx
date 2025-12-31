@@ -298,15 +298,9 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
             </div>
           ) : chatHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              {deepResearchMode ? (
-                <Sparkles className="w-12 h-12 text-purple-300 mb-3" />
-              ) : (
-                <BrainCircuit className="w-12 h-12 text-slate-300 mb-3" />
-              )}
+              <BrainCircuit className="w-12 h-12 text-slate-300 mb-3" />
               <p className="text-slate-500 text-sm">
-                {deepResearchMode 
-                  ? 'Faça uma pergunta complexa para iniciar uma pesquisa profunda'
-                  : 'Comece uma conversa para ter ideias baseadas no conteúdo desta modelagem'}
+                Comece uma conversa para ter ideias baseadas no conteúdo desta modelagem
               </p>
             </div>
           ) : (
@@ -317,14 +311,14 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
                   className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {msg.role === 'assistant' && (
-                    <div className={`p-2 rounded-full ${deepResearchMode ? 'bg-purple-100' : 'bg-amber-100'} shrink-0 h-fit`}>
-                      <Bot className={`w-4 h-4 ${deepResearchMode ? 'text-purple-600' : 'text-amber-600'}`} />
+                    <div className="p-2 rounded-full bg-amber-100 shrink-0 h-fit">
+                      <Bot className="w-4 h-4 text-amber-600" />
                     </div>
                   )}
                   <div
                     className={`rounded-lg px-4 py-2 max-w-[80%] ${
                       msg.role === 'user'
-                        ? deepResearchMode ? 'bg-purple-600 text-white' : 'bg-amber-600 text-white'
+                        ? 'bg-amber-600 text-white'
                         : 'bg-slate-100 text-slate-900'
                     }`}
                   >
@@ -345,8 +339,8 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
               ))}
               {sendMutation.isPending && (
                 <div className="flex gap-3 justify-start">
-                  <div className={`p-2 rounded-full ${deepResearchMode ? 'bg-purple-100' : 'bg-amber-100'} shrink-0 h-fit`}>
-                    <Bot className={`w-4 h-4 ${deepResearchMode ? 'text-purple-600' : 'text-amber-600'}`} />
+                  <div className="p-2 rounded-full bg-amber-100 shrink-0 h-fit">
+                    <Bot className="w-4 h-4 text-amber-600" />
                   </div>
                   <div className="rounded-lg px-4 py-2 bg-slate-100">
                     <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
