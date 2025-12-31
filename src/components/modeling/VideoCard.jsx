@@ -14,7 +14,7 @@ const statusConfig = {
   error: { label: "Erro", color: "bg-red-100 text-red-700", icon: AlertCircle }
 };
 
-export default function VideoCard({ video, analysis, onTranscribe, onView, onDelete, isTranscribing }) {
+export default function VideoCard({ video, analysis, onTranscribe, onAnalyze, onView, onDelete, isTranscribing, isAnalyzing }) {
   const [showAnalysis, setShowAnalysis] = React.useState(false);
   const status = statusConfig[video.status] || statusConfig.pending;
   const StatusIcon = status.icon;
@@ -136,39 +136,62 @@ export default function VideoCard({ video, analysis, onTranscribe, onView, onDel
               </div>
             )}
 
-            {/* Action Button */}
-            {video.status === 'pending' && (
-              <Button 
-                size="sm" 
-                className="mt-3 h-7 text-xs bg-pink-600 hover:bg-pink-700"
-                onClick={onTranscribe}
-                disabled={isTranscribing}
-              >
-                {isTranscribing ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Transcrevendo...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3 h-3 mr-1" />
-                    Transcrever
-                  </>
-                )}
-              </Button>
-            )}
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 mt-3">
+              {video.status === 'pending' && (
+                <Button 
+                  size="sm" 
+                  className="h-7 text-xs bg-pink-600 hover:bg-pink-700"
+                  onClick={onTranscribe}
+                  disabled={isTranscribing}
+                >
+                  {isTranscribing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Transcrevendo...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3 h-3 mr-1" />
+                      Transcrever
+                    </>
+                  )}
+                </Button>
+              )}
 
-            {video.status === 'error' && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="mt-3 h-7 text-xs"
-                onClick={onTranscribe}
-                disabled={isTranscribing}
-              >
-                Tentar novamente
-              </Button>
-            )}
+              {video.status === 'transcribed' && (!analysis || analysis.status !== 'completed') && (
+                <Button 
+                  size="sm" 
+                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
+                  onClick={onAnalyze}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Analisando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Analisar
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {video.status === 'error' && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={onTranscribe}
+                  disabled={isTranscribing}
+                >
+                  Tentar novamente
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

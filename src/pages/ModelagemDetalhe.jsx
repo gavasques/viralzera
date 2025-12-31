@@ -41,6 +41,7 @@ export default function ModelagemDetalhe() {
   const [processingLinkId, setProcessingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [generatingDossier, setGeneratingDossier] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState(null);
 
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
@@ -417,6 +418,35 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
+  // Analyze video
+  const handleAnalyzeVideo = async (videoId) => {
+    setAnalyzingId(videoId);
+    
+    const video = videos.find(v => v.id === videoId);
+    if (!video || !video.transcript) {
+      toast.error('Vídeo não transcrito');
+      setAnalyzingId(null);
+      return;
+    }
+
+    try {
+      toast.info('Analisando vídeo...');
+      await base44.functions.invoke('runModelingAnalysis', {
+        modeling_id: modelingId,
+        materialId: videoId,
+        materialType: 'video',
+        content: video.transcript
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
+      toast.success('Vídeo analisado!');
+    } catch (error) {
+      console.error('Erro na análise:', error);
+      toast.error('Erro ao analisar: ' + error.message);
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
   // Generate dossier and redirect to script wizard
   const handleCreateScript = async () => {
     console.log('🚀 Iniciando geração de dossiê...');
@@ -741,7 +771,9 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                     video={video}
                     analysis={analysis}
                     isTranscribing={transcribingId === video.id}
+                    isAnalyzing={analyzingId === video.id}
                     onTranscribe={() => handleTranscribe(video.id)}
+                    onAnalyze={() => handleAnalyzeVideo(video.id)}
                     onView={() => setViewingVideo(video)}
                     onDelete={() => {
                       if (confirm('Excluir este vídeo?')) {
