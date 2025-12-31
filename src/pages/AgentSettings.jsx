@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube } from 'lucide-react';
+import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube, BrainCircuit, Globe, FileArchive } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminProtection } from '@/components/admin/AdminProtection';
@@ -108,6 +108,27 @@ const AGENT_CARDS = [
     description: 'Agente que refina seções específicas do roteiro (hook, cta, etc).',
     icon: Sparkles,
     color: 'bg-red-400'
+  },
+  {
+    key: 'modelingAssistant',
+    title: 'Lab de Ideias - Assistente',
+    description: 'Agente de brainstorming que conversa com o usuário dentro de uma Modelagem.',
+    icon: BrainCircuit,
+    color: 'bg-amber-600'
+  },
+  {
+    key: 'modelingScraper',
+    title: 'Lab de Ideias - Leitor de Links',
+    description: 'Agente que lê e resume artigos de links externos para pesquisa.',
+    icon: Globe,
+    color: 'bg-sky-600'
+  },
+  {
+    key: 'dossierGenerator',
+    title: 'Lab de Ideias - Gerador de Dossiê',
+    description: 'Agente que compila todos os materiais de uma Modelagem em um único documento.',
+    icon: FileArchive,
+    color: 'bg-slate-600'
   }
 ];
 

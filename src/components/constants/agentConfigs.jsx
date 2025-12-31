@@ -405,6 +405,34 @@ REGRAS
       { key: 'SCRIPT_CONTEXT', description: 'Contexto do roteiro (título, tipo)' },
       { key: 'MODELINGS_DATA', description: 'Dados das modelagens de referência' }
     ]
+  },
+
+  modelingAssistant: {
+    configEntity: 'ModelingAssistantConfig',
+    title: 'Configurações do Assistente do Laboratório de Ideias',
+    defaultPrompt: `Você é um Assistente de Estratégia de Conteúdo para YouTube. Use o contexto fornecido (transcrições, textos, notas) para ajudar o usuário a ter ideias, analisar ângulos e estruturar tópicos para um novo vídeo. Seja um parceiro de brainstorming.`,
+    promptPlaceholders: [
+      { key: '{{historico_chat}}', description: 'Histórico da conversa atual' },
+      { key: '{{contexto_modelagem}}', description: 'Todo o conteúdo da modelagem (vídeos, textos, links)' }
+    ]
+  },
+
+  modelingScraper: {
+    configEntity: 'ModelingScraperConfig',
+    title: 'Configurações do Leitor de Links',
+    defaultPrompt: `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.`,
+    promptPlaceholders: [
+      { key: '{{conteudo_artigo}}', description: 'O texto completo extraído do link' }
+    ]
+  },
+
+  dossierGenerator: {
+    configEntity: 'DossierGeneratorConfig',
+    title: 'Configurações do Gerador de Dossiê',
+    defaultPrompt: `Você é um organizador de conteúdo. Sua tarefa é pegar os diversos materiais brutos (transcrições, textos, notas) e organizá-los em um único documento coeso em formato Markdown, chamado 'Dossiê de Conteúdo'. Crie seções claras para cada tipo de material.`,
+    promptPlaceholders: [
+      { key: '{{materiais_brutos}}', description: 'Concatenação de todos os textos da modelagem' }
+    ]
   }
 };
 
