@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube, BrainCircuit, Globe, FileArchive } from 'lucide-react';
+import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube, BrainCircuit, Globe, FileArchive, FileScan } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AdminProtection } from '@/components/admin/AdminProtection';
@@ -129,6 +129,13 @@ const AGENT_CARDS = [
     description: 'Agente que compila todos os materiais de uma Modelagem em um único documento.',
     icon: FileArchive,
     color: 'bg-slate-600'
+  },
+  {
+    key: 'modelingAnalyzer',
+    title: 'Lab de Ideias - Analisador Individual',
+    description: 'Agente que analisa cada vídeo, texto ou link e cria um resumo analítico.',
+    icon: FileScan,
+    color: 'bg-teal-600'
   }
 ];
 

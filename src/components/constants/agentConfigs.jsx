@@ -433,6 +433,22 @@ REGRAS
     promptPlaceholders: [
       { key: '{{materiais_brutos}}', description: 'Concatenação de todos os textos da modelagem' }
     ]
+  },
+
+  modelingAnalyzer: {
+    configEntity: 'ModelingAnalyzerConfig',
+    title: 'Configurações do Analisador Individual',
+    defaultPrompt: `Você é um Analista de Conteúdo Sênior. Sua tarefa é analisar o material a seguir (transcrição de vídeo, texto ou resumo de artigo) e criar um resumo analítico focado em:
+
+1. **Ideia Central**: Qual o principal argumento ou mensagem?
+2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
+3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
+4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
+
+Formate a saída em Markdown.`,
+    promptPlaceholders: [
+      { key: '{{material_content}}', description: 'Conteúdo do vídeo, texto ou link' }
+    ]
   }
 };
 
