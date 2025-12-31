@@ -27,12 +27,11 @@ export default function YoutubeScriptDetail() {
 
   // Local state for editing
   const [title, setTitle] = useState('');
-  const [sections, setSections] = useState(getEmptySections());
+  const [content, setContent] = useState('');
   const [initialData, setInitialData] = useState(null);
   
   // Refiner drawer state
   const [refinerOpen, setRefinerOpen] = useState(false);
-  const [refinerSection, setRefinerSection] = useState(null);
   
   // Title suggestions modal state
   const [showTitleModal, setShowTitleModal] = useState(false);
