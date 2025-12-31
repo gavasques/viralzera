@@ -15,8 +15,7 @@ import ReactMarkdown from 'react-markdown';
 export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
-  const [deepResearchMode, setDeepResearchMode] = useState(false);
-  const [useDossier, setUseDossier] = useState(false);
+
   const scrollRef = useRef(null);
 
   // Fetch dossier
