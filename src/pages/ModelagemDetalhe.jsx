@@ -80,13 +80,17 @@ export default function ModelagemDetalhe() {
 
   // Transcribe video (Start)
   const handleTranscribe = async (videoId) => {
+    console.log('handleTranscribe called for', videoId);
     setTranscribingId(videoId);
     try {
+      console.log('Invoking modelingTranscribe...');
       // Use 'transcribe' action which handles both start and check status
       const response = await base44.functions.invoke('modelingTranscribe', {
         action: 'transcribe',
         videoId
       });
+      
+      console.log('Response:', response);
       
       if (response.data.error) throw new Error(response.data.error);
       
@@ -99,6 +103,7 @@ export default function ModelagemDetalhe() {
         toast.success('Transcrição concluída!');
       }
     } catch (error) {
+      console.error('Transcribe error:', error);
       toast.error('Erro: ' + error.message);
     } finally {
       setTranscribingId(null);

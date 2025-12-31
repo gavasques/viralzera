@@ -115,7 +115,12 @@ export default function VideoCard({ video, onTranscribe, onView, onDelete, isTra
               <Button 
                 size="sm" 
                 className="mt-3 h-7 text-xs bg-pink-600 hover:bg-pink-700"
-                onClick={onTranscribe}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  console.log('VideoCard: Transcribe clicked', video.id);
+                  if (onTranscribe) onTranscribe();
+                }}
                 disabled={isTranscribing}
               >
                 {isTranscribing ? (
