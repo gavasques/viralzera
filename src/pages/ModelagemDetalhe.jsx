@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { invokeFunction } from "@/components/utils/invokeFunction";
+import { createClient } from "@base44/sdk";
 import { Button } from "@/components/ui/button";
+
+const functionClient = createClient();
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -67,7 +69,7 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      invokeFunction('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      functionClient.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
       toast.success('Vídeo excluído!');
     }
   });
@@ -78,7 +80,7 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      invokeFunction('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      functionClient.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
       toast.success('Texto excluído!');
     }
   });
@@ -90,7 +92,7 @@ export default function ModelagemDetalhe() {
     try {
       console.log('Invoking modelingTranscribe...');
       // Use 'transcribe' action which handles both start and check status
-      const response = await invokeFunction('modelingTranscribe', {
+      const response = await functionClient.functions.invoke('modelingTranscribe', {
         action: 'transcribe',
         videoId
       });
@@ -118,7 +120,7 @@ export default function ModelagemDetalhe() {
   // Check Status
   const handleCheckStatus = async (videoId) => {
     try {
-      const response = await invokeFunction('modelingTranscribe', {
+      const response = await functionClient.functions.invoke('modelingTranscribe', {
         action: 'transcribe', // Same action checks status if already processing
         videoId
       });
@@ -128,7 +130,7 @@ export default function ModelagemDetalhe() {
       if (response.data.status === 'transcribed') {
         queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
         queryClient.invalidateQueries({ queryKey: ['modelings'] });
-        invokeFunction('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+        functionClient.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
         toast.success('Transcrição finalizada!');
       } else if (response.data.status === 'transcribing') {
         toast.info('Ainda processando...');
