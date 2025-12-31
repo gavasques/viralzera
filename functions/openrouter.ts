@@ -10,8 +10,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admins can access this endpoint
-    if (user.role !== 'admin') {
+    // Only admins can access listModels
+    const { action } = await req.clone().json();
+    if (action === 'listModels' && user.role !== 'admin') {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
