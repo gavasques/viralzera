@@ -64,6 +64,8 @@ import YoutubeScripts from "./YoutubeScripts";
 
 import YoutubeScriptDetail from "./YoutubeScriptDetail";
 
+import AdminScriptTypes from "./AdminScriptTypes";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import AppProviders from '@/components/providers/AppProviders';
 
@@ -132,6 +134,8 @@ const PAGES = {
     YoutubeScripts: YoutubeScripts,
 
     YoutubeScriptDetail: YoutubeScriptDetail,
+
+    AdminScriptTypes: AdminScriptTypes,
 
     }
 
@@ -223,6 +227,8 @@ function PagesContent() {
                 <Route path="/YoutubeScripts" element={<YoutubeScripts />} />
 
                     <Route path="/YoutubeScriptDetail" element={<YoutubeScriptDetail />} />
+
+                <Route path="/AdminScriptTypes" element={<AdminScriptTypes />} />
 
                 </Routes>
         </Layout>
