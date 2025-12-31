@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Layers, Youtube, FileText, Plus, Hash, 
-  Video, Loader2, PlayCircle, Settings, BrainCircuit
+  Video, Loader2, PlayCircle, Settings, BrainCircuit, Link2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -18,6 +18,9 @@ import VideoCard from "@/components/modeling/VideoCard";
 import TextCard from "@/components/modeling/TextCard";
 import AddVideoModal from "@/components/modeling/AddVideoModal";
 import AddTextModal from "@/components/modeling/AddTextModal";
+import AddLinkModal from "@/components/modeling/AddLinkModal";
+import LinkCard from "@/components/modeling/LinkCard";
+import LinkViewerModal from "@/components/modeling/LinkViewerModal";
 import CreatorIdeaEditor from "@/components/modeling/CreatorIdeaEditor";
 import TranscriptViewerModal from "@/components/modeling/TranscriptViewerModal";
 import ModelingFormModal from "@/components/modeling/ModelingFormModal";
@@ -30,9 +33,12 @@ export default function ModelagemDetalhe() {
 
   const [showAddVideo, setShowAddVideo] = useState(false);
   const [showAddText, setShowAddText] = useState(false);
+  const [showAddLink, setShowAddLink] = useState(false);
   const [showEditModeling, setShowEditModeling] = useState(false);
   const [viewingVideo, setViewingVideo] = useState(null);
+  const [viewingLink, setViewingLink] = useState(null);
   const [transcribingId, setTranscribingId] = useState(null);
+  const [processingLinkId, setProcessingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
 
   // Fetch modeling
@@ -59,6 +65,13 @@ export default function ModelagemDetalhe() {
     enabled: !!modelingId
   });
 
+  // Fetch links
+  const { data: links = [], isLoading: loadingLinks } = useQuery({
+    queryKey: ['modelingLinks', modelingId],
+    queryFn: () => base44.entities.ModelingLink.filter({ modeling_id: modelingId }, '-created_date', 100),
+    enabled: !!modelingId
+  });
+
   // Delete video mutation
   const deleteVideoMutation = useMutation({
     mutationFn: (id) => base44.entities.ModelingVideo.delete(id),
@@ -76,8 +89,17 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      updateModelingTotals().catch(() => {});
       toast.success('Texto excluído!');
+    }
+  });
+
+  // Delete link mutation
+  const deleteLinkMutation = useMutation({
+    mutationFn: (id) => base44.entities.ModelingLink.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
+      queryClient.invalidateQueries({ queryKey: ['modelings'] });
+      toast.success('Link excluído!');
     }
   });
 
@@ -237,6 +259,35 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
+  // Process link
+  const handleProcessLink = async (linkId) => {
+    setProcessingLinkId(linkId);
+    
+    try {
+      await base44.functions.invoke('modelingScraper', { link_id: linkId });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
+      queryClient.invalidateQueries({ queryKey: ['modelings'] });
+      toast.success('Link processado!');
+    } catch (error) {
+      toast.error('Erro ao processar link: ' + error.message);
+    } finally {
+      setProcessingLinkId(null);
+    }
+  };
+
+  // Process all pending links
+  const handleProcessAllLinks = async () => {
+    const pendingLinks = links.filter(l => l.status === 'pending');
+    if (pendingLinks.length === 0) {
+      toast.info('Nenhum link pendente para processar');
+      return;
+    }
+
+    for (const link of pendingLinks) {
+      await handleProcessLink(link.id);
+    }
+  };
+
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -245,6 +296,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
   const pendingCount = videos.filter(v => v.status === 'pending').length;
   const transcribedCount = videos.filter(v => v.status === 'transcribed').length;
+  const pendingLinksCount = links.filter(l => l.status === 'pending').length;
 
   if (!modelingId) {
     return (
@@ -317,7 +369,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
           <Video className="w-5 h-5 text-red-500 mx-auto mb-1" />
           <p className="text-2xl font-bold text-slate-900">{videos.length}</p>
@@ -327,6 +379,11 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
           <FileText className="w-5 h-5 text-blue-500 mx-auto mb-1" />
           <p className="text-2xl font-bold text-slate-900">{texts.length}</p>
           <p className="text-xs text-slate-500">Textos</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
+          <Link2 className="w-5 h-5 text-sky-500 mx-auto mb-1" />
+          <p className="text-2xl font-bold text-slate-900">{links.length}</p>
+          <p className="text-xs text-slate-500">Links</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
           <Hash className="w-5 h-5 text-purple-500 mx-auto mb-1" />
@@ -354,6 +411,10 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             <TabsTrigger value="texts" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
               <FileText className="w-4 h-4 mr-2" />
               Textos ({texts.length})
+            </TabsTrigger>
+            <TabsTrigger value="links" className="data-[state=active]:bg-sky-50 data-[state=active]:text-sky-600">
+              <Link2 className="w-4 h-4 mr-2" />
+              Links ({links.length})
             </TabsTrigger>
           </TabsList>
 
@@ -448,6 +509,58 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             </div>
           )}
         </TabsContent>
+
+        {/* Links Tab */}
+        <TabsContent value="links" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              {pendingLinksCount > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleProcessAllLinks}
+                  disabled={processingLinkId !== null}
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  Processar Todos ({pendingLinksCount})
+                </Button>
+              )}
+            </div>
+            <Button onClick={() => setShowAddLink(true)} className="bg-sky-600 hover:bg-sky-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Link
+            </Button>
+          </div>
+
+          {loadingLinks ? (
+            <CardGridSkeleton count={3} columns={2} />
+          ) : links.length === 0 ? (
+            <EmptyState
+              icon={Link2}
+              title="Nenhum link adicionado"
+              description="Adicione links de artigos e páginas para processar e resumir"
+              actionLabel="Adicionar Link"
+              onAction={() => setShowAddLink(true)}
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {links.map(link => (
+                <LinkCard
+                  key={link.id}
+                  link={link}
+                  isProcessing={processingLinkId === link.id}
+                  onProcess={() => handleProcessLink(link.id)}
+                  onView={() => setViewingLink(link)}
+                  onDelete={() => {
+                    if (confirm('Excluir este link?')) {
+                      deleteLinkMutation.mutate(link.id);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Modals */}
@@ -463,10 +576,22 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         modelingId={modelingId}
       />
 
+      <AddLinkModal
+        open={showAddLink}
+        onOpenChange={setShowAddLink}
+        modelingId={modelingId}
+      />
+
       <TranscriptViewerModal
         open={!!viewingVideo}
         onOpenChange={() => setViewingVideo(null)}
         video={viewingVideo}
+      />
+
+      <LinkViewerModal
+        open={!!viewingLink}
+        onOpenChange={() => setViewingLink(null)}
+        link={viewingLink}
       />
 
       <ModelingFormModal

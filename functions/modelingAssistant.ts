@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     const modeling = await base44.entities.Modeling.filter({ id: modeling_id });
     const videos = await base44.entities.ModelingVideo.filter({ modeling_id });
     const texts = await base44.entities.ModelingText.filter({ modeling_id });
+    const links = await base44.entities.ModelingLink.filter({ modeling_id });
 
     // Montar contexto
     let contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
@@ -56,6 +57,16 @@ Deno.serve(async (req) => {
       contexto += `## Textos (${texts.length})\n`;
       texts.forEach((t, i) => {
         contexto += `\n### Texto ${i + 1}: ${t.title || 'Sem título'}\n${t.content}\n`;
+      });
+    }
+
+    if (links.length > 0) {
+      contexto += `\n## Links Processados (${links.length})\n`;
+      links.filter(l => l.status === 'completed').forEach((l, i) => {
+        contexto += `\n### Link ${i + 1}: ${l.title || l.url}\n`;
+        if (l.summary) {
+          contexto += `${l.summary}\n`;
+        }
       });
     }
 
