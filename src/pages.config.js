@@ -28,6 +28,7 @@ import TwitterProjects from './pages/TwitterProjects';
 import UsageAnalytics from './pages/UsageAnalytics';
 import UserSettings from './pages/UserSettings';
 import index from './pages/index';
+import YoutubeScripts from './pages/YoutubeScripts';
 
 
 export const PAGES = {
@@ -61,6 +62,7 @@ export const PAGES = {
     "UsageAnalytics": UsageAnalytics,
     "UserSettings": UserSettings,
     "index": index,
+    "YoutubeScripts": YoutubeScripts,
 }
 
 export const pagesConfig = {
