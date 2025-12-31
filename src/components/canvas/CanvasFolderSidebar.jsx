@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Folder, FolderPlus, MoreVertical, Pencil, Trash2, FolderOpen, Layers } from 'lucide-react';
+import { Folder, FolderPlus, MoreVertical, Pencil, Trash2, FolderOpen, Layers, Archive } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -110,6 +110,17 @@ export default function CanvasFolderSidebar({ selectedFolderId, onSelectFolder }
                 >
                     <FolderOpen className="w-4 h-4" />
                     Sem Pasta
+                </button>
+                <button
+                    onClick={() => onSelectFolder('archived')}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                        selectedFolderId === 'archived' 
+                        ? 'bg-amber-50 text-amber-700 font-medium' 
+                        : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                >
+                    <Archive className="w-4 h-4" />
+                    Arquivados
                 </button>
 
                 <div className="h-px bg-slate-100 my-2 mx-2" />
