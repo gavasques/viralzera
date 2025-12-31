@@ -77,8 +77,12 @@ export default function DeepResearchDrawer({ open, onOpenChange, modelingId }) {
         };
       }
 
-      // Add web search if enabled
+      // Add web search if enabled - using provider routing
       if (config.enable_web_search) {
+        requestBody.provider = {
+          allow_fallbacks: false,
+          require_parameters: true
+        };
         requestBody.tools = [{
           type: 'web_search_ddg'
         }];
