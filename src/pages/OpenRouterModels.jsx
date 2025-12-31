@@ -42,11 +42,18 @@ export default function OpenRouterModels() {
   const [selectedModel, setSelectedModel] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
-  const { data: models = [], isLoading } = useQuery({
+  const { data: models = [], isLoading, error } = useQuery({
     queryKey: ['openrouter-models-full'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
-      return response.data?.models || [];
+      console.log('[OpenRouterModels] Fetching models...');
+      try {
+        const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
+        console.log('[OpenRouterModels] Response:', response);
+        return response.data?.models || [];
+      } catch (err) {
+        console.error('[OpenRouterModels] Error:', err);
+        throw err;
+      }
     },
     staleTime: 1000 * 60 * 5 // 5 minutes
   });
