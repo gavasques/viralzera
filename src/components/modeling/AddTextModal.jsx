@@ -29,20 +29,33 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.ModelingText.create({
-      ...data,
-      modeling_id: modelingId,
-      character_count: data.content.length,
-      token_estimate: Math.ceil(data.content.length / 4)
-    }),
+    mutationFn: async (data) => {
+      const newText = await base44.entities.ModelingText.create({
+        ...data,
+        modeling_id: modelingId,
+        character_count: data.content.length,
+        token_estimate: Math.ceil(data.content.length / 4)
+      });
+
+      // Update modeling totals
+      const allTexts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
+      const allVideos = await base44.entities.ModelingVideo.filter({ modeling_id: modelingId });
+      
+      const textChars = allTexts.reduce((sum, t) => sum + (t.character_count || 0), 0);
+      const textTokens = allTexts.reduce((sum, t) => sum + (t.token_estimate || 0), 0);
+      const videoChars = allVideos.reduce((sum, v) => sum + (v.character_count || 0), 0);
+      const videoTokens = allVideos.reduce((sum, v) => sum + (v.token_estimate || 0), 0);
+
+      await base44.entities.Modeling.update(modelingId, {
+        total_characters: textChars + videoChars,
+        total_tokens_estimate: textTokens + videoTokens
+      });
+
+      return newText;
+    },
     onSuccess: (newText) => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      // Update totals
-      base44.functions.invoke('modelingTranscribe', { 
-        action: 'updateTotals', 
-        modelingId 
-      }).catch(() => {});
       
       toast.success('Texto adicionado!');
 
@@ -59,7 +72,10 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
       setFormData({ title: '', description: '', content: '', text_type: 'reference' });
       onOpenChange(false);
     },
-    onError: (err) => toast.error('Erro ao adicionar: ' + err.message)
+    onError: (err) => {
+      console.error('Erro ao adicionar texto:', err);
+      toast.error('Erro ao adicionar: ' + err.message);
+    }
   });
 
   const handleSubmit = (e) => {
