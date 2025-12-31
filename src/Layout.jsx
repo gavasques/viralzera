@@ -14,30 +14,25 @@ import { useSelectedFocus } from '@/components/hooks/useSelectedFocus';
 const menuItems = [
   { section: 'Principal', items: [
     { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
+    { name: 'Gestão de Postagens', icon: Calendar, page: 'PostManagement' },
   ]},
   { section: 'Criação', items: [
     { name: 'Multi Chat', icon: Bot, page: 'TitanosRouter' },
     { name: 'Canvas', icon: ScrollText, page: 'Canvas' },
   ]},
-  { section: 'Estratégia', items: [
-    { name: 'Focos', icon: Target, page: 'FocusManager' },
-    { name: 'Públicos-Alvo', icon: Users, page: 'Audiences' },
-    { name: 'Personas', icon: FileText, page: 'Personas' },
-    { name: 'Produtos', icon: Package, page: 'Products' },
-  ]},
   { section: 'Conteúdo', items: [
-    { name: 'Tipos de Postagem', icon: Layers, page: 'PostTypes' },
-    { name: 'Temas', icon: FolderTree, page: 'ThemeMatrix' },
-    { name: 'Materiais', icon: Library, page: 'MaterialBank' },
+    { name: 'Banco de Listas', icon: Library, page: 'MaterialBank' },
     { name: 'Tendências', icon: TrendingUp, page: 'Trends' },
-  ]},
-  { section: 'DNA', items: [
-    { name: 'DNA de Comunicação', icon: Dna, page: 'DNACommunication' },
+    { name: 'Matriz de Temas', icon: FolderTree, page: 'ThemeMatrix' },
+    { name: 'Prompts', icon: MessageSquare, page: 'Prompts' },
+    { name: 'Tipos de Postagem', icon: Layers, page: 'PostTypes' },
     { name: 'Modelagem', icon: Video, page: 'ContentModeling' },
   ]},
-  { section: 'Gestão', items: [
-    { name: 'Postagens', icon: Calendar, page: 'PostManagement' },
-    { name: 'Configurações', icon: Settings, page: 'Settings' },
+  { section: 'DNA', items: [
+    { name: 'Público-Alvo', icon: Users, page: 'Audiences' },
+    { name: 'Minha Persona', icon: FileText, page: 'Personas' },
+    { name: 'Produtos', icon: Package, page: 'Products' },
+    { name: 'DNA Comunicação', icon: Dna, page: 'DNACommunication' },
   ]},
 ];
 
