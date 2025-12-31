@@ -24,26 +24,19 @@ export default function ModelManagement() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(null);
 
-  // Fetch all OpenRouter models (only when user is authenticated)
+  // Fetch all OpenRouter models directly from API (public endpoint)
   const { data: allModels = [], isLoading: isLoadingModels, error: modelsError, refetch: refetchModels } = useQuery({
     queryKey: ['openrouterModels'],
     queryFn: async () => {
-      console.log('[ModelManagement] Fetching models via base44.functions...');
-      console.log('[ModelManagement] base44:', base44);
-      console.log('[ModelManagement] base44.functions:', base44?.functions);
-      try {
-        if (!base44?.functions?.invoke) {
-          throw new Error('base44.functions.invoke não está disponível');
-        }
-        const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
-        console.log('[ModelManagement] Raw response:', response);
-        const models = response.data?.models || [];
-        console.log('[ModelManagement] Loaded models:', models.length);
-        return models;
-      } catch (err) {
-        console.error('[ModelManagement] Error:', err);
-        throw err;
+      console.log('[ModelManagement] Fetching models from OpenRouter API...');
+      const response = await fetch('https://openrouter.ai/api/v1/models');
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status}`);
       }
+      const data = await response.json();
+      const models = data.data || [];
+      console.log('[ModelManagement] Loaded models:', models.length);
+      return models;
     },
     staleTime: 300000,
     retry: 1

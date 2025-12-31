@@ -45,20 +45,14 @@ export default function OpenRouterModels() {
   const { data: models = [], isLoading, error } = useQuery({
     queryKey: ['openrouter-models-full'],
     queryFn: async () => {
-      console.log('[OpenRouterModels] Fetching models...');
-      console.log('[OpenRouterModels] base44:', base44);
-      console.log('[OpenRouterModels] base44.functions:', base44?.functions);
-      try {
-        if (!base44?.functions?.invoke) {
-          throw new Error('base44.functions.invoke não está disponível');
-        }
-        const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
-        console.log('[OpenRouterModels] Response:', response);
-        return response.data?.models || [];
-      } catch (err) {
-        console.error('[OpenRouterModels] Error:', err);
-        throw err;
+      console.log('[OpenRouterModels] Fetching models from OpenRouter API...');
+      const response = await fetch('https://openrouter.ai/api/v1/models');
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status}`);
       }
+      const data = await response.json();
+      console.log('[OpenRouterModels] Loaded models:', data.data?.length);
+      return data.data || [];
     },
     staleTime: 1000 * 60 * 5 // 5 minutes
   });

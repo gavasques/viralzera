@@ -143,19 +143,19 @@ export async function sendMessage({
 }
 
 /**
- * Busca lista de modelos disponíveis via backend
+ * Busca lista de modelos disponíveis diretamente da API OpenRouter
  * Retorna dados completos incluindo supported_parameters
  */
 export async function fetchModels() {
   try {
-    if (!base44?.functions?.invoke) {
-      console.error('[fetchModels] base44.functions.invoke not available', { base44 });
-      throw new Error('Cliente base44 não inicializado corretamente');
+    const response = await fetch('https://openrouter.ai/api/v1/models');
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status}`);
     }
-    const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
-    return response.data?.models || [];
+    const data = await response.json();
+    return data.data || [];
   } catch (error) {
-    console.error('[fetchModels] Error invoking backend:', error);
+    console.error('[fetchModels] Error:', error);
     throw new Error(error.message || 'Erro ao carregar modelos');
   }
 }
