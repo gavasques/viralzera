@@ -14,7 +14,7 @@ import DNACommunication from "./DNACommunication";
 
 import Dashboard from "./Dashboard";
 
-import Landing from "./Landing";
+
 
 import MaterialBank from "./MaterialBank";
 
@@ -79,7 +79,7 @@ const PAGES = {
     
     Dashboard: Dashboard,
     
-    Landing: Landing,
+
     
     MaterialBank: MaterialBank,
     
@@ -166,7 +166,7 @@ function PagesContent() {
                 
                 <Route path="/Dashboard" element={<Dashboard />} />
                 
-                <Route path="/Landing" element={<Landing />} />
+
                 
                 <Route path="/MaterialBank" element={<MaterialBank />} />
                 
