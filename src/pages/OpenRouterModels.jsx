@@ -46,7 +46,12 @@ export default function OpenRouterModels() {
     queryKey: ['openrouter-models-full'],
     queryFn: async () => {
       console.log('[OpenRouterModels] Fetching models...');
+      console.log('[OpenRouterModels] base44:', base44);
+      console.log('[OpenRouterModels] base44.functions:', base44?.functions);
       try {
+        if (!base44?.functions?.invoke) {
+          throw new Error('base44.functions.invoke não está disponível');
+        }
         const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
         console.log('[OpenRouterModels] Response:', response);
         return response.data?.models || [];

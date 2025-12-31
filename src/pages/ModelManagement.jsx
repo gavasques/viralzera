@@ -29,7 +29,12 @@ export default function ModelManagement() {
     queryKey: ['openrouterModels'],
     queryFn: async () => {
       console.log('[ModelManagement] Fetching models via base44.functions...');
+      console.log('[ModelManagement] base44:', base44);
+      console.log('[ModelManagement] base44.functions:', base44?.functions);
       try {
+        if (!base44?.functions?.invoke) {
+          throw new Error('base44.functions.invoke não está disponível');
+        }
         const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
         console.log('[ModelManagement] Raw response:', response);
         const models = response.data?.models || [];
