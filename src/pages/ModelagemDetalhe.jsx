@@ -82,10 +82,13 @@ export default function ModelagemDetalhe() {
   const handleTranscribe = async (videoId) => {
     setTranscribingId(videoId);
     try {
+      console.log('Iniciando transcrição do vídeo:', videoId);
       const response = await base44.functions.invoke('modelingTranscribe', {
         action: 'transcribe',
         videoId
       });
+      
+      console.log('Resposta da API:', response);
       
       if (response.data.error) throw new Error(response.data.error);
       
@@ -93,6 +96,7 @@ export default function ModelagemDetalhe() {
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Transcrição concluída!');
     } catch (error) {
+      console.error('Erro na transcrição:', error);
       toast.error('Erro na transcrição: ' + error.message);
     } finally {
       setTranscribingId(null);
