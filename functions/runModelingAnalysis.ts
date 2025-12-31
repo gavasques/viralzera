@@ -9,60 +9,51 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { modeling_id, material_id, material_type, material_title, content } = await req.json();
+    const { materialId, materialType, content, modeling_id } = await req.json();
 
-    if (!modeling_id || !material_id || !material_type || !content) {
+    if (!materialId || !materialType || !content || !modeling_id) {
       return Response.json({ 
-        error: 'Campos obrigatórios: modeling_id, material_id, material_type, content' 
+        error: 'Missing required fields: materialId, materialType, content, modeling_id' 
       }, { status: 400 });
     }
 
     // Buscar configuração do agente
-    const analyzerConfigs = await base44.entities.ModelingAnalyzerConfig.list();
-    const config = analyzerConfigs?.[0];
+    const configs = await base44.asServiceRole.entities.ModelingAnalyzerConfig.list();
+    const config = configs[0];
 
     if (!config?.model) {
       return Response.json({ 
-        error: 'Configure o modelo de análise em Configurações de Agentes > Lab de Ideias - Analisador Individual' 
+        error: 'Agente Analisador Individual não configurado' 
       }, { status: 400 });
     }
 
-    const systemPrompt = config.prompt || 'Analise o conteúdo fornecido e crie um resumo estruturado.';
-
     // Buscar API key do usuário
-    const userConfigs = await base44.entities.UserConfig.list();
+    const userConfigs = await base44.asServiceRole.entities.UserConfig.filter({ 
+      created_by: user.email 
+    });
     const apiKey = userConfigs[0]?.openrouter_api_key;
 
     if (!apiKey) {
       return Response.json({ 
-        error: 'Configure sua API Key do OpenRouter em Configurações' 
+        error: 'API Key do OpenRouter não configurada' 
       }, { status: 400 });
     }
 
-    // Criar ou atualizar registro de análise
-    const existingAnalyses = await base44.entities.ModelingAnalysis.filter({
-      modeling_id,
-      material_id,
-      material_type
-    });
-
-    let analysisId;
-    if (existingAnalyses.length > 0) {
-      analysisId = existingAnalyses[0].id;
-      await base44.entities.ModelingAnalysis.update(analysisId, {
-        status: 'analyzing',
-        error_message: null
-      });
-    } else {
-      const newAnalysis = await base44.entities.ModelingAnalysis.create({
-        modeling_id,
-        material_id,
-        material_type,
-        material_title: material_title || 'Sem título',
-        status: 'analyzing'
-      });
-      analysisId = newAnalysis.id;
+    // Buscar título do material
+    let materialTitle = 'Material sem título';
+    if (materialType === 'video') {
+      const videos = await base44.asServiceRole.entities.ModelingVideo.filter({ id: materialId });
+      materialTitle = videos[0]?.title || materialTitle;
+    } else if (materialType === 'text') {
+      const texts = await base44.asServiceRole.entities.ModelingText.filter({ id: materialId });
+      materialTitle = texts[0]?.title || materialTitle;
+    } else if (materialType === 'link') {
+      const links = await base44.asServiceRole.entities.ModelingLink.filter({ id: materialId });
+      materialTitle = links[0]?.title || materialTitle;
     }
+
+    // Preparar prompt
+    const systemPrompt = config.prompt.replace(/\{\{material_content\}\}/g, content);
 
     // Chamar OpenRouter
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -70,20 +61,14 @@ Deno.serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': Deno.env.get('BASE44_APP_URL') || 'https://base44.com',
+        'HTTP-Referer': 'https://app.base44.com',
         'X-Title': 'ContentAI - Modeling Analyzer'
       },
       body: JSON.stringify({
         model: config.model,
         messages: [
-          { 
-            role: 'system', 
-            content: systemPrompt.replace(/\{\{material_content\}\}/g, content) 
-          },
-          { 
-            role: 'user', 
-            content: `Por favor, analise o seguinte conteúdo:\n\n${content}` 
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Por favor, analise este ${materialType}:\n\n${content}` }
         ],
         temperature: 0.7,
         max_tokens: 4000
@@ -96,53 +81,33 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
-    const analysisSummary = data.choices?.[0]?.message?.content;
+    const analysis = data.choices?.[0]?.message?.content;
 
-    if (!analysisSummary) {
+    if (!analysis) {
       throw new Error('Resposta inválida da API');
     }
 
-    const charCount = analysisSummary.length;
-    const tokenEstimate = Math.ceil(charCount / 4);
-
-    // Atualizar análise com resultado
-    await base44.entities.ModelingAnalysis.update(analysisId, {
-      analysis_summary: analysisSummary,
-      character_count: charCount,
-      token_estimate: tokenEstimate,
+    // Salvar análise
+    const analysisRecord = await base44.asServiceRole.entities.ModelingAnalysis.create({
+      modeling_id,
+      material_id: materialId,
+      material_type: materialType,
+      material_title: materialTitle,
+      analysis_summary: analysis,
+      character_count: analysis.length,
+      token_estimate: Math.ceil(analysis.length / 4),
       status: 'completed',
-      error_message: null
+      created_by: user.email
     });
 
-    return Response.json({
-      success: true,
-      analysis_id: analysisId,
-      character_count: charCount,
-      token_estimate: tokenEstimate
+    return Response.json({ 
+      success: true, 
+      analysisId: analysisRecord.id,
+      analysis 
     });
 
   } catch (error) {
-    console.error('Erro na análise:', error);
-    
-    // Tentar atualizar status para erro se já tiver um ID
-    try {
-      const { modeling_id, material_id, material_type } = await req.json();
-      const existingAnalyses = await base44.entities.ModelingAnalysis.filter({
-        modeling_id,
-        material_id,
-        material_type
-      });
-      
-      if (existingAnalyses.length > 0) {
-        await base44.entities.ModelingAnalysis.update(existingAnalyses[0].id, {
-          status: 'error',
-          error_message: error.message
-        });
-      }
-    } catch {}
-
-    return Response.json({ 
-      error: error.message 
-    }, { status: 500 });
+    console.error('Erro ao analisar material:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
