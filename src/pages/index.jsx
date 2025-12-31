@@ -62,6 +62,8 @@ import UserSettings from "./UserSettings";
 
 import YoutubeScripts from "./YoutubeScripts";
 
+import YoutubeScriptDetail from "./YoutubeScriptDetail";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import AppProviders from '@/components/providers/AppProviders';
 
@@ -128,8 +130,10 @@ const PAGES = {
     UserSettings: UserSettings,
     
     YoutubeScripts: YoutubeScripts,
-    
-}
+
+    YoutubeScriptDetail: YoutubeScriptDetail,
+
+    }
 
 function _getCurrentPage(url) {
     if (url.endsWith('/')) {
@@ -217,8 +221,10 @@ function PagesContent() {
                 <Route path="/UserSettings" element={<UserSettings />} />
                 
                 <Route path="/YoutubeScripts" element={<YoutubeScripts />} />
-                
-            </Routes>
+
+                    <Route path="/YoutubeScriptDetail" element={<YoutubeScriptDetail />} />
+
+                </Routes>
         </Layout>
     );
 }
