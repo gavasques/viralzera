@@ -138,7 +138,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       });
 
       // 6. Chamar a função backend com o modelo configurado
-      const aiResponse = await base44.functions.invoke('youtubeScriptGenerator', {
+      const aiResponse = await base44.functions('youtubeScriptGenerator', {
         prompt: finalPrompt,
         model: agentConfig.model,
         enableReasoning: agentConfig.enable_reasoning || false,
