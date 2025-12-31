@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -32,7 +32,8 @@ export default function YoutubeScriptHeader({
   onTitleChange, 
   onSave, 
   isSaving,
-  hasChanges 
+  hasChanges,
+  onSuggestTitles
 }) {
   const navigate = useNavigate();
 
@@ -56,6 +57,16 @@ export default function YoutubeScriptHeader({
             className="text-xl font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-auto py-1"
             placeholder="Título do roteiro..."
           />
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSuggestTitles}
+            className="shrink-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+          >
+            <Sparkles className="w-4 h-4 mr-1" />
+            Sugerir Títulos
+          </Button>
         </div>
 
         {/* Right side - Badges and save button */}
