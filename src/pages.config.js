@@ -31,6 +31,7 @@ import YoutubeScripts from './pages/YoutubeScripts';
 import index from './pages/index';
 import YoutubeScriptDetail from './pages/YoutubeScriptDetail';
 import AdminScriptTypes from './pages/AdminScriptTypes';
+import UserContent from './pages/UserContent';
 
 
 export const PAGES = {
@@ -67,6 +68,7 @@ export const PAGES = {
     "index": index,
     "YoutubeScriptDetail": YoutubeScriptDetail,
     "AdminScriptTypes": AdminScriptTypes,
+    "UserContent": UserContent,
 }
 
 export const pagesConfig = {
