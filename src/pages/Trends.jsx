@@ -20,6 +20,7 @@ import PageHeader from "@/components/common/PageHeader";
 import InfoCard from "@/components/common/InfoCard";
 import EmptyState from "@/components/common/EmptyState";
 import { ListSkeleton } from "@/components/common/LoadingSkeleton";
+import { searchTrends } from "@/components/trends/TrendsService";
 
 export default function Trends() {
   const queryClient = useQueryClient();
