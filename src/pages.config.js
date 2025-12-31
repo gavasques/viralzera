@@ -1,3 +1,4 @@
+import AdminScriptTypes from './pages/AdminScriptTypes';
 import AgentSettings from './pages/AgentSettings';
 import AudienceChat from './pages/AudienceChat';
 import Audiences from './pages/Audiences';
@@ -26,15 +27,15 @@ import Trends from './pages/Trends';
 import TwitterGenerator from './pages/TwitterGenerator';
 import TwitterProjects from './pages/TwitterProjects';
 import UsageAnalytics from './pages/UsageAnalytics';
+import UserContent from './pages/UserContent';
 import UserSettings from './pages/UserSettings';
+import YoutubeScriptDetail from './pages/YoutubeScriptDetail';
 import YoutubeScripts from './pages/YoutubeScripts';
 import index from './pages/index';
-import YoutubeScriptDetail from './pages/YoutubeScriptDetail';
-import AdminScriptTypes from './pages/AdminScriptTypes';
-import UserContent from './pages/UserContent';
 
 
 export const PAGES = {
+    "AdminScriptTypes": AdminScriptTypes,
     "AgentSettings": AgentSettings,
     "AudienceChat": AudienceChat,
     "Audiences": Audiences,
@@ -63,12 +64,11 @@ export const PAGES = {
     "TwitterGenerator": TwitterGenerator,
     "TwitterProjects": TwitterProjects,
     "UsageAnalytics": UsageAnalytics,
+    "UserContent": UserContent,
     "UserSettings": UserSettings,
+    "YoutubeScriptDetail": YoutubeScriptDetail,
     "YoutubeScripts": YoutubeScripts,
     "index": index,
-    "YoutubeScriptDetail": YoutubeScriptDetail,
-    "AdminScriptTypes": AdminScriptTypes,
-    "UserContent": UserContent,
 }
 
 export const pagesConfig = {

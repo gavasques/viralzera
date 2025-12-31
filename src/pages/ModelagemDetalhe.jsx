@@ -78,26 +78,68 @@ export default function ModelagemDetalhe() {
     }
   });
 
-  // Transcribe video
+  // Transcribe video (Start)
   const handleTranscribe = async (videoId) => {
     setTranscribingId(videoId);
     try {
       const response = await base44.functions.invoke('modelingTranscribe', {
-        action: 'transcribe',
+        action: 'start_transcription',
         videoId
       });
       
       if (response.data.error) throw new Error(response.data.error);
       
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
-      queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      toast.success('Transcrição concluída!');
+      
+      if (response.data.status === 'transcribing') {
+        toast.info('Transcrição iniciada! Isso pode levar alguns minutos.');
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['modelings'] });
+        toast.success('Transcrição concluída!');
+      }
     } catch (error) {
-      toast.error('Erro na transcrição: ' + error.message);
+      toast.error('Erro ao iniciar: ' + error.message);
     } finally {
       setTranscribingId(null);
     }
   };
+
+  // Check Status
+  const handleCheckStatus = async (videoId) => {
+    try {
+      const response = await base44.functions.invoke('modelingTranscribe', {
+        action: 'check_status',
+        videoId
+      });
+
+      if (response.data.error) throw new Error(response.data.error);
+
+      if (response.data.status === 'transcribed') {
+        queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
+        queryClient.invalidateQueries({ queryKey: ['modelings'] });
+        base44.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+        toast.success('Transcrição finalizada!');
+      } else if (response.data.status === 'transcribing') {
+        toast.info('Ainda processando...');
+      }
+    } catch (error) {
+      console.error('Check status error:', error);
+    }
+  };
+
+  // Polling para vídeos em processamento
+  React.useEffect(() => {
+    const transcribingVideos = videos.filter(v => v.status === 'transcribing');
+    if (transcribingVideos.length === 0) return;
+
+    const interval = setInterval(() => {
+      transcribingVideos.forEach(video => {
+        handleCheckStatus(video.id);
+      });
+    }, 10000); // Checa a cada 10s
+
+    return () => clearInterval(interval);
+  }, [videos]);
 
   // Transcribe all pending videos
   const handleTranscribeAll = async () => {
@@ -266,6 +308,7 @@ export default function ModelagemDetalhe() {
                   video={video}
                   isTranscribing={transcribingId === video.id}
                   onTranscribe={() => handleTranscribe(video.id)}
+                  onCheckStatus={() => handleCheckStatus(video.id)}
                   onView={() => setViewingVideo(video)}
                   onDelete={() => {
                     if (confirm('Excluir este vídeo?')) {

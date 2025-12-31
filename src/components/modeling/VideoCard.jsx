@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink
+  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, RefreshCw
 } from "lucide-react";
 
 const statusConfig = {
@@ -14,7 +14,7 @@ const statusConfig = {
   error: { label: "Erro", color: "bg-red-100 text-red-700", icon: AlertCircle }
 };
 
-export default function VideoCard({ video, onTranscribe, onView, onDelete, isTranscribing }) {
+export default function VideoCard({ video, onTranscribe, onView, onDelete, isTranscribing, onCheckStatus }) {
   const status = statusConfig[video.status] || statusConfig.pending;
   const StatusIcon = status.icon;
 
@@ -111,33 +111,37 @@ export default function VideoCard({ video, onTranscribe, onView, onDelete, isTra
             )}
 
             {/* Action Button */}
-            {(video.status === 'pending' || video.status === 'transcribing') && (
+            {video.status === 'pending' && (
               <Button 
                 size="sm" 
-                className={`mt-3 h-7 text-xs ${video.status === 'transcribing' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-pink-600 hover:bg-pink-700'}`}
+                className="mt-3 h-7 text-xs bg-pink-600 hover:bg-pink-700"
                 onClick={onTranscribe}
                 disabled={isTranscribing}
               >
                 {isTranscribing ? (
                   <>
                     <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    {video.status === 'transcribing' ? 'Verificando...' : 'Iniciando...'}
+                    Iniciando...
                   </>
                 ) : (
                   <>
-                    {video.status === 'transcribing' ? (
-                      <>
-                        <Loader2 className="w-3 h-3 mr-1" />
-                        Verificar Status
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-3 h-3 mr-1" />
-                        Transcrever
-                      </>
-                    )}
+                    <Play className="w-3 h-3 mr-1" />
+                    Transcrever
                   </>
                 )}
+              </Button>
+            )}
+
+            {video.status === 'transcribing' && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="mt-3 h-7 text-xs"
+                onClick={onCheckStatus ? onCheckStatus : () => {}}
+                disabled={isTranscribing}
+              >
+                <RefreshCw className={`w-3 h-3 mr-1 ${isTranscribing ? 'animate-spin' : ''}`} />
+                Verificar Status
               </Button>
             )}
 
