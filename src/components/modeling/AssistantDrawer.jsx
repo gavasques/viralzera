@@ -33,42 +33,38 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
 
       // Buscar contexto da modelagem
       const modeling = await base44.entities.Modeling.filter({ id: modelingId });
-      const videos = await base44.entities.ModelingVideo.filter({ modeling_id: modelingId });
-      const texts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
-      const links = await base44.entities.ModelingLink.filter({ modeling_id: modelingId });
+      
+      // Buscar análises dos materiais
+      const analyses = await base44.entities.ModelingAnalysis.filter({ 
+        modeling_id: modelingId,
+        status: 'completed'
+      });
 
-      // Montar contexto
+      // Montar contexto com base nas análises
       let contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
       
       if (modeling[0]?.creator_idea) {
-        contexto += `## Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
+        contexto += `## 💡 Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
       }
 
-      if (videos.length > 0) {
-        contexto += `## Vídeos (${videos.length})\n`;
-        videos.forEach((v, i) => {
-          contexto += `\n### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n`;
-          if (v.transcript) {
-            contexto += `${v.transcript.substring(0, 2000)}${v.transcript.length > 2000 ? '...' : ''}\n`;
-          }
+      if (analyses.length > 0) {
+        contexto += `## 📊 ANÁLISES DOS MATERIAIS (${analyses.length})\n\n`;
+        
+        analyses.forEach((analysis, i) => {
+          contexto += `### ${i + 1}. ${analysis.material_title || 'Sem título'} (${analysis.material_type})\n\n`;
+          contexto += `${analysis.analysis_summary}\n\n`;
+          contexto += `---\n\n`;
         });
-        contexto += '\n';
+      } else {
+        contexto += `_Nenhuma análise de material disponível ainda. Os materiais precisam ser processados primeiro._\n\n`;
       }
 
-      if (texts.length > 0) {
-        contexto += `## Textos (${texts.length})\n`;
-        texts.forEach((t, i) => {
-          contexto += `\n### Texto ${i + 1}: ${t.title || 'Sem título'}\n${t.content}\n`;
-        });
-      }
-
-      if (links.length > 0) {
-        contexto += `\n## Links Processados (${links.length})\n`;
-        links.filter(l => l.status === 'completed').forEach((l, i) => {
-          contexto += `\n### Link ${i + 1}: ${l.title || l.url}\n`;
-          if (l.summary) {
-            contexto += `${l.summary}\n`;
-          }
+      // Adicionar histórico do chat ao contexto
+      if (chatHistory.length > 0) {
+        contexto += `## 💬 Histórico da Conversa\n\n`;
+        chatHistory.forEach((msg) => {
+          const role = msg.role === 'user' ? 'Usuário' : 'Assistente';
+          contexto += `**${role}:** ${msg.content}\n\n`;
         });
       }
 
