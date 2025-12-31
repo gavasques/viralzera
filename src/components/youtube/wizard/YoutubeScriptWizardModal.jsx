@@ -39,7 +39,8 @@ const INITIAL_FORM_DATA = {
   enableWebSearch: false
 };
 
-export default function YoutubeScriptWizardModal({ open, onOpenChange, onCreate }) {
+export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
+  const navigate = useNavigate();
   const { selectedFocusId } = useSelectedFocus();
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
