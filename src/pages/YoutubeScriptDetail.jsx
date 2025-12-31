@@ -10,6 +10,7 @@ import YoutubeScriptHeader from "@/components/youtube/detail/YoutubeScriptHeader
 import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScriptSectionEditor";
 import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
+import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptChatDrawer";
 // import { 
 //   parseScript, 
 //   rebuildScript, 
@@ -35,6 +36,9 @@ export default function YoutubeScriptDetail() {
   
   // Title suggestions modal state
   const [showTitleModal, setShowTitleModal] = useState(false);
+
+  // Chat drawer state
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Fetch script data
   const { data: script, isLoading, error } = useQuery({
@@ -146,6 +150,7 @@ export default function YoutubeScriptDetail() {
         isSaving={saveMutation.isPending}
         hasChanges={hasChanges}
         onSuggestTitles={() => setShowTitleModal(true)}
+        onChatOpen={() => setChatOpen(true)}
       />
 
       <div className="space-y-6 pb-12">
@@ -182,6 +187,19 @@ export default function YoutubeScriptDetail() {
         onTitleSelected={(newTitle) => {
           setTitle(newTitle);
           setInitialData(prev => ({ ...prev, title: newTitle }));
+        }}
+      />
+
+      {/* Chat Drawer */}
+      <YoutubeScriptChatDrawer
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        scriptId={scriptId}
+        scriptContext={{
+          title: title,
+          content: content,
+          videoType: script?.video_type,
+          status: script?.status
         }}
       />
     </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Save, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Sparkles, MessageSquareText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -66,6 +66,16 @@ export default function YoutubeScriptHeader({
           >
             <Sparkles className="w-4 h-4 mr-1" />
             Sugerir Títulos
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={props.onChatOpen}
+            className="shrink-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+          >
+            <MessageSquareText className="w-4 h-4 mr-1" />
+            Chat IA
           </Button>
         </div>
 
