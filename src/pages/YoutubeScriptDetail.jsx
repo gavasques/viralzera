@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import YoutubeScriptHeader from "@/components/youtube/detail/YoutubeScriptHeader";
-import SectionWithAI from "@/components/youtube/detail/SectionWithAI";
-import AIAssistantDrawer from "@/components/youtube/detail/AIAssistantDrawer";
+import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScriptSectionEditor";
+import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import { 
   parseScript, 
   rebuildScript, 
@@ -29,9 +29,9 @@ export default function YoutubeScriptDetail() {
   const [sections, setSections] = useState(getEmptySections());
   const [initialData, setInitialData] = useState(null);
   
-  // AI Assistant state
-  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
+  // Refiner drawer state
+  const [refinerOpen, setRefinerOpen] = useState(false);
+  const [refinerSection, setRefinerSection] = useState(null);
 
   // Fetch script data
   const { data: script, isLoading, error } = useQuery({
@@ -96,24 +96,28 @@ export default function YoutubeScriptDetail() {
     saveMutation.mutate();
   };
 
-  // AI Assistant handlers
-  const handleOpenAssistant = (sectionKey) => {
-    setActiveSection(sectionKey);
-    setAiDrawerOpen(true);
+  // Handle refiner drawer
+  const handleOpenRefiner = (sectionKey) => {
+    setRefinerSection(sectionKey);
+    setRefinerOpen(true);
   };
 
-  const handleAIReplace = (sectionKey, content) => {
+  // Handle replace from refiner
+  const handleRefinerReplace = (sectionKey, newContent) => {
     setSections(prev => ({
       ...prev,
-      [sectionKey]: content
+      [sectionKey]: newContent
     }));
+    toast.success('Conteúdo substituído');
   };
 
-  const handleAIInsertBelow = (sectionKey, content) => {
+  // Handle insert below from refiner
+  const handleRefinerInsertBelow = (sectionKey, newContent) => {
     setSections(prev => ({
       ...prev,
-      [sectionKey]: (prev[sectionKey] || '') + '\n\n' + content
+      [sectionKey]: prev[sectionKey] + '\n\n' + newContent
     }));
+    toast.success('Conteúdo inserido');
   };
 
   // Redirect if no ID
@@ -160,29 +164,31 @@ export default function YoutubeScriptDetail() {
 
       <div className="space-y-6 pb-12">
         {SCRIPT_SECTIONS.map((section) => (
-          <SectionWithAI
+          <YoutubeScriptSectionEditor
             key={section.key}
             sectionKey={section.key}
             title={section.title}
             description={section.description}
-            value={sections[section.key]}
+            content={sections[section.key]}
             onChange={handleSectionChange}
-            onOpenAssistant={handleOpenAssistant}
+            onOpenRefiner={handleOpenRefiner}
           />
         ))}
       </div>
 
-      {/* AI Assistant Drawer */}
-      <AIAssistantDrawer
-        open={aiDrawerOpen}
-        onOpenChange={setAiDrawerOpen}
-        sectionKey={activeSection}
-        sectionContent={activeSection ? sections[activeSection] : ''}
-        scriptData={script}
-        sections={sections}
-        modelingIds={script?.modeling_ids || []}
-        onReplace={handleAIReplace}
-        onInsertBelow={handleAIInsertBelow}
+      {/* Refiner Drawer */}
+      <RefinerDrawer
+        open={refinerOpen}
+        onOpenChange={setRefinerOpen}
+        sectionKey={refinerSection}
+        sectionContent={refinerSection ? sections[refinerSection] : ''}
+        scriptContext={{
+          title: title,
+          videoType: script?.video_type
+        }}
+        modelingIds={script?.modeling_ids}
+        onReplace={handleRefinerReplace}
+        onInsertBelow={handleRefinerInsertBelow}
       />
     </div>
   );
