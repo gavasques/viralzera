@@ -103,8 +103,8 @@ export default function CanvasCard({
         </div>
 
         {/* Content Preview */}
-        <div className="flex-1 mb-4">
-          <p className="text-sm text-slate-500 line-clamp-4 leading-relaxed">
+        <div className="flex-1 mb-3">
+          <p className="text-xs text-slate-500 line-clamp-5 leading-relaxed">
             {canvas.content || <span className="italic opacity-50">Sem conteúdo...</span>}
           </p>
         </div>
