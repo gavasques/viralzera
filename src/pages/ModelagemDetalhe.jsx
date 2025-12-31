@@ -32,6 +32,13 @@ export default function ModelagemDetalhe() {
   const [viewingVideo, setViewingVideo] = useState(null);
   const [transcribingId, setTranscribingId] = useState(null);
 
+  // Debug Base44 Client
+  React.useEffect(() => {
+    console.log('Base44 Client Check:', base44);
+    if (!base44) console.error('Base44 client is undefined');
+    else if (!base44.functions) console.error('Base44.functions is undefined');
+  }, []);
+
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
     queryKey: ['modeling', modelingId],
