@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Layers, Youtube, FileText, Plus, Hash, 
-  Video, Loader2, PlayCircle, Settings, BrainCircuit, Link2
+  Video, Loader2, PlayCircle, Settings, BrainCircuit, Link2, Sparkles
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -40,6 +40,7 @@ export default function ModelagemDetalhe() {
   const [transcribingId, setTranscribingId] = useState(null);
   const [processingLinkId, setProcessingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [generatingDossier, setGeneratingDossier] = useState(false);
 
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
@@ -288,6 +289,28 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
+  // Generate dossier and redirect to script wizard
+  const handleCreateScript = async () => {
+    setGeneratingDossier(true);
+    
+    try {
+      const response = await base44.functions.invoke('generateDossier', { 
+        modeling_id: modelingId 
+      });
+      
+      const dossierId = response.data.dossier_id;
+      toast.success('Dossiê gerado! Redirecionando...');
+      
+      // Redirect to youtube script wizard with dossierId
+      window.location.href = createPageUrl('YoutubeScripts') + `?action=new&dossierId=${dossierId}`;
+      
+    } catch (error) {
+      toast.error('Erro ao gerar dossiê: ' + error.message);
+    } finally {
+      setGeneratingDossier(false);
+    }
+  };
+
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -354,6 +377,23 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             <p className="text-2xl font-bold text-slate-900">{formatNumber(modeling.total_tokens_estimate || 0)}</p>
             <p className="text-xs text-slate-500">tokens estimados</p>
           </div>
+          <Button 
+            onClick={handleCreateScript}
+            disabled={generatingDossier}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+          >
+            {generatingDossier ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Criar Roteiro
+              </>
+            )}
+          </Button>
           <Button 
             variant="outline" 
             className="bg-amber-50 hover:bg-amber-100 text-amber-600"
