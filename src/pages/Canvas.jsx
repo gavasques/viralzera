@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Plus, Search } from "lucide-react";
+import { FileText, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/common/PageHeader";
 import { PageSkeleton } from "@/components/common/LoadingSkeleton";
@@ -13,6 +13,8 @@ import CanvasCard from "@/components/canvas/CanvasCard";
 import CanvasFormModal from "@/components/canvas/CanvasFormModal";
 import CanvasEditorDialog from "@/components/canvas/CanvasEditorDialog";
 
+const ITEMS_PER_PAGE = 12;
+
 export default function Canvas() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,6 +23,7 @@ export default function Canvas() {
   const [isEditing, setIsEditing] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCanvas, setEditingCanvas] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const { selectedFocusId } = useSelectedFocus();
 
@@ -134,6 +137,18 @@ export default function Canvas() {
     return a.title.localeCompare(b.title);
   });
 
+  // Pagination
+  const totalPages = Math.ceil(sortedItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = sortedItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedFolderId]);
+
   if (isLoading) return <PageSkeleton />;
 
   return (
@@ -188,20 +203,74 @@ export default function Canvas() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {sortedItems.map((canvas) => (
-              <CanvasCard 
-                key={canvas.id} 
-                canvas={canvas}
-                folderName={folderMap[canvas.folder_id]}
-                onClick={() => handleEdit(canvas)}
-                onSendToKanban={handleSendToKanban}
-                onCopy={handleCopy}
-                onTogglePin={(c) => togglePinMutation.mutate({ id: c.id, isPinned: c.is_pinned })}
-                onDelete={(id) => deleteMutation.mutate(id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {paginatedItems.map((canvas) => (
+                <CanvasCard 
+                  key={canvas.id} 
+                  canvas={canvas}
+                  folderName={folderMap[canvas.folder_id]}
+                  onClick={() => handleEdit(canvas)}
+                  onSendToKanban={handleSendToKanban}
+                  onCopy={handleCopy}
+                  onTogglePin={(c) => togglePinMutation.mutate({ id: c.id, isPinned: c.is_pinned })}
+                  onDelete={(id) => deleteMutation.mutate(id)}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      if (totalPages <= 7) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((page, idx, arr) => (
+                      <React.Fragment key={page}>
+                        {idx > 0 && arr[idx - 1] !== page - 1 && (
+                          <span className="px-2 text-slate-400">...</span>
+                        )}
+                        <Button
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-8 h-8 p-0 ${currentPage === page ? 'bg-pink-500 hover:bg-pink-600' : ''}`}
+                        >
+                          {page}
+                        </Button>
+                      </React.Fragment>
+                    ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                
+                <span className="text-sm text-slate-500 ml-2">
+                  {sortedItems.length} itens
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
