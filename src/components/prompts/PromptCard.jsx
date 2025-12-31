@@ -11,7 +11,7 @@ import {
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 
-export default function PromptCard({ prompt, onEdit, onDelete }) {
+export default function PromptCard({ prompt, onEdit, onDelete, onClick }) {
     const isSystem = prompt.type === 'system_prompt';
 
     const handleCopy = () => {
@@ -20,7 +20,10 @@ export default function PromptCard({ prompt, onEdit, onDelete }) {
     };
 
     return (
-        <div className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow group">
+        <div 
+            className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow group cursor-pointer"
+            onClick={onClick}
+        >
             <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSystem ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>

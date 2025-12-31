@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PromptFormModal from '@/components/prompts/PromptFormModal';
 import PromptCard from '@/components/prompts/PromptCard';
 import DeletePromptDialog from '@/components/prompts/DeletePromptDialog';
+import PromptViewerModal from '@/components/prompts/PromptViewerModal';
 import FolderSidebar from '@/components/prompts/FolderSidebar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, Tag } from 'lucide-react';
@@ -26,6 +27,7 @@ export default function Prompts() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingPrompt, setEditingPrompt] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [viewingPrompt, setViewingPrompt] = useState(null);
 
     // Fetch prompts
     const { data: prompts = [], isLoading } = useQuery({
@@ -168,6 +170,7 @@ export default function Prompts() {
                             <PromptCard 
                                 key={prompt.id}
                                 prompt={prompt}
+                                onClick={() => setViewingPrompt(prompt)}
                                 onEdit={() => handleEdit(prompt)}
                                 onDelete={() => setDeleteTarget(prompt)}
                             />
@@ -181,6 +184,14 @@ export default function Prompts() {
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
                 prompt={editingPrompt}
+            />
+
+            {/* Viewer Modal */}
+            <PromptViewerModal
+                open={!!viewingPrompt}
+                onOpenChange={(open) => !open && setViewingPrompt(null)}
+                prompt={viewingPrompt}
+                onEdit={() => viewingPrompt && handleEdit(viewingPrompt)}
             />
 
             {/* Delete Confirmation */}
