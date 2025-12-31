@@ -4,14 +4,13 @@ import { Sparkles, Wand2, ArrowRight, Loader2, Check, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getAgentConfig } from "@/components/constants/agentConfigs";
+import { sendMessage } from "@/components/services/OpenRouterDirectService";
 
 const QUICK_ACTIONS = [
-  { id: 'improve', label: 'Melhorar', prompt: 'Melhore este trecho mantendo o mesmo sentido, mas com mais clareza e fluidez:' },
-  { id: 'shorten', label: 'Encurtar', prompt: 'Encurte este trecho mantendo as informações essenciais:' },
-  { id: 'expand', label: 'Expandir', prompt: 'Expanda este trecho com mais detalhes e explicações:' },
-  { id: 'rewrite', label: 'Reescrever', prompt: 'Reescreva este trecho de forma diferente, mantendo o significado:' },
-  { id: 'tone_casual', label: 'Tom Casual', prompt: 'Reescreva este trecho com um tom mais casual e conversacional:' },
+  { id: 'improve', label: 'Melhorar', prompt: 'Melhore este trecho mantendo o mesmo sentido, mas com mais clareza e fluidez' },
+  { id: 'expand', label: 'Expandir', prompt: 'Expanda este trecho com mais detalhes' },
+  { id: 'shorten', label: 'Resumir', prompt: 'Resuma este trecho mantendo o essencial' },
+  { id: 'rewrite', label: 'Reescrever', prompt: 'Reescreva este trecho de forma diferente' },
 ];
 
 export default function ScriptTextSelectionPopover({ 
@@ -30,17 +29,15 @@ export default function ScriptTextSelectionPopover({
   const popoverRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Fetch Youtube Refiner Config
+  // Fetch Agent Config
   const { data: config } = useQuery({
-    queryKey: ['YoutubeRefinerConfig', 'global'],
+    queryKey: ['YoutubeScriptEditorConfig', 'global'],
     queryFn: async () => {
-      const configs = await base44.entities.YoutubeRefinerConfig.list('-created_date', 1);
+      const configs = await base44.entities.YoutubeScriptEditorConfig.list('-created_date', 1);
       return configs[0] || null;
     },
     staleTime: 1000 * 60 * 5
   });
-
-  const agentConfig = getAgentConfig('youtubeScriptRefiner');
 
   // Focus input when showing custom input
   useEffect(() => {
@@ -49,54 +46,56 @@ export default function ScriptTextSelectionPopover({
     }
   }, [showCustomInput]);
 
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        // Prevent closing if clicking inside the popover
-        return;
-      }
-       // If click is outside popover, we might want to close, 
-       // but we need to be careful not to conflict with Quill selection.
-       // The editor handles selection clearing (setSelection(null)) when clicking elsewhere in the editor.
-       // So we mainly handle clicks completely outside.
-    };
-    // document.addEventListener('mousedown', handleClickOutside);
-    // return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
-
   const handleAction = async (actionPrompt) => {
     if (isLoading) return;
     setIsLoading(true);
 
     try {
-      const systemPrompt = config?.prompt || agentConfig.defaultPrompt;
+      if (!config?.model) {
+        throw new Error('Agente de Edição não configurado. Vá em Admin -> Agentes e configure o "Edição - Roteiros Youtube".');
+      }
+
+      const defaultSystemPrompt = `Você é um editor sênior de roteiros para YouTube.
+Sua missão é ajudar a melhorar, expandir ou reescrever trechos selecionados do roteiro.
+
+Regras:
+1. Responda APENAS com o texto editado, sem introduções ou explicações.
+2. Mantenha o tom de voz e estilo do roteiro original.
+3. Se for uma correção específica, aplique apenas o que foi pedido.
+
+Retorne o texto pronto para ser substituído no lugar da seleção.`;
+
+      const systemPrompt = config.prompt || defaultSystemPrompt;
 
       const messages = [
         { 
           role: 'system', 
-          content: `${systemPrompt}\n\nIMPORTANTE: Você receberá um TRECHO SELECIONADO de um Roteiro de YouTube. Responda APENAS com o texto editado, sem explicações ou comentários adicionais. O usuário quer substituir o trecho original pelo que você gerar.`
+          content: systemPrompt
         },
         {
           role: 'user',
-          content: `${actionPrompt}\n\nTRECHO SELECIONADO:\n"${selectedText}"\n\nCONTEXTO DO ROTEIRO COMPLETO (para referência):\nTítulo: ${scriptTitle}\n${fullContent}`
+          content: `AÇÃO: ${actionPrompt}
+          
+TRECHO SELECIONADO:
+"${selectedText}"
+
+CONTEXTO DO ROTEIRO (Título: ${scriptTitle}):
+...`
         }
       ];
 
-      // Use OpenRouter Direct Service via backend function wrapper or direct if needed
-      // Here using the backend function 'openrouter' as in the Canvas component
-      const response = await base44.functions.invoke('openrouter', {
-        action: 'chat',
-        model: config?.model || 'openai/gpt-4o-mini',
-        model_name: config?.model_name || 'GPT-4o Mini',
+      const response = await sendMessage({
+        model: config.model,
         messages,
-        temperature: 0.7,
-        max_tokens: 2048,
-        feature: 'script_ai_selection',
-        enableWebSearch: config?.enable_web_search || false
+        options: {
+          enableReasoning: config.enable_reasoning,
+          reasoningEffort: config.reasoning_effort,
+          enableWebSearch: config.enable_web_search,
+          feature: 'YoutubeScriptEditor'
+        }
       });
 
-      const newText = response.data?.choices?.[0]?.message?.content;
+      const newText = response.content;
       
       if (newText) {
         setGeneratedText(newText.trim());
@@ -141,7 +140,8 @@ export default function ScriptTextSelectionPopover({
     };
 
     if (position) {
-      const popoverWidth = 400; 
+      // Calculate width based on content state
+      const popoverWidth = isReviewing || showCustomInput ? 400 : 450; 
       const screenPadding = 20;
       
       // Center horizontally relative to selection, but clamp to screen edges
@@ -156,7 +156,8 @@ export default function ScriptTextSelectionPopover({
       }
       
       style.left = leftPos;
-      // Position above by default, verify if enough space, otherwise below
+      
+      // Position above by default if enough space, otherwise below
       const spaceAbove = position.y - 100;
       if (spaceAbove > 150) {
           style.top = Math.max(screenPadding, position.y - 10);
@@ -178,7 +179,7 @@ export default function ScriptTextSelectionPopover({
       className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 z-[9999]"
     >
       {isLoading ? (
-        <div className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50/50">
+        <div className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50/50 min-w-[300px]">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>A IA está trabalhando no seu texto...</span>
         </div>
@@ -218,6 +219,15 @@ export default function ScriptTextSelectionPopover({
       ) : showCustomInput ? (
         <form onSubmit={handleCustomSubmit} className="p-2 w-[400px]">
           <div className="flex items-center gap-2">
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCustomInput(false)}
+                className="h-9 w-9 shrink-0 text-slate-400 hover:text-slate-600"
+            >
+                <X className="w-4 h-4" />
+            </Button>
             <input
               ref={inputRef}
               type="text"
@@ -243,13 +253,13 @@ export default function ScriptTextSelectionPopover({
           </div>
         </form>
       ) : (
-        <div className="flex flex-col w-[400px]">
-          <div className="flex items-center gap-1 p-1.5 border-b border-slate-100 flex-wrap">
+        <div className="flex items-center p-1 bg-white">
+          <div className="flex items-center gap-0.5 border-r border-slate-100 pr-1 mr-1">
             {QUICK_ACTIONS.map((action) => (
               <button
                 key={action.id}
                 onClick={() => handleAction(action.prompt)}
-                className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-md transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap"
               >
                 {action.label}
               </button>
@@ -257,7 +267,7 @@ export default function ScriptTextSelectionPopover({
           </div>
           <button
             onClick={() => setShowCustomInput(true)}
-            className="flex items-center gap-2 px-3 py-2 text-xs text-indigo-600 hover:bg-indigo-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap"
           >
             <Wand2 className="w-3.5 h-3.5" />
             Pedir algo específico...
