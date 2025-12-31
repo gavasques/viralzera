@@ -353,35 +353,9 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
 
         {/* Input */}
         <div className="p-4 border-t shrink-0 space-y-3">
-          {/* Action Buttons */}
-          {deepResearchMode && chatHistory.length > 0 && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLastResponse}
-                disabled={sendMutation.isPending}
-                className="text-xs"
-              >
-                <Copy className="w-3 h-3 mr-1" />
-                Copiar
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveResearch}
-                disabled={sendMutation.isPending}
-                className="text-xs"
-              >
-                <Save className="w-3 h-3 mr-1" />
-                Salvar
-              </Button>
-            </div>
-          )}
-
           <div className="flex gap-2">
             <Textarea
-              placeholder={deepResearchMode ? "Faça uma pergunta para pesquisa..." : "Digite sua mensagem..."}
+              placeholder="Digite sua mensagem..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -391,7 +365,7 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
             <Button
               onClick={handleSend}
               disabled={!message.trim() || sendMutation.isPending}
-              className={deepResearchMode ? "bg-purple-600 hover:bg-purple-700 shrink-0" : "bg-amber-600 hover:bg-amber-700 shrink-0"}
+              className="bg-amber-600 hover:bg-amber-700 shrink-0"
             >
               {sendMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
