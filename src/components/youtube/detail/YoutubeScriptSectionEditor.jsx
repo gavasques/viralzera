@@ -42,25 +42,31 @@ export default function YoutubeScriptSectionEditor({
 
   // Handle selection change
   const handleSelectionChange = (range, source, editor) => {
-    if (range && range.length > 0) {
-      const bounds = editor.getBounds(range.index, range.length);
-      const text = editor.getText(range.index, range.length);
-      
-      // Get the editor container position to calculate absolute position
-      const editorContainer = editor.container;
-      const editorRect = editorContainer.getBoundingClientRect();
-      
-      setSelection({
-        range,
-        text,
-        position: {
-          x: editorRect.left + bounds.left + (bounds.width / 2),
-          y: editorRect.top + bounds.top,
-          bottom: editorRect.top + bounds.bottom
+    if (source === 'user') {
+      if (range && range.length > 0) {
+        const bounds = editor.getBounds(range.index, range.length);
+        const text = editor.getText(range.index, range.length);
+        
+        if (!text.trim()) {
+           setSelection(null);
+           return;
         }
-      });
-    } else {
-      setSelection(null);
+
+        const editorContainer = editor.container;
+        const editorRect = editorContainer.getBoundingClientRect();
+        
+        setSelection({
+          range,
+          text,
+          position: {
+            x: editorRect.left + bounds.left + (bounds.width / 2),
+            y: editorRect.top + bounds.top,
+            bottom: editorRect.top + bounds.bottom
+          }
+        });
+      } else {
+        setSelection(null);
+      }
     }
   };
 
@@ -75,14 +81,7 @@ export default function YoutubeScriptSectionEditor({
     }
   };
 
-  // Close selection on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      if (selection) setSelection(null);
-    };
-    window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
-  }, [selection]);
+  // Close selection on scroll logic removed to prevent menu closing during selection drag
 
   // Memoize initial content conversion to avoid re-rendering issues/loops with Quill
   // But we need to handle external updates if content changes from outside (e.g. refiner)

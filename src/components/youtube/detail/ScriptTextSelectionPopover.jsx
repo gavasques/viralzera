@@ -53,11 +53,16 @@ export default function ScriptTextSelectionPopover({
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        onClose();
+        // Prevent closing if clicking inside the popover
+        return;
       }
+       // If click is outside popover, we might want to close, 
+       // but we need to be careful not to conflict with Quill selection.
+       // The editor handles selection clearing (setSelection(null)) when clicking elsewhere in the editor.
+       // So we mainly handle clicks completely outside.
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // document.addEventListener('mousedown', handleClickOutside);
+    // return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
   const handleAction = async (actionPrompt) => {
