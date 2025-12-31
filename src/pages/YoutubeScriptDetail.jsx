@@ -10,12 +10,12 @@ import YoutubeScriptHeader from "@/components/youtube/detail/YoutubeScriptHeader
 import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScriptSectionEditor";
 import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
-import { 
-  parseScript, 
-  rebuildScript, 
-  getEmptySections,
-  SCRIPT_SECTIONS 
-} from "@/components/youtube/utils/parseYoutubeScript";
+// import { 
+//   parseScript, 
+//   rebuildScript, 
+//   getEmptySections,
+//   SCRIPT_SECTIONS 
+// } from "@/components/youtube/utils/parseYoutubeScript";
 
 export default function YoutubeScriptDetail() {
   const navigate = useNavigate();
