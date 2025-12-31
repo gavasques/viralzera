@@ -16,7 +16,18 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
   const [deepResearchMode, setDeepResearchMode] = useState(false);
+  const [useDossier, setUseDossier] = useState(false);
   const scrollRef = useRef(null);
+
+  // Fetch dossier
+  const { data: dossier } = useQuery({
+    queryKey: ['modelingDossier', modelingId],
+    queryFn: async () => {
+      const dossiers = await base44.entities.ContentDossier.filter({ modeling_id: modelingId }, '-created_date', 1);
+      return dossiers[0] || null;
+    },
+    enabled: !!modelingId && open
+  });
 
   // Fetch chat history
   const { data: chatHistory = [], isLoading } = useQuery({
@@ -134,24 +145,33 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
         status: 'completed'
       });
 
-      // Montar contexto
-      let contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
+      // Montar contexto - se useDossier e dossier existe, usar ele
+      let contexto = '';
       
-      if (modeling[0]?.description) {
-        contexto += `**Descrição:** ${modeling[0].description}\n\n`;
-      }
-      if (modeling[0]?.target_platform) {
-        contexto += `**Plataforma:** ${modeling[0].target_platform}\n`;
-      }
-      if (modeling[0]?.content_type) {
-        contexto += `**Tipo:** ${modeling[0].content_type}\n\n`;
-      }
-      if (modeling[0]?.creator_idea) {
-        contexto += `## 💡 Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
+      if (useDossier && dossier?.full_content) {
+        contexto = `# DOSSIÊ COMPLETO DA MODELAGEM\n\n${dossier.full_content}\n\n`;
+      } else {
+        // Contexto normal
+        contexto = `# MODELAGEM: ${modeling[0]?.title || 'Sem título'}\n\n`;
+        
+        if (modeling[0]?.description) {
+          contexto += `**Descrição:** ${modeling[0].description}\n\n`;
+        }
+        if (modeling[0]?.target_platform) {
+          contexto += `**Plataforma:** ${modeling[0].target_platform}\n`;
+        }
+        if (modeling[0]?.content_type) {
+          contexto += `**Tipo:** ${modeling[0].content_type}\n\n`;
+        }
+        if (modeling[0]?.creator_idea) {
+          contexto += `## 💡 Ideia do Criador\n${modeling[0].creator_idea}\n\n`;
+        }
       }
 
-      // Usar análises se disponíveis, senão usar materiais brutos
-      if (analyses.length > 0) {
+      // Só adicionar materiais se não estiver usando dossiê
+      if (!useDossier || !dossier?.full_content) {
+        // Usar análises se disponíveis, senão usar materiais brutos
+        if (analyses.length > 0) {
         contexto += `## 📊 ANÁLISES DOS MATERIAIS (${analyses.length})\n\n`;
         
         analyses.forEach((analysis, i) => {
@@ -203,6 +223,7 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
 
         if (transcribedVideos.length === 0 && texts.length === 0 && completedLinks.length === 0) {
           contexto += `_Nenhum material processado ainda. Adicione e processe vídeos, textos ou links para começar._\n\n`;
+        }
         }
       }
 
@@ -368,29 +389,51 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
             )}
           </div>
 
-          {/* Deep Research Toggle */}
-          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <div>
-                <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
-                  Deep Research
-                </Label>
-                <p className="text-xs text-slate-500">Pesquisa profunda com web search e reasoning</p>
+          <div className="space-y-2">
+            {/* Deep Research Toggle */}
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <div>
+                  <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
+                    Deep Research
+                  </Label>
+                  <p className="text-xs text-slate-500">Pesquisa profunda com web search e reasoning</p>
+                </div>
               </div>
+              <Switch
+                id="deep-research"
+                checked={deepResearchMode}
+                onCheckedChange={setDeepResearchMode}
+              />
             </div>
-            <Switch
-              id="deep-research"
-              checked={deepResearchMode}
-              onCheckedChange={setDeepResearchMode}
-            />
-          </div>
 
-          {!deepResearchMode && (
-            <p className="text-sm text-slate-500 mt-2">
-              Use as transcrições e textos desta modelagem para ter ideias
-            </p>
-          )}
+            {/* Use Dossier Toggle */}
+            {!deepResearchMode && dossier && (
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-green-600" />
+                  <div>
+                    <Label htmlFor="use-dossier" className="text-sm font-medium cursor-pointer">
+                      Usar Dossiê como Contexto
+                    </Label>
+                    <p className="text-xs text-slate-500">Enviar dossiê completo ao invés de materiais separados</p>
+                  </div>
+                </div>
+                <Switch
+                  id="use-dossier"
+                  checked={useDossier}
+                  onCheckedChange={setUseDossier}
+                />
+              </div>
+            )}
+
+            {!deepResearchMode && !dossier && (
+              <p className="text-sm text-slate-500">
+                Use as transcrições e textos desta modelagem para ter ideias
+              </p>
+            )}
+          </div>
         </SheetHeader>
 
         {/* Messages */}
