@@ -166,6 +166,26 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         modeling_ids: formData.selectedModelings || []
       });
 
+      // 8. Salvar histórico inicial no chat para continuação
+      try {
+        await Promise.all([
+          base44.entities.YoutubeScriptChat.create({
+            script_id: newScript.id,
+            role: 'user',
+            content: finalPrompt
+          }),
+          base44.entities.YoutubeScriptChat.create({
+            script_id: newScript.id,
+            role: 'assistant',
+            content: generatedContent,
+            usage: aiResponse.usage
+          })
+        ]);
+      } catch (chatError) {
+        console.error("Erro ao salvar histórico do chat:", chatError);
+        // Não impede o fluxo principal, apenas loga o erro
+      }
+
       onOpenChange(false);
       toast.success('Roteiro criado com sucesso!');
       navigate(createPageUrl(`YoutubeScriptDetail?id=${newScript.id}`));
