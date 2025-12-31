@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, FileText, Video, Users, Bot, Library } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
+import { createPageUrl } from "@/utils";
+import { toast } from "sonner";
 
 import { StepName } from "./steps/StepName";
 import { StepVideoType } from "./steps/StepVideoType";
 import { StepContext } from "./steps/StepContext";
 import { StepModel } from "./steps/StepModel";
 import { StepRefinement } from "./steps/StepRefinement";
-import { buildYoutubePrompt } from "./buildYoutubePrompt";
+import { buildYoutubePrompt, getVideoTypeConfig } from "./buildYoutubePrompt";
 
 const STEPS = [
   { id: 'name', title: 'Nome', description: 'Título do roteiro', icon: FileText },
