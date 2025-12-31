@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Check, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { sendMessage } from "@/components/services/OpenRouterDirectService";
 
 export default function TitleSuggestionsModal({ 
   open, 
@@ -30,15 +31,67 @@ export default function TitleSuggestionsModal({
     setSelectedIndex(null);
 
     try {
-      const response = await base44.functions.invoke('youtubeTitleGenerator', {
-        scriptId
-      });
+      // 1. Fetch config and script
+      const [configs, script] = await Promise.all([
+        base44.entities.YoutubeTitleGeneratorConfig.list(),
+        base44.entities.YoutubeScript.get(scriptId)
+      ]);
 
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Erro ao gerar títulos');
+      const config = configs?.[0];
+      if (!config?.model) {
+        throw new Error('Agente de Títulos não configurado. Vá em Admin -> Agentes e configure o "YouTube - Gerador de Títulos".');
       }
 
-      setTitles(response.data.titles || []);
+      if (!script?.corpo) {
+        throw new Error('O roteiro precisa ter conteúdo para gerar títulos.');
+      }
+
+      // 2. Prepare prompt
+      const systemPrompt = config.prompt || `Você é um especialista em copywriting. Gere 5 títulos magnéticos para o roteiro abaixo. Retorne JSON: { "titles": [] }`;
+      const userPrompt = `Analise este roteiro e gere 5 títulos:\n\n${script.corpo.substring(0, 50000)}`;
+
+      // 3. Call AI
+      const response = await sendMessage({
+        model: config.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        options: {
+          enableReasoning: config.enable_reasoning,
+          reasoningEffort: config.reasoning_effort,
+          enableWebSearch: config.enable_web_search,
+          feature: 'YoutubeTitleGenerator'
+        }
+      });
+
+      // 4. Parse JSON
+      let generatedTitles = [];
+      const content = response.content;
+      
+      try {
+        // Try to parse clean JSON first
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        const jsonStr = jsonMatch ? jsonMatch[0] : content;
+        const parsed = JSON.parse(jsonStr);
+        if (Array.isArray(parsed.titles)) {
+          generatedTitles = parsed.titles;
+        } else if (Array.isArray(parsed)) {
+          generatedTitles = parsed;
+        }
+      } catch (e) {
+        // Fallback: extract lines that look like titles
+        generatedTitles = content
+          .split('\n')
+          .filter(line => /^\d+\.|^-/.test(line.trim()))
+          .map(line => line.replace(/^\d+\.|^-/, '').trim().replace(/^"|"$/g, ''));
+      }
+
+      if (generatedTitles.length === 0) {
+        throw new Error('Não foi possível extrair títulos da resposta da IA.');
+      }
+
+      setTitles(generatedTitles.slice(0, 5));
     } catch (error) {
       console.error('Error generating titles:', error);
       toast.error(error.message || 'Erro ao gerar títulos');

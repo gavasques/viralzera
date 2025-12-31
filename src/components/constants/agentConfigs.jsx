@@ -451,6 +451,36 @@ Formate a saída em Markdown.`,
     ]
   },
 
+  youtubeTitleGenerator: {
+    configEntity: 'YoutubeTitleGeneratorConfig',
+    title: 'YouTube - Gerador de Títulos',
+    defaultPrompt: `Você é um especialista em copywriting e títulos virais para YouTube.
+    
+MISSÃO
+Analise o roteiro fornecido e sugira 5 títulos magnéticos e chamativos.
+
+REGRAS
+- Títulos curiosos que geram cliques (CTR alto)
+- Máximo de 60 caracteres
+- Use gatilhos mentais (curiosidade, urgência, benefício, polêmica)
+- Varie os estilos (listas, perguntas, afirmações fortes)
+- Retorne APENAS um JSON válido.
+
+FORMATO DE RESPOSTA (JSON):
+{
+  "titles": [
+    "Título 1",
+    "Título 2",
+    "Título 3",
+    "Título 4",
+    "Título 5"
+  ]
+}`,
+    promptPlaceholders: [
+      { key: '{{script_content}}', description: 'Conteúdo completo do roteiro' }
+    ]
+  },
+
   deepResearch: {
     configEntity: 'DeepResearchConfig',
     title: 'Deep Research',
