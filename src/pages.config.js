@@ -5,7 +5,6 @@ import Canvas from './pages/Canvas';
 import CreateFocus from './pages/CreateFocus';
 import DNACommunication from './pages/DNACommunication';
 import Dashboard from './pages/Dashboard';
-import Landing from './pages/Landing';
 import Layout from './pages/Layout';
 import MaterialBank from './pages/MaterialBank';
 import ModelManagement from './pages/ModelManagement';
@@ -29,7 +28,6 @@ import TwitterProjects from './pages/TwitterProjects';
 import UsageAnalytics from './pages/UsageAnalytics';
 import UserSettings from './pages/UserSettings';
 import index from './pages/index';
-import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -40,7 +38,6 @@ export const PAGES = {
     "CreateFocus": CreateFocus,
     "DNACommunication": DNACommunication,
     "Dashboard": Dashboard,
-    "Landing": Landing,
     "Layout": Layout,
     "MaterialBank": MaterialBank,
     "ModelManagement": ModelManagement,
@@ -67,7 +64,6 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Landing",
+    mainPage: "AgentSettings",
     Pages: PAGES,
-    Layout: __Layout,
 };
