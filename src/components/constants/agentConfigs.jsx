@@ -331,10 +331,9 @@ Responda de forma clara e direta. Quando gerar conteúdo editado, formate-o de f
 
   modeling: {
     configEntity: 'ModelingConfig',
-    title: 'Configurações de Modelagem (Transcrição via Transkriptor)',
-    defaultPrompt: `Este agente utiliza o serviço Transkriptor para realizar transcrições de alta precisão.
-    
-As configurações de modelo e prompt abaixo não se aplicam, pois o Transkriptor processa o áudio diretamente.`,
+    title: 'Configurações de Modelagem (Transcrição)',
+    defaultPrompt: `A transcrição agora é realizada pelo serviço Transkriptor.
+Este agente serve apenas para configurações gerais, não há prompt de sistema customizável para a transcrição em si.`,
     promptPlaceholders: []
   },
 

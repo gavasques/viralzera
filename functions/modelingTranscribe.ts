@@ -1,11 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Backend function para gerenciar transcrições com Transkriptor
- * Actions:
- * - start_transcription: Envia URL para Transkriptor
- * - check_status: Verifica status e baixa resultado se pronto
- * - updateTotals: Recalcula totais (mantido legado)
+ * Backend function para transcrever vídeos usando Transkriptor
+ * Ações:
+ * - transcribe: 
+ *    - Se pending/error: Inicia transcrição no Transkriptor (upload url)
+ *    - Se transcribing: Verifica status no Transkriptor
+ * - updateTotals: Recalcula tokens e caracteres da modelagem
  */
 Deno.serve(async (req) => {
   try {
@@ -18,79 +19,172 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { action } = body;
-    const apiKey = Deno.env.get("TRANSKRIPTOR_API_KEY");
 
-    if (!apiKey && action !== 'updateTotals') {
-      return Response.json({ error: 'TRANSKRIPTOR_API_KEY secret is not set' }, { status: 500 });
-    }
-
-    // --- AÇÃO: START TRANSCRIPTION ---
-    if (action === 'start_transcription') {
+    // --- AÇÃO: TRANSCRIBE ---
+    if (action === 'transcribe') {
       const { videoId } = body;
       if (!videoId) throw new Error('videoId is required');
 
+      // 1. Buscar dados do vídeo
       const video = await base44.entities.ModelingVideo.get(videoId);
-      if (!video) throw new Error('Video not found');
+      if (!video) throw new Error('Vídeo não encontrado');
 
-      // Se já tiver order_id e estiver transcrevendo, apenas checa o status
-      if (video.transkriptor_order_id && video.status === 'transcribing') {
-        return handleCheckStatus(videoId, video.transkriptor_order_id, base44, apiKey);
+      // 2. Buscar API Key do Transkriptor (User Secret ou Variável de Ambiente)
+      // O usuário setou TRANSKRIPTOR_API_KEY via set_secrets, que vai para env vars do App
+      const apiKey = Deno.env.get('TRANSKRIPTOR_API_KEY');
+      
+      if (!apiKey) {
+        throw new Error('API Key do Transkriptor não configurada (TRANSKRIPTOR_API_KEY).');
       }
 
-      console.log(`[Transkriptor] Starting transcription for video: ${video.url}`);
+      // 3. Lógica de Transcrição
+      // Se já tem order_id e status é transcribing, verifica o status
+      if (video.transkriptor_order_id && video.status === 'transcribing') {
+        console.log(`[modelingTranscribe] Checking status for order: ${video.transkriptor_order_id}`);
+        
+        const checkResponse = await fetch(`https://api.tor.app/developer/files/${video.transkriptor_order_id}/content`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Accept': 'application/json'
+          }
+        });
 
-      const response = await fetch("https://api.tor.app/developer/transcription/url", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-          "Accept": "application/json",
-        },
-        body: JSON.stringify({
+        if (!checkResponse.ok) {
+           // Se der 404 ou erro, pode ser que o ID esteja errado ou expirou.
+           const errText = await checkResponse.text();
+           console.error(`[modelingTranscribe] Check status failed: ${checkResponse.status} - ${errText}`);
+           
+           // Se for erro de servidor, talvez manter transcribing? Se for 404, falhar.
+           if (checkResponse.status === 404) {
+             await base44.entities.ModelingVideo.update(video.id, {
+               status: 'error',
+               error_message: 'Pedido de transcrição não encontrado no Transkriptor.'
+             });
+             return Response.json({ status: 'error', message: 'Pedido não encontrado.' });
+           }
+           
+           throw new Error(`Erro ao verificar status: ${checkResponse.status}`);
+        }
+
+        const data = await checkResponse.json();
+        console.log(`[modelingTranscribe] Status response:`, JSON.stringify(data).substring(0, 200));
+
+        // Transkriptor retorna 200 OK com body contendo "status": "Completed" ou "Processing"
+        // O body pode estar dentro de um objeto "body" se for wrapper da AWS Lambda, mas a doc diz que retorna direto o JSON.
+        // Vamos checar a estrutura. Doc diz:
+        // { "status": "Completed", "content": [ { "text": "..." } ] }
+        // Ou
+        // { "status": "Processing", ... }
+
+        const status = data.status; // "Processing", "Completed", "Failed"?
+
+        if (status === 'Completed') {
+          // Extrair texto completo
+          // content é array de objetos { text, StartTime, ... }
+          let fullText = '';
+          if (Array.isArray(data.content)) {
+            fullText = data.content.map(c => c.text).join(' ');
+          } else if (typeof data.content === 'string') {
+            fullText = data.content;
+          }
+
+          if (!fullText) fullText = "Transcrição vazia.";
+
+          const charCount = fullText.length;
+          const tokenEst = Math.ceil(charCount / 4);
+
+          await base44.entities.ModelingVideo.update(video.id, {
+            transcript: fullText,
+            status: 'transcribed',
+            character_count: charCount,
+            token_estimate: tokenEst,
+            updated_date: new Date().toISOString()
+          });
+
+          // Atualizar totais
+          // Chamar updateTotals internamente ou deixar o frontend chamar?
+          // Vamos chamar internamente para garantir.
+           // Recalcular totais (simples)
+           // (Ideal seria chamar a função separada, mas para evitar overhead fazemos aqui ou deixamos o front)
+           // Vamos deixar o front chamar updateTotals no success.
+
+          return Response.json({ success: true, status: 'transcribed', transcript: fullText });
+
+        } else if (status === 'Processing' || status === 'Uploaded' || status === 'I am working on it') {
+          return Response.json({ success: true, status: 'transcribing', message: 'Ainda processando...' });
+        } else if (status === 'Failed' || status === 'Error') {
+           await base44.entities.ModelingVideo.update(video.id, {
+            status: 'error',
+            error_message: 'Transkriptor falhou na transcrição.'
+          });
+          return Response.json({ success: false, status: 'error', message: 'Falha no processamento.' });
+        } else {
+           // Status desconhecido, mantém transcribing
+           console.log(`[modelingTranscribe] Unknown status: ${status}`);
+           return Response.json({ success: true, status: 'transcribing', message: `Status: ${status}` });
+        }
+
+      } else {
+        // INICIAR NOVA TRANSCRIÇÃO
+        console.log(`[modelingTranscribe] Starting new transcription for: ${video.url}`);
+
+        // Payload para URL
+        // Endpoint: https://api.tor.app/developer/transcription/url
+        const payload = {
           url: video.url,
           service: "Standard",
-          language: "pt-BR" // Padrão PT-BR, poderia ser parâmetro
-        }),
-      });
+          language: "pt-BR", // Default para PT-BR conforme contexto do app, mas ideal seria parametrizável ou auto? Doc diz language code. Vamos usar pt-BR.
+          // file_name: video.title // Opcional
+        };
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[Transkriptor] Start error:', errorText);
-        throw new Error(`Transkriptor API error: ${errorText}`);
+        const startResponse = await fetch('https://api.tor.app/developer/transcription/url', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!startResponse.ok) {
+           const errText = await startResponse.text();
+           console.error(`[modelingTranscribe] Start transcription failed: ${startResponse.status} - ${errText}`);
+           throw new Error(`Erro ao iniciar transcrição: ${startResponse.status} - ${errText}`);
+        }
+
+        const startData = await startResponse.json();
+        // { "message": "...", "order_id": "..." }
+        
+        const orderId = startData.order_id;
+        if (!orderId) {
+          throw new Error('Não foi possível obter o Order ID do Transkriptor.');
+        }
+
+        // Salvar order_id e mudar status
+        await base44.entities.ModelingVideo.update(video.id, {
+          status: 'transcribing',
+          transkriptor_order_id: orderId,
+          error_message: null
+        });
+
+        // Log de uso (inicio)
+        await base44.entities.UsageLog.create({
+          user_email: user.email,
+          feature: 'modeling_transcribe_start',
+          model: 'transkriptor',
+          model_name: 'Standard',
+          total_tokens: 0,
+          duration_ms: 0,
+          success: true
+        });
+
+        return Response.json({ success: true, status: 'transcribing', orderId });
       }
-
-      const data = await response.json();
-      console.log('[Transkriptor] Order started:', data);
-
-      if (!data.order_id) {
-        throw new Error('No order_id received from Transkriptor');
-      }
-
-      await base44.entities.ModelingVideo.update(videoId, {
-        transkriptor_order_id: data.order_id,
-        status: 'transcribing',
-        error_message: null
-      });
-
-      return Response.json({ success: true, order_id: data.order_id, status: 'transcribing' });
     }
 
-    // --- AÇÃO: CHECK STATUS ---
-    if (action === 'check_status') {
-      const { videoId } = body;
-      if (!videoId) throw new Error('videoId is required');
-
-      const video = await base44.entities.ModelingVideo.get(videoId);
-      if (!video) throw new Error('Video not found');
-
-      if (!video.transkriptor_order_id) {
-        throw new Error('No Transkriptor order ID found for this video');
-      }
-
-      return handleCheckStatus(videoId, video.transkriptor_order_id, base44, apiKey);
-    }
-
-    // --- AÇÃO: UPDATE TOTALS (LEGADO/UTIL) ---
+    // --- AÇÃO: UPDATE TOTALS ---
     if (action === 'updateTotals') {
       const { modelingId } = body;
       if (!modelingId) throw new Error('modelingId is required');
@@ -118,84 +212,21 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[modelingTranscribe] Error:', error);
+    
+    // Tenta atualizar status para erro se for ação de transcrição e tiver ID
+    try {
+      const body = await req.json().catch(() => ({}));
+      if (body.action === 'transcribe' && body.videoId) {
+        // Só atualiza para erro se não for erro de "ainda processando" (que não lançaria exceção acima, mas vai que)
+        // Aqui é erro de código mesmo.
+        const base44 = createClientFromRequest(req);
+        await base44.entities.ModelingVideo.update(body.videoId, {
+          status: 'error',
+          error_message: error.message
+        });
+      }
+    } catch (e) { /* ignore secondary error */ }
+
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
-
-async function handleCheckStatus(videoId, orderId, base44, apiKey) {
-  console.log(`[Transkriptor] Checking status for order: ${orderId}`);
-
-  const response = await fetch(`https://api.tor.app/developer/files/${orderId}/content`, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Accept": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[Transkriptor] Check error:', errorText);
-    throw new Error(`Transkriptor Check API error: ${errorText}`);
-  }
-
-  const data = await response.json();
-  // A API pode retornar status no body mesmo com 200 OK
-  // Ex: { status: "Processing" } ou { status: "Completed", content: [...] }
-  
-  // A documentação do "Get Transcription Content" diz que retorna o content.
-  // Mas a resposta de exemplo mostra um campo "status".
-  
-  if (data.status === 'Processing' || data.status === 'Queued' || data.status === 'Uploading') {
-    return Response.json({ success: true, status: 'transcribing', progress: 'processing' });
-  }
-
-  if (data.status === 'Completed') {
-    // Processar conteúdo
-    // data.content é array de { text, StartTime, EndTime, Speaker }
-    
-    let fullText = '';
-    if (Array.isArray(data.content)) {
-      fullText = data.content.map(item => item.text).join(' ');
-    } else {
-        // Fallback caso estrutura seja diferente
-        fullText = JSON.stringify(data.content);
-    }
-
-    const charCount = fullText.length;
-    const tokenEst = Math.ceil(charCount / 4);
-
-    await base44.entities.ModelingVideo.update(videoId, {
-      transcript: fullText,
-      status: 'transcribed',
-      character_count: charCount,
-      token_estimate: tokenEst,
-      updated_date: new Date().toISOString()
-    });
-
-    // Atualiza totais da modelagem
-    const video = await base44.entities.ModelingVideo.get(videoId);
-    if (video.modeling_id) {
-       // Invoke updateTotals async (fire and forget kinda, but calling self via fetch or base44 SDK if possible)
-       // Vamos chamar a função recursivamente ou via SDK se possível, mas aqui estamos dentro da função.
-       // Melhor apenas chamar a lógica de updateTotals se tivermos acesso fácil, mas como é outra action, 
-       // vamos deixar o client chamar ou o usuário atualizar a página.
-       // Ou fazer o update direto aqui:
-       // Mas para economizar tempo de execução, deixamos para o client ou próxima carga.
-    }
-
-    return Response.json({ success: true, status: 'transcribed', transcript: fullText });
-  }
-
-  // Se for outro status (Failed?)
-  if (data.status === 'Failed' || data.status === 'Error') {
-     await base44.entities.ModelingVideo.update(videoId, {
-      status: 'error',
-      error_message: 'Transkriptor failed to process video'
-    });
-    return Response.json({ success: false, status: 'error', error: 'Transkriptor failed' });
-  }
-
-  // Se não tiver status claro, assume processing
-  return Response.json({ success: true, status: 'transcribing', data });
-}

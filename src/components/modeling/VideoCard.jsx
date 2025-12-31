@@ -111,22 +111,31 @@ export default function VideoCard({ video, onTranscribe, onView, onDelete, isTra
             )}
 
             {/* Action Button */}
-            {video.status === 'pending' && (
+            {(video.status === 'pending' || video.status === 'transcribing') && (
               <Button 
                 size="sm" 
-                className="mt-3 h-7 text-xs bg-pink-600 hover:bg-pink-700"
+                className={`mt-3 h-7 text-xs ${video.status === 'transcribing' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-pink-600 hover:bg-pink-700'}`}
                 onClick={onTranscribe}
                 disabled={isTranscribing}
               >
                 {isTranscribing ? (
                   <>
                     <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Transcrevendo...
+                    {video.status === 'transcribing' ? 'Verificando...' : 'Iniciando...'}
                   </>
                 ) : (
                   <>
-                    <Play className="w-3 h-3 mr-1" />
-                    Transcrever
+                    {video.status === 'transcribing' ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-1" />
+                        Verificar Status
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3 h-3 mr-1" />
+                        Transcrever
+                      </>
+                    )}
                   </>
                 )}
               </Button>
