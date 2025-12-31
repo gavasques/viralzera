@@ -33,7 +33,8 @@ export default function YoutubeScriptHeader({
   onSave, 
   isSaving,
   hasChanges,
-  onSuggestTitles
+  onSuggestTitles,
+  onChatOpen
 }) {
   const navigate = useNavigate();
 
@@ -71,7 +72,7 @@ export default function YoutubeScriptHeader({
           <Button
             variant="ghost"
             size="sm"
-            onClick={props.onChatOpen}
+            onClick={onChatOpen}
             className="shrink-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
           >
             <MessageSquareText className="w-4 h-4 mr-1" />
