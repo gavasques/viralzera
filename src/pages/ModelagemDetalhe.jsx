@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { createClient } from "@base44/sdk";
 import { Button } from "@/components/ui/button";
-
-const functionClient = createClient();
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -35,8 +32,6 @@ export default function ModelagemDetalhe() {
   const [viewingVideo, setViewingVideo] = useState(null);
   const [transcribingId, setTranscribingId] = useState(null);
 
-
-
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
     queryKey: ['modeling', modelingId],
@@ -61,15 +56,13 @@ export default function ModelagemDetalhe() {
     enabled: !!modelingId
   });
 
-
-
   // Delete video mutation
   const deleteVideoMutation = useMutation({
     mutationFn: (id) => base44.entities.ModelingVideo.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      functionClient.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      base44.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
       toast.success('Vídeo excluído!');
     }
   });
@@ -80,79 +73,31 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      functionClient.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      base44.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
       toast.success('Texto excluído!');
     }
   });
 
-  // Transcribe video (Start)
+  // Transcribe video
   const handleTranscribe = async (videoId) => {
-    console.log('handleTranscribe called for', videoId);
     setTranscribingId(videoId);
     try {
-      console.log('Invoking modelingTranscribe...');
-      // Use 'transcribe' action which handles both start and check status
-      const response = await functionClient.functions.invoke('modelingTranscribe', {
+      const response = await base44.functions.invoke('modelingTranscribe', {
         action: 'transcribe',
         videoId
       });
       
-      console.log('Response:', response);
-      
       if (response.data.error) throw new Error(response.data.error);
       
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
-      
-      if (response.data.status === 'transcribing') {
-        toast.info('Processando no Transkriptor...');
-      } else if (response.data.status === 'transcribed') {
-        queryClient.invalidateQueries({ queryKey: ['modelings'] });
-        toast.success('Transcrição concluída!');
-      }
+      queryClient.invalidateQueries({ queryKey: ['modelings'] });
+      toast.success('Transcrição concluída!');
     } catch (error) {
-      console.error('Transcribe error:', error);
-      toast.error('Erro: ' + error.message);
+      toast.error('Erro na transcrição: ' + error.message);
     } finally {
       setTranscribingId(null);
     }
   };
-
-  // Check Status
-  const handleCheckStatus = async (videoId) => {
-    try {
-      const response = await functionClient.functions.invoke('modelingTranscribe', {
-        action: 'transcribe', // Same action checks status if already processing
-        videoId
-      });
-
-      if (response.data.error) throw new Error(response.data.error);
-
-      if (response.data.status === 'transcribed') {
-        queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
-        queryClient.invalidateQueries({ queryKey: ['modelings'] });
-        functionClient.functions.invoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
-        toast.success('Transcrição finalizada!');
-      } else if (response.data.status === 'transcribing') {
-        toast.info('Ainda processando...');
-      }
-    } catch (error) {
-      console.error('Check status error:', error);
-    }
-  };
-
-  // Polling para vídeos em processamento
-  React.useEffect(() => {
-    const transcribingVideos = videos.filter(v => v.status === 'transcribing');
-    if (transcribingVideos.length === 0) return;
-
-    const interval = setInterval(() => {
-      transcribingVideos.forEach(video => {
-        handleCheckStatus(video.id);
-      });
-    }, 10000); // Checa a cada 10s
-
-    return () => clearInterval(interval);
-  }, [videos]);
 
   // Transcribe all pending videos
   const handleTranscribeAll = async () => {
@@ -321,7 +266,6 @@ export default function ModelagemDetalhe() {
                   video={video}
                   isTranscribing={transcribingId === video.id}
                   onTranscribe={() => handleTranscribe(video.id)}
-                  onCheckStatus={() => handleCheckStatus(video.id)}
                   onView={() => setViewingVideo(video)}
                   onDelete={() => {
                     if (confirm('Excluir este vídeo?')) {
