@@ -105,6 +105,12 @@ export default function OpenRouterModels() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {error && (
+          <div className="p-8 text-center text-red-600 bg-red-50">
+            <p className="font-medium">Erro ao carregar modelos</p>
+            <p className="text-sm mt-1">{error.message}</p>
+          </div>
+        )}
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
