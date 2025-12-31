@@ -61,25 +61,6 @@ export default function DeepResearchDrawer({ open, onOpenChange, modelingId }) {
         ...newHistory.map(m => ({ role: m.role, content: m.content }))
       ];
 
-      // If web search enabled, get context from internet first
-      let webContext = '';
-      if (config.enable_web_search) {
-        try {
-          webContext = await base44.integrations.Core.InvokeLLM({
-            prompt: `Pesquise na internet sobre: ${userMessage}\n\nRetorne um resumo completo e estruturado das informações mais relevantes e atualizadas.`,
-            add_context_from_internet: true
-          });
-          
-          // Add web context to messages
-          messages.push({
-            role: 'system',
-            content: `Contexto adicional da web:\n\n${webContext}`
-          });
-        } catch (error) {
-          console.warn('Web search falhou, continuando sem contexto web:', error);
-        }
-      }
-
       // Call OpenRouter
       const requestBody = {
         model: config.model,
@@ -87,6 +68,36 @@ export default function DeepResearchDrawer({ open, onOpenChange, modelingId }) {
         temperature: 0.7,
         max_tokens: 8000
       };
+
+      // Check if model has native web search (Perplexity models)
+      const hasNativeWebSearch = config.model?.toLowerCase().includes('perplexity') || 
+                                  config.model?.toLowerCase().includes('sonar');
+
+      // Add web search if enabled
+      if (config.enable_web_search) {
+        if (hasNativeWebSearch) {
+          // Use native web search for Perplexity models
+          requestBody.web_search_options = {
+            enabled: true
+          };
+        } else {
+          // For other models, get web context first
+          try {
+            const webContext = await base44.integrations.Core.InvokeLLM({
+              prompt: `Pesquise na internet sobre: ${userMessage}\n\nRetorne um resumo completo e estruturado das informações mais relevantes e atualizadas.`,
+              add_context_from_internet: true
+            });
+            
+            // Add web context to messages
+            messages.push({
+              role: 'system',
+              content: `Contexto adicional da web:\n\n${webContext}`
+            });
+          } catch (error) {
+            console.warn('Web search falhou, continuando sem contexto web:', error);
+          }
+        }
+      }
 
       // Add reasoning if enabled
       if (config.enable_reasoning) {
