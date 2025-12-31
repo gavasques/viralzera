@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, FileText, Video, Users, Bot, Library } from "lucide-react";
+import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, FileText, Video, Users, Bot, Library, Database } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
@@ -14,12 +14,14 @@ import { StepVideoType } from "./steps/StepVideoType";
 import { StepContext } from "./steps/StepContext";
 import { StepModel } from "./steps/StepModel";
 import { StepRefinement } from "./steps/StepRefinement";
+import { StepModelings } from "./steps/StepModelings";
 import { buildYoutubePrompt, getVideoTypeConfig } from "./buildYoutubePrompt";
 
 const STEPS = [
   { id: 'name', title: 'Nome', description: 'Título do roteiro', icon: FileText },
   { id: 'type', title: 'Tipo de Vídeo', description: 'Formato do conteúdo', icon: Video },
   { id: 'context', title: 'Contexto', description: 'Persona e Público', icon: Users },
+  { id: 'modelings', title: 'Modelagens', description: 'Referências de sucesso', icon: Database },
   { id: 'model', title: 'Inteligência', description: 'Modelo e Recursos', icon: Bot },
   { id: 'refine', title: 'Refinamento', description: 'Materiais e Notas', icon: Library },
 ];
@@ -30,6 +32,7 @@ const INITIAL_FORM_DATA = {
   personaId: '',
   audienceId: '',
   selectedMaterials: [],
+  selectedModelings: [],
   userNotes: '',
   duracaoEstimada: '',
   model: '',
@@ -80,14 +83,41 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
           : []
       ]);
 
-      // 2. Build prompt
+      // 2. Fetch modelings content if selected
+      let modelingsContent = [];
+      if (formData.selectedModelings?.length > 0) {
+        const [modelingsData, videos, texts] = await Promise.all([
+          base44.entities.Modeling.filter({ id: { $in: formData.selectedModelings } }),
+          base44.entities.ModelingVideo.filter({ 
+            modeling_id: { $in: formData.selectedModelings },
+            status: 'transcribed'
+          }),
+          base44.entities.ModelingText.filter({ 
+            modeling_id: { $in: formData.selectedModelings }
+          })
+        ]);
+
+        modelingsContent = modelingsData.map(m => ({
+          title: m.title,
+          creatorIdea: m.creator_idea,
+          transcripts: videos
+            .filter(v => v.modeling_id === m.id)
+            .map(v => ({ title: v.title, content: v.transcript })),
+          texts: texts
+            .filter(t => t.modeling_id === m.id)
+            .map(t => ({ title: t.title, content: t.content }))
+        }));
+      }
+
+      // 3. Build prompt
       const prompt = buildYoutubePrompt({
         videoType: formData.videoType,
         title: formData.title,
         persona: persona?.data || persona,
         audience: audience?.data || audience,
         materials: Array.isArray(materials) ? materials : (materials?.data || []),
-        userNotes: formData.userNotes
+        userNotes: formData.userNotes,
+        modelingsContent
       });
 
       // 3. Call AI via backend function
@@ -115,7 +145,8 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         corpo: generatedContent,
         duracao_estimada: formData.duracaoEstimada || null,
         status: 'Rascunho',
-        focus_id: selectedFocusId
+        focus_id: selectedFocusId,
+        modeling_ids: formData.selectedModelings || []
       });
 
       // 6. Close modal and redirect
@@ -139,8 +170,10 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       case 2:
         return <StepContext focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 3:
-        return <StepModel value={formData} onChange={setFormData} />;
+        return <StepModelings focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 4:
+        return <StepModel value={formData} onChange={setFormData} />;
+      case 5:
         return <StepRefinement focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       default:
         return null;

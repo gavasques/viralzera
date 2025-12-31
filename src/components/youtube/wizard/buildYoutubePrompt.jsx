@@ -181,9 +181,40 @@ function formatMaterialsData(materials) {
 }
 
 /**
+ * Formata os dados das modelagens para o prompt
+ */
+function formatModelingsData(modelingsContent) {
+  if (!modelingsContent || modelingsContent.length === 0) return null;
+  
+  return modelingsContent.map((item, i) => {
+    let text = `\n--- Modelagem ${i + 1}: ${item.title} ---\n`;
+    
+    if (item.creatorIdea) {
+      text += `📝 Insights do Criador:\n${item.creatorIdea}\n\n`;
+    }
+    
+    if (item.transcripts && item.transcripts.length > 0) {
+      text += `🎬 Transcrições de Vídeos:\n`;
+      item.transcripts.forEach((t, j) => {
+        text += `[Vídeo ${j + 1}: ${t.title}]\n${t.content}\n\n`;
+      });
+    }
+    
+    if (item.texts && item.texts.length > 0) {
+      text += `📄 Textos de Referência:\n`;
+      item.texts.forEach((t, j) => {
+        text += `[Texto ${j + 1}: ${t.title}]\n${t.content}\n\n`;
+      });
+    }
+    
+    return text;
+  }).join('\n');
+}
+
+/**
  * Constrói o prompt completo para geração de roteiro YouTube
  */
-export function buildYoutubePrompt({ videoType, title, persona, audience, materials, userNotes }) {
+export function buildYoutubePrompt({ videoType, title, persona, audience, materials, userNotes, modelingsContent }) {
   const typeConfig = VIDEO_TYPE_CONFIG[videoType];
   
   if (!typeConfig) {
@@ -224,6 +255,18 @@ ${audienceText}`;
 Use estas referências para criar o conteúdo:
 
 ${materialsText}
+`;
+  }
+
+  // Modelagens de Referência
+  const modelingsText = formatModelingsData(modelingsContent);
+  if (modelingsText) {
+    prompt += `
+🎯 **MODELAGENS DE REFERÊNCIA:**
+Analise os padrões de sucesso destas referências e use como inspiração para criar um roteiro ainda melhor.
+Identifique: estrutura, ganchos, transições, técnicas de engajamento, tom de voz, e aplique no novo roteiro.
+
+${modelingsText}
 `;
   }
 
