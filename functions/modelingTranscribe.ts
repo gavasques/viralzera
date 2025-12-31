@@ -64,18 +64,24 @@ async function transcribeVideo(base44, videoId) {
   });
 
   try {
-    // Buscar configuração do OpenRouter
-    const apiKey = Deno.env.get('OPENROUTER_API_KEY');
+    // Buscar API Key do usuário
+    const userConfigs = await base44.entities.UserConfig.filter({ created_by: base44.auth.me().email });
+    const apiKey = userConfigs[0]?.openrouter_api_key;
+    
     if (!apiKey) {
-      throw new Error('OPENROUTER_API_KEY não configurada');
+      throw new Error('Configure sua API Key do OpenRouter em Configurações');
     }
 
     // Buscar config de modelagem para usar prompt e modelo customizados
-    const configs = await base44.entities.ModelingConfig.list();
+    const configs = await base44.asServiceRole.entities.ModelingConfig.list();
     const config = configs?.[0];
     
-    const model = config?.model || 'google/gemini-2.5-flash';
-    const systemPrompt = config?.prompt || `Você é um especialista em transcrição de vídeos.
+    if (!config?.model) {
+      throw new Error('Configure o modelo de transcrição em Configurações de Agentes > Modelagem');
+    }
+    
+    const model = config.model;
+    const systemPrompt = config.prompt || `Você é um especialista em transcrição de vídeos.
 
 Tarefa:
 - Transcreva todo o conteúdo do vídeo com precisão
