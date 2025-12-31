@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Layers, Youtube, FileText, Plus, Hash, 
-  Video, Loader2, PlayCircle, Settings
+  Video, Loader2, PlayCircle, Settings, BrainCircuit
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -21,6 +21,7 @@ import AddTextModal from "@/components/modeling/AddTextModal";
 import CreatorIdeaEditor from "@/components/modeling/CreatorIdeaEditor";
 import TranscriptViewerModal from "@/components/modeling/TranscriptViewerModal";
 import ModelingFormModal from "@/components/modeling/ModelingFormModal";
+import AssistantDrawer from "@/components/modeling/AssistantDrawer";
 
 export default function ModelagemDetalhe() {
   const queryClient = useQueryClient();
@@ -32,6 +33,7 @@ export default function ModelagemDetalhe() {
   const [showEditModeling, setShowEditModeling] = useState(false);
   const [viewingVideo, setViewingVideo] = useState(null);
   const [transcribingId, setTranscribingId] = useState(null);
+  const [showAssistant, setShowAssistant] = useState(false);
 
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
@@ -300,6 +302,14 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             <p className="text-2xl font-bold text-slate-900">{formatNumber(modeling.total_tokens_estimate || 0)}</p>
             <p className="text-xs text-slate-500">tokens estimados</p>
           </div>
+          <Button 
+            variant="outline" 
+            className="bg-amber-50 hover:bg-amber-100 text-amber-600"
+            onClick={() => setShowAssistant(true)}
+          >
+            <BrainCircuit className="w-4 h-4 mr-2" />
+            Assistente
+          </Button>
           <Button variant="outline" size="icon" onClick={() => setShowEditModeling(true)}>
             <Settings className="w-4 h-4" />
           </Button>
@@ -465,6 +475,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         modeling={modeling}
         focusId={modeling?.focus_id}
       />
-    </div>
-  );
-}
+
+      <AssistantDrawer
+        open={showAssistant}
+        onOpenChange={setShowAssistant}
+        modelingId={modelingId}
+      />
+      </div>
+      );
+      }
