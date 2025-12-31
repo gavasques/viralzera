@@ -147,8 +147,13 @@ export async function sendMessage({
  * Retorna dados completos incluindo supported_parameters
  */
 export async function fetchModels() {
-  const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
-  return response.data?.models || [];
+  try {
+    const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
+    return response.data?.models || [];
+  } catch (error) {
+    console.error('[fetchModels] Error invoking backend:', error);
+    throw new Error(error.message || 'Erro ao carregar modelos');
+  }
 }
 
 /**
