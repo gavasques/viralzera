@@ -170,9 +170,9 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden px-6 pb-6">
-          <ScrollArea className="h-full">
-            <div className="pr-6 py-4">
+        <div className="flex-1 overflow-hidden px-6 pb-6 min-h-0">
+          <ScrollArea className="h-[calc(90vh-180px)] w-full pr-4">
+            <div className="pb-8 pt-4">
               {isEditing ? (
                 <Textarea
                   value={editedContent}
@@ -181,27 +181,23 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
                   placeholder="Edite o conteúdo do dossiê em Markdown..."
                 />
               ) : (
-                <div className="prose prose-slate lg:prose-lg max-w-none
-                  prose-headings:font-bold prose-headings:text-slate-900 prose-headings:tracking-tight
-                  prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-0 prose-h1:pb-4 prose-h1:border-b-2 prose-h1:border-purple-200
-                  prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:text-purple-700 prose-h2:border-b prose-h2:border-purple-100 prose-h2:pb-3
-                  prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-5 prose-h3:text-slate-800
-                  prose-h4:text-xl prose-h4:mt-8 prose-h4:mb-4 prose-h4:text-slate-700
-                  prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-6 prose-p:text-base
-                  prose-strong:text-slate-900 prose-strong:font-semibold
-                  prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2
-                  prose-ol:my-6 prose-ol:list-decimal prose-ol:pl-6 prose-ol:space-y-2
-                  prose-li:text-slate-700 prose-li:leading-relaxed prose-li:my-3
-                  prose-a:text-purple-600 prose-a:no-underline prose-a:font-medium hover:prose-a:underline hover:prose-a:text-purple-700
-                  prose-blockquote:border-l-4 prose-blockquote:border-purple-400 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:my-6 prose-blockquote:italic prose-blockquote:text-slate-600 prose-blockquote:bg-purple-50/30
-                  prose-code:text-purple-700 prose-code:bg-purple-50 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:font-mono
-                  prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-6 prose-pre:rounded-xl prose-pre:overflow-x-auto prose-pre:my-6 prose-pre:shadow-lg
-                  prose-hr:border-slate-200 prose-hr:my-12 prose-hr:border-t-2
-                  prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
-                  prose-table:my-8
-                  [&>*:first-child]:mt-0"
+                <div className="prose prose-slate max-w-none
+                  prose-headings:font-bold prose-headings:text-slate-900 
+                  prose-h1:text-3xl prose-h1:border-b prose-h1:pb-4 prose-h1:mb-8
+                  prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-purple-800
+                  prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-slate-800
+                  prose-p:text-slate-700 prose-p:leading-8 prose-p:mb-6 prose-p:text-lg
+                  prose-li:text-slate-700 prose-li:leading-7
+                  prose-strong:text-slate-900 prose-strong:font-bold
+                  prose-hr:my-8 prose-hr:border-slate-200"
                 >
-                  <ReactMarkdown>{dossier.full_content}</ReactMarkdown>
+                  <ReactMarkdown 
+                    components={{
+                      p: ({node, ...props}) => <p style={{whiteSpace: 'pre-wrap'}} {...props} />
+                    }}
+                  >
+                    {dossier.full_content}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
