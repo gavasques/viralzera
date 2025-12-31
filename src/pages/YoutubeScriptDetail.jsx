@@ -149,25 +149,22 @@ export default function YoutubeScriptDetail() {
       />
 
       <div className="space-y-6 pb-12">
-        {SCRIPT_SECTIONS.map((section) => (
-          <YoutubeScriptSectionEditor
-            key={section.key}
-            sectionKey={section.key}
-            title={section.title}
-            description={section.description}
-            content={sections[section.key]}
-            onChange={handleSectionChange}
-            onOpenRefiner={handleOpenRefiner}
-          />
-        ))}
+        <YoutubeScriptSectionEditor
+          sectionKey="corpo"
+          title="Roteiro Completo"
+          description="Edite o conteúdo completo do roteiro"
+          content={content}
+          onChange={(_, val) => setContent(val)}
+          onOpenRefiner={handleOpenRefiner}
+        />
       </div>
 
       {/* Refiner Drawer */}
       <RefinerDrawer
         open={refinerOpen}
         onOpenChange={setRefinerOpen}
-        sectionKey={refinerSection}
-        sectionContent={refinerSection ? sections[refinerSection] : ''}
+        sectionKey="corpo"
+        sectionContent={content}
         scriptContext={{
           title: title,
           videoType: script?.video_type
