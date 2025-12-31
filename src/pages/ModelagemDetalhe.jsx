@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { invokeFunction } from "@/components/utils/invokeFunction";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,16 +33,7 @@ export default function ModelagemDetalhe() {
   const [viewingVideo, setViewingVideo] = useState(null);
   const [transcribingId, setTranscribingId] = useState(null);
 
-  // Debug Base44 Client
-  React.useEffect(() => {
-    console.log('Base44 Object:', base44);
-    if (base44) {
-      console.log('Base44 Keys:', Object.keys(base44));
-      console.log('Base44 Prototype:', Object.getPrototypeOf(base44));
-    } else {
-      console.error('Base44 object is undefined/null');
-    }
-  }, []);
+
 
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
@@ -67,13 +59,7 @@ export default function ModelagemDetalhe() {
     enabled: !!modelingId
   });
 
-  const safeInvoke = async (functionName, body) => {
-    if (!base44?.functions?.invoke) {
-      console.error('Base44 client missing functions.invoke', base44);
-      throw new Error('Base44 client not configured for functions');
-    }
-    return base44.functions.invoke(functionName, body);
-  };
+
 
   // Delete video mutation
   const deleteVideoMutation = useMutation({
@@ -81,7 +67,7 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      safeInvoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      invokeFunction('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
       toast.success('Vídeo excluído!');
     }
   });
@@ -92,7 +78,7 @@ export default function ModelagemDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      safeInvoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+      invokeFunction('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
       toast.success('Texto excluído!');
     }
   });
@@ -104,7 +90,7 @@ export default function ModelagemDetalhe() {
     try {
       console.log('Invoking modelingTranscribe...');
       // Use 'transcribe' action which handles both start and check status
-      const response = await safeInvoke('modelingTranscribe', {
+      const response = await invokeFunction('modelingTranscribe', {
         action: 'transcribe',
         videoId
       });
@@ -132,7 +118,7 @@ export default function ModelagemDetalhe() {
   // Check Status
   const handleCheckStatus = async (videoId) => {
     try {
-      const response = await safeInvoke('modelingTranscribe', {
+      const response = await invokeFunction('modelingTranscribe', {
         action: 'transcribe', // Same action checks status if already processing
         videoId
       });
@@ -142,7 +128,7 @@ export default function ModelagemDetalhe() {
       if (response.data.status === 'transcribed') {
         queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
         queryClient.invalidateQueries({ queryKey: ['modelings'] });
-        safeInvoke('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
+        invokeFunction('modelingTranscribe', { action: 'updateTotals', modelingId }).catch(() => {});
         toast.success('Transcrição finalizada!');
       } else if (response.data.status === 'transcribing') {
         toast.info('Ainda processando...');
