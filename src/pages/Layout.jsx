@@ -177,6 +177,7 @@ export default function Layout({ children }) {
             isAdmin: true,
             items: [
               { name: 'Gestão de Modelos', icon: Rocket, page: 'ModelManagement' },
+              { name: 'Tipos de Roteiros', icon: ScrollText, page: 'AdminScriptTypes' },
               { name: 'Configurações de Agentes', icon: Settings, page: 'AgentSettings' },
               { name: 'Análise de Consumo', icon: LayoutDashboard, page: 'UsageAnalytics' },
               { name: 'Análise Multi Chat', icon: LayoutDashboard, page: 'MultiChatAnalytics' },
