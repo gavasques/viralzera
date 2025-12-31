@@ -431,12 +431,69 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
     try {
       toast.info('Analisando vídeo...');
-      await base44.functions.invoke('runModelingAnalysis', {
-        modeling_id: modelingId,
-        materialId: videoId,
-        materialType: 'video',
-        content: video.transcript
+
+      // Buscar configuração do agente de análise
+      const analyzerConfigs = await base44.entities.ModelingAnalyzerConfig.list();
+      const config = analyzerConfigs?.[0];
+      
+      if (!config?.model) {
+        throw new Error('Configure o agente de Análise Individual em Configurações de Agentes');
+      }
+
+      const systemPrompt = config.prompt || `Você é um analista de conteúdo especializado. Analise este material e extraia os insights, tópicos-chave e informações mais relevantes para criação de conteúdo.`;
+
+      // Buscar API key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter em Configurações');
+      }
+
+      // Chamar OpenRouter diretamente
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Analyzer'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: video.transcript }
+          ],
+          temperature: 0.5,
+          max_tokens: 4000
+        })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const analysisSummary = data.choices?.[0]?.message?.content;
+
+      if (!analysisSummary) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      // Salvar análise
+      await base44.entities.ModelingAnalysis.create({
+        modeling_id: modelingId,
+        material_id: videoId,
+        material_type: 'video',
+        material_title: video.title,
+        analysis_summary: analysisSummary,
+        character_count: analysisSummary.length,
+        token_estimate: Math.ceil(analysisSummary.length / 4),
+        status: 'completed'
+      });
+
       queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
       toast.success('Vídeo analisado!');
     } catch (error) {
