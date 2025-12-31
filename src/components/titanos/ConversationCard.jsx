@@ -12,7 +12,7 @@ import {
     DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, differenceInMinutes, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function ConversationCard({ 
@@ -28,6 +28,17 @@ export default function ConversationCard({
     // Count messages (excluding system messages)
     const messageCount = chat.message_count || 0;
     const isWizard = chat.source === 'multiscript_wizard';
+    
+    // Format time - show "agora" for very recent, otherwise relative time
+    const getTimeDisplay = () => {
+        const createdDate = new Date(chat.created_date);
+        const minutesAgo = differenceInMinutes(new Date(), createdDate);
+        
+        if (minutesAgo < 2) return 'agora';
+        if (minutesAgo < 60) return `${minutesAgo} min atrás`;
+        
+        return formatDistanceToNow(createdDate, { addSuffix: true, locale: ptBR });
+    };
 
     return (
         <div 
@@ -82,7 +93,7 @@ export default function ConversationCard({
                 
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
                     <Clock className="w-3 h-3" />
-                    <span>{formatDistanceToNow(new Date(chat.created_date), { addSuffix: true, locale: ptBR })}</span>
+                    <span>{getTimeDisplay()}</span>
                     {messageCount > 0 && (
                         <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                             {messageCount}
