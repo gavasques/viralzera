@@ -13,15 +13,19 @@ export const SCRIPT_SECTIONS = [
 
 /**
  * Cria um regex para encontrar o marcador de seção
- * Suporta variações como: ## HOOK, ##HOOK, ## Hook, ## HOOK (0-30s), etc
+ * Suporta variações como: 
+ * - ## HOOK, ##HOOK, ## Hook
+ * - ## HOOK (0-30s)
+ * - **## HOOK (A Promessa em 5 Segundos)**
+ * - **##HOOK**
  */
 function createSectionRegex(label, altLabels = []) {
   const allLabels = [label, ...(altLabels || [])];
   const escapedLabels = allLabels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const pattern = escapedLabels.join('|');
   
-  // Match: ## LABEL ou ##LABEL, case insensitive, com possível texto adicional após
-  return new RegExp(`^##\\s*(${pattern})(?:\\s*\\([^)]*\\))?\\s*$`, 'im');
+  // Match: opcionalmente envolto em ** ou *, ## LABEL, possível texto em parênteses, e fechamento **
+  return new RegExp(`^\\**##\\s*(${pattern})(?:\\s*\\([^)]*\\))?\\**\\s*$`, 'im');
 }
 
 /**
