@@ -200,7 +200,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <StepTema value={formData} onChange={setFormData} />;
+        return <StepTema focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 1:
         return <StepVideoType focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 2:
