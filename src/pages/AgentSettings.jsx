@@ -136,6 +136,13 @@ const AGENT_CARDS = [
     description: 'Agente que analisa cada vídeo, texto ou link e cria um resumo analítico.',
     icon: FileScan,
     color: 'bg-teal-600'
+  },
+  {
+    key: 'deepResearch',
+    title: 'Deep Research',
+    description: 'Pesquisa profunda com web search e reasoning avançado.',
+    icon: Sparkles,
+    color: 'bg-purple-600'
   }
 ];
 
