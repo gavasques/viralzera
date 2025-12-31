@@ -28,7 +28,8 @@ import {
         Calendar,
         FileText,
         ScrollText,
-        Globe
+        Globe,
+        Youtube
         } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -145,6 +146,7 @@ export default function Layout({ children }) {
             items: [
               { name: 'Multi Chat', icon: Sparkles, page: 'TitanosRouter' },
               { name: 'Canvas', icon: FileText, page: 'Canvas' },
+              { name: 'Roteiros YouTube', icon: Youtube, page: 'YoutubeScripts' },
             ]
           },
           {
