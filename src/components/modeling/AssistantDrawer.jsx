@@ -268,14 +268,10 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
         <SheetHeader className="p-6 pb-4 border-b shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${deepResearchMode ? 'bg-purple-100' : 'bg-amber-100'}`}>
-                {deepResearchMode ? (
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                ) : (
-                  <BrainCircuit className="w-5 h-5 text-amber-600" />
-                )}
+              <div className="p-2 rounded-lg bg-amber-100">
+                <BrainCircuit className="w-5 h-5 text-amber-600" />
               </div>
-              <SheetTitle>{deepResearchMode ? 'Deep Research' : 'Assistente de Ideias'}</SheetTitle>
+              <SheetTitle>Assistente de Ideias</SheetTitle>
             </div>
             {chatHistory.length > 0 && (
               <Button
@@ -289,51 +285,9 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
             )}
           </div>
 
-          <div className="space-y-2">
-            {/* Deep Research Toggle */}
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-600" />
-                <div>
-                  <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
-                    Deep Research
-                  </Label>
-                  <p className="text-xs text-slate-500">Pesquisa profunda com web search e reasoning</p>
-                </div>
-              </div>
-              <Switch
-                id="deep-research"
-                checked={deepResearchMode}
-                onCheckedChange={setDeepResearchMode}
-              />
-            </div>
-
-            {/* Use Dossier Toggle */}
-            {!deepResearchMode && dossier && (
-              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-green-600" />
-                  <div>
-                    <Label htmlFor="use-dossier" className="text-sm font-medium cursor-pointer">
-                      Usar Dossiê como Contexto
-                    </Label>
-                    <p className="text-xs text-slate-500">Enviar dossiê completo ao invés de materiais separados</p>
-                  </div>
-                </div>
-                <Switch
-                  id="use-dossier"
-                  checked={useDossier}
-                  onCheckedChange={setUseDossier}
-                />
-              </div>
-            )}
-
-            {!deepResearchMode && !dossier && (
-              <p className="text-sm text-slate-500">
-                Use as transcrições e textos desta modelagem para ter ideias
-              </p>
-            )}
-          </div>
+          <p className="text-sm text-slate-500">
+            Use as transcrições e textos desta modelagem para ter ideias
+          </p>
         </SheetHeader>
 
         {/* Messages */}
