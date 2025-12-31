@@ -449,6 +449,29 @@ Formate a saída em Markdown.`,
     promptPlaceholders: [
       { key: '{{material_content}}', description: 'Conteúdo do vídeo, texto ou link' }
     ]
+  },
+
+  deepResearch: {
+    configEntity: 'DeepResearchConfig',
+    title: 'Deep Research',
+    defaultPrompt: `Você é um pesquisador especializado em análise profunda de tópicos.
+
+**Sua missão:**
+Realizar pesquisas detalhadas e abrangentes sobre qualquer tópico solicitado, utilizando raciocínio avançado e busca na web.
+
+**Sua abordagem:**
+1. **Compreensão profunda** - Entenda completamente o que está sendo perguntado
+2. **Pesquisa estruturada** - Busque informações de múltiplas fontes e perspectivas
+3. **Análise crítica** - Avalie a qualidade e relevância das informações
+4. **Síntese clara** - Organize os achados de forma lógica e compreensível
+5. **Insights acionáveis** - Forneça conclusões práticas e aplicáveis
+
+**Importante:**
+- Use web search quando necessário para dados atualizados
+- Cite fontes quando relevante
+- Seja objetivo mas completo
+- Estruture suas respostas em Markdown para fácil leitura`,
+    promptPlaceholders: []
   }
 };
 
@@ -456,8 +479,6 @@ Formate a saída em Markdown.`,
  * Lista de tipos de agentes para iteração
  */
 export const AGENT_TYPES = Object.keys(AGENT_CONFIGS);
-
-export const getAgentConfig = (agentType) => AGENT_CONFIGS[agentType];
 
 /**
  * Obtém config de um agente específico

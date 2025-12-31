@@ -4,14 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Send, Trash2, BrainCircuit, User, Bot } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Loader2, Send, Trash2, BrainCircuit, User, Bot, Sparkles, Copy, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import ReactMarkdown from 'react-markdown';
 
 export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
+  const [deepResearchMode, setDeepResearchMode] = useState(false);
   const scrollRef = useRef(null);
 
   // Fetch chat history
@@ -21,10 +25,100 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
     enabled: !!modelingId && open
   });
 
-  // Send message mutation
+  // Send message mutation (Normal Mode)
   const sendMutation = useMutation({
     mutationFn: async (userMessage) => {
-      // Buscar configuração do agente
+      // Se está em modo Deep Research, processar separadamente
+      if (deepResearchMode) {
+        // Buscar config de Deep Research
+        const deepConfigs = await base44.entities.DeepResearchConfig.list();
+        const deepConfig = deepConfigs?.[0];
+
+        if (!deepConfig?.model) {
+          throw new Error('Configure o agente Deep Research em Configurações de Agentes');
+        }
+
+        // Buscar API key
+        const userConfigs = await base44.entities.UserConfig.list();
+        const apiKey = userConfigs[0]?.openrouter_api_key;
+
+        if (!apiKey) {
+          throw new Error('Configure sua API Key do OpenRouter');
+        }
+
+        const systemPrompt = deepConfig.prompt || `Você é um pesquisador especializado. Realize análises profundas e abrangentes.`;
+
+        // Montar histórico para o contexto
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...chatHistory.map(m => ({ role: m.role, content: m.content })),
+          { role: 'user', content: userMessage }
+        ];
+
+        // Preparar request body
+        const requestBody = {
+          model: deepConfig.model,
+          messages,
+          temperature: 0.7,
+          max_tokens: 16000
+        };
+
+        // Adicionar web search se habilitado
+        if (deepConfig.enable_web_search) {
+          requestBody.tools = [{
+            type: "web_search_tool"
+          }];
+        }
+
+        // Adicionar reasoning se habilitado
+        if (deepConfig.enable_reasoning) {
+          requestBody.reasoning = {
+            effort: deepConfig.reasoning_effort || 'high'
+          };
+        }
+
+        // Chamar OpenRouter
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'ContentAI - Deep Research'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const assistantMessage = data.choices?.[0]?.message?.content;
+
+        if (!assistantMessage) {
+          throw new Error('Resposta inválida da API');
+        }
+
+        // Salvar mensagens
+        await base44.entities.ModelingChat.create({
+          modeling_id: modelingId,
+          role: 'user',
+          content: userMessage
+        });
+
+        await base44.entities.ModelingChat.create({
+          modeling_id: modelingId,
+          role: 'assistant',
+          content: assistantMessage,
+          usage: data.usage
+        });
+
+        return { message: assistantMessage, usage: data.usage };
+      }
+
+      // Modo normal - Assistente de Ideias
       const configs = await base44.entities.ModelingAssistantConfig.list();
       const config = configs?.[0];
 
@@ -78,7 +172,6 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
             contexto += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
             if (v.channel_name) contexto += `**Canal:** ${v.channel_name}\n`;
             if (v.notes) contexto += `**Notas:** ${v.notes}\n\n`;
-            // Limitar tamanho da transcrição para não estourar tokens
             const transcriptPreview = v.transcript.length > 3000 
               ? v.transcript.substring(0, 3000) + '\n\n_[transcrição truncada]_' 
               : v.transcript;
@@ -215,6 +308,32 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
     }
   };
 
+  const handleCopyLastResponse = () => {
+    const lastAssistantMessage = chatHistory.filter(m => m.role === 'assistant').pop();
+    if (lastAssistantMessage) {
+      navigator.clipboard.writeText(lastAssistantMessage.content);
+      toast.success('Resposta copiada!');
+    }
+  };
+
+  const handleSaveResearch = async () => {
+    const lastAssistantMessage = chatHistory.filter(m => m.role === 'assistant').pop();
+    if (lastAssistantMessage) {
+      await base44.entities.ModelingText.create({
+        modeling_id: modelingId,
+        title: `Deep Research - ${new Date().toLocaleDateString()}`,
+        description: 'Resultado de pesquisa profunda',
+        content: lastAssistantMessage.content,
+        text_type: 'research',
+        character_count: lastAssistantMessage.content.length,
+        token_estimate: Math.ceil(lastAssistantMessage.content.length / 4)
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
+      toast.success('Pesquisa salva como texto!');
+    }
+  };
+
   // Auto scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
@@ -226,12 +345,16 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:w-[500px] flex flex-col p-0">
         <SheetHeader className="p-6 pb-4 border-b shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-100">
-                <BrainCircuit className="w-5 h-5 text-amber-600" />
+              <div className={`p-2 rounded-lg ${deepResearchMode ? 'bg-purple-100' : 'bg-amber-100'}`}>
+                {deepResearchMode ? (
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                ) : (
+                  <BrainCircuit className="w-5 h-5 text-amber-600" />
+                )}
               </div>
-              <SheetTitle>Assistente de Ideias</SheetTitle>
+              <SheetTitle>{deepResearchMode ? 'Deep Research' : 'Assistente de Ideias'}</SheetTitle>
             </div>
             {chatHistory.length > 0 && (
               <Button
@@ -244,9 +367,30 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
               </Button>
             )}
           </div>
-          <p className="text-sm text-slate-500 mt-2">
-            Use as transcrições e textos desta modelagem para ter ideias
-          </p>
+
+          {/* Deep Research Toggle */}
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-600" />
+              <div>
+                <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
+                  Deep Research
+                </Label>
+                <p className="text-xs text-slate-500">Pesquisa profunda com web search e reasoning</p>
+              </div>
+            </div>
+            <Switch
+              id="deep-research"
+              checked={deepResearchMode}
+              onCheckedChange={setDeepResearchMode}
+            />
+          </div>
+
+          {!deepResearchMode && (
+            <p className="text-sm text-slate-500 mt-2">
+              Use as transcrições e textos desta modelagem para ter ideias
+            </p>
+          )}
         </SheetHeader>
 
         {/* Messages */}
@@ -257,9 +401,15 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
             </div>
           ) : chatHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <BrainCircuit className="w-12 h-12 text-slate-300 mb-3" />
+              {deepResearchMode ? (
+                <Sparkles className="w-12 h-12 text-purple-300 mb-3" />
+              ) : (
+                <BrainCircuit className="w-12 h-12 text-slate-300 mb-3" />
+              )}
               <p className="text-slate-500 text-sm">
-                Comece uma conversa para ter ideias baseadas no conteúdo desta modelagem
+                {deepResearchMode 
+                  ? 'Faça uma pergunta complexa para iniciar uma pesquisa profunda'
+                  : 'Comece uma conversa para ter ideias baseadas no conteúdo desta modelagem'}
               </p>
             </div>
           ) : (
@@ -270,18 +420,24 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
                   className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {msg.role === 'assistant' && (
-                    <div className="p-2 rounded-full bg-amber-100 shrink-0 h-fit">
-                      <Bot className="w-4 h-4 text-amber-600" />
+                    <div className={`p-2 rounded-full ${deepResearchMode ? 'bg-purple-100' : 'bg-amber-100'} shrink-0 h-fit`}>
+                      <Bot className={`w-4 h-4 ${deepResearchMode ? 'text-purple-600' : 'text-amber-600'}`} />
                     </div>
                   )}
                   <div
                     className={`rounded-lg px-4 py-2 max-w-[80%] ${
                       msg.role === 'user'
-                        ? 'bg-amber-600 text-white'
+                        ? deepResearchMode ? 'bg-purple-600 text-white' : 'bg-amber-600 text-white'
                         : 'bg-slate-100 text-slate-900'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    {msg.role === 'assistant' ? (
+                      <div className="prose prose-sm max-w-none">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    )}
                   </div>
                   {msg.role === 'user' && (
                     <div className="p-2 rounded-full bg-slate-200 shrink-0 h-fit">
@@ -292,8 +448,8 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
               ))}
               {sendMutation.isPending && (
                 <div className="flex gap-3 justify-start">
-                  <div className="p-2 rounded-full bg-amber-100 shrink-0 h-fit">
-                    <Bot className="w-4 h-4 text-amber-600" />
+                  <div className={`p-2 rounded-full ${deepResearchMode ? 'bg-purple-100' : 'bg-amber-100'} shrink-0 h-fit`}>
+                    <Bot className={`w-4 h-4 ${deepResearchMode ? 'text-purple-600' : 'text-amber-600'}`} />
                   </div>
                   <div className="rounded-lg px-4 py-2 bg-slate-100">
                     <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
@@ -305,10 +461,36 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
         </ScrollArea>
 
         {/* Input */}
-        <div className="p-4 border-t shrink-0">
+        <div className="p-4 border-t shrink-0 space-y-3">
+          {/* Action Buttons */}
+          {deepResearchMode && chatHistory.length > 0 && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLastResponse}
+                disabled={sendMutation.isPending}
+                className="text-xs"
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                Copiar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveResearch}
+                disabled={sendMutation.isPending}
+                className="text-xs"
+              >
+                <Save className="w-3 h-3 mr-1" />
+                Salvar
+              </Button>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Textarea
-              placeholder="Digite sua mensagem..."
+              placeholder={deepResearchMode ? "Faça uma pergunta para pesquisa..." : "Digite sua mensagem..."}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -318,7 +500,7 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
             <Button
               onClick={handleSend}
               disabled={!message.trim() || sendMutation.isPending}
-              className="bg-amber-600 hover:bg-amber-700 shrink-0"
+              className={deepResearchMode ? "bg-purple-600 hover:bg-purple-700 shrink-0" : "bg-amber-600 hover:bg-amber-700 shrink-0"}
             >
               {sendMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -327,7 +509,7 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
               )}
             </Button>
           </div>
-          <p className="text-xs text-slate-400 mt-2">
+          <p className="text-xs text-slate-400">
             Pressione Enter para enviar • Shift+Enter para nova linha
           </p>
         </div>
