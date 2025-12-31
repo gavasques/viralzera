@@ -457,6 +457,8 @@ Formate a saída em Markdown.`,
  */
 export const AGENT_TYPES = Object.keys(AGENT_CONFIGS);
 
+export const getAgentConfig = (agentType) => AGENT_CONFIGS[agentType];
+
 /**
  * Obtém config de um agente específico
  */
