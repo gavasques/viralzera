@@ -60,6 +60,8 @@ import UsageAnalytics from "./UsageAnalytics";
 
 import UserSettings from "./UserSettings";
 
+import YoutubeScripts from "./YoutubeScripts";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import AppProviders from '@/components/providers/AppProviders';
 
@@ -124,6 +126,8 @@ const PAGES = {
     UsageAnalytics: UsageAnalytics,
     
     UserSettings: UserSettings,
+    
+    YoutubeScripts: YoutubeScripts,
     
 }
 
@@ -211,6 +215,8 @@ function PagesContent() {
                 <Route path="/UsageAnalytics" element={<UsageAnalytics />} />
                 
                 <Route path="/UserSettings" element={<UserSettings />} />
+                
+                <Route path="/YoutubeScripts" element={<YoutubeScripts />} />
                 
             </Routes>
         </Layout>
