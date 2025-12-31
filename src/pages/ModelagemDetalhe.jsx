@@ -231,7 +231,20 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Transcrição concluída!');
 
-    } catch (error) {
+      // Executar análise individual do vídeo
+      try {
+        await base44.functions.invoke('runModelingAnalysis', {
+          modeling_id: modelingId,
+          material_id: videoId,
+          material_type: 'video',
+          material_title: video.title,
+          content: transcript
+        });
+      } catch (analysisError) {
+        console.error('Erro na análise individual:', analysisError);
+      }
+
+      } catch (error) {
       console.error('Erro na transcrição:', error);
       
       // Update status to error
@@ -353,7 +366,20 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Link processado!');
 
-    } catch (error) {
+      // Executar análise individual do link
+      try {
+        await base44.functions.invoke('runModelingAnalysis', {
+          modeling_id: modelingId,
+          material_id: linkId,
+          material_type: 'link',
+          material_title: link.title,
+          content: summary
+        });
+      } catch (analysisError) {
+        console.error('Erro na análise individual:', analysisError);
+      }
+
+      } catch (error) {
       await base44.entities.ModelingLink.update(linkId, {
         status: 'error',
         error_message: error.message
