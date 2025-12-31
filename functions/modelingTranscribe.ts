@@ -65,7 +65,8 @@ async function transcribeVideo(base44, videoId) {
 
   try {
     // Buscar API Key do usuário
-    const userConfigs = await base44.entities.UserConfig.filter({ created_by: base44.auth.me().email });
+    const user = await base44.auth.me();
+    const userConfigs = await base44.entities.UserConfig.filter({ created_by: user.email });
     const apiKey = userConfigs[0]?.openrouter_api_key;
     
     if (!apiKey) {
@@ -99,7 +100,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': Deno.env.get('APP_URL') || 'https://app.base44.com',
+        'HTTP-Referer': 'https://app.base44.com',
         'X-Title': 'ContentAI - Modelagem'
       },
       body: JSON.stringify({
