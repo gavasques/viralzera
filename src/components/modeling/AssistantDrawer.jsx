@@ -246,7 +246,7 @@ export default function AssistantDrawer({ open, onOpenChange, modelingId }) {
 
       // Preparar mensagens
       const messages = [
-        { role: 'system', content: systemPrompt.replace(/\{\{contexto_modelagem\}\}/g, contexto).replace(/\{\{historico_chat\}\}/g, JSON.stringify(chatHistory.reverse())) },
+        { role: 'system', content: systemPrompt.replace(/\{\{contexto_modelagem\}\}/g, contexto) },
         ...chatHistory.map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: userMessage }
       ];
