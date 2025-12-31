@@ -20,15 +20,15 @@ export default function ContentDossiers() {
   const [viewingDossier, setViewingDossier] = useState(null);
 
   // Fetch modelings to get titles
-  const { data: modelings = [] } = useQuery({
+  const { data: modelings = [], isLoading: loadingModelings } = useQuery({
     queryKey: ['modelings', selectedFocusId],
     queryFn: () => base44.entities.Modeling.filter({ focus_id: selectedFocusId }, '-created_date', 200),
     enabled: !!selectedFocusId
   });
 
   // Fetch dossiers
-  const { data: dossiers = [], isLoading } = useQuery({
-    queryKey: ['dossiers', selectedFocusId],
+  const { data: dossiers = [], isLoading: loadingDossiers } = useQuery({
+    queryKey: ['dossiers', selectedFocusId, modelings],
     queryFn: async () => {
       const allDossiers = await base44.entities.ContentDossier.list('-created_date', 200);
       
@@ -36,8 +36,10 @@ export default function ContentDossiers() {
       const modelingIds = modelings.map(m => m.id);
       return allDossiers.filter(d => modelingIds.includes(d.modeling_id));
     },
-    enabled: !!selectedFocusId && modelings.length > 0
+    enabled: !!selectedFocusId && !loadingModelings
   });
+
+  const isLoading = loadingModelings || loadingDossiers;
 
   // Delete mutation
   const deleteMutation = useMutation({
