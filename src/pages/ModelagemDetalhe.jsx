@@ -424,13 +424,21 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       console.log('⚙️ Config do agente:', config);
 
       const model = config?.model || 'openai/gpt-4o-mini';
-      const systemPrompt = config?.prompt || `Você é um organizador de conteúdo. Sua tarefa é pegar os diversos materiais brutos (transcrições, textos, notas) e organizá-los em um único documento coeso em formato Markdown, chamado 'Dossiê de Conteúdo'. Crie seções claras para cada tipo de material.`;
+      const systemPrompt = config?.prompt || `Você é um Estrategista de Conteúdo. Sua tarefa é ler esta conversa de brainstorming entre um usuário e um assistente de IA e extrair um plano de ação claro para um vídeo de YouTube. Organize as ideias, decisões e estrutura do vídeo em um documento coeso em formato Markdown, chamado 'Dossiê de Conteúdo'.`;
 
-      // Montar materiais brutos
-      let materiaisBrutos = `# DOSSIÊ DE CONTEÚDO: ${modeling.title}\n\n`;
+      // Buscar histórico do chat
+      const chatHistory = await base44.entities.ModelingChat.filter({ modeling_id: modelingId }, 'created_date', 100);
+
+      // Verificar se há conversa
+      if (chatHistory.length === 0) {
+        throw new Error('Nenhuma conversa encontrada. Use o Assistente de Ideias para desenvolver o conceito do vídeo antes de gerar o dossiê.');
+      }
+
+      // Montar materiais brutos a partir da conversa
+      let materiaisBrutos = `# CONVERSA DE BRAINSTORMING: ${modeling.title}\n\n`;
       
       if (modeling.description) {
-        materiaisBrutos += `**Descrição:** ${modeling.description}\n\n`;
+        materiaisBrutos += `**Descrição da Modelagem:** ${modeling.description}\n\n`;
       }
       if (modeling.target_platform) {
         materiaisBrutos += `**Plataforma:** ${modeling.target_platform}\n`;
@@ -439,54 +447,21 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         materiaisBrutos += `**Tipo de Conteúdo:** ${modeling.content_type}\n\n`;
       }
       if (modeling.creator_idea) {
-        materiaisBrutos += `## 💡 Ideia do Criador\n\n${modeling.creator_idea}\n\n`;
+        materiaisBrutos += `## 💡 Ideia Inicial do Criador\n\n${modeling.creator_idea}\n\n`;
       }
 
-      // Vídeos transcritos
-      const transcribedVideos = videos.filter(v => v.status === 'transcribed' && v.transcript);
-      if (transcribedVideos.length > 0) {
-        materiaisBrutos += `---\n\n## 🎥 VÍDEOS ANALISADOS (${transcribedVideos.length})\n\n`;
-        transcribedVideos.forEach((v, i) => {
-          materiaisBrutos += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
-          if (v.channel_name) materiaisBrutos += `**Canal:** ${v.channel_name}\n`;
-          if (v.url) materiaisBrutos += `**URL:** ${v.url}\n\n`;
-          if (v.notes) materiaisBrutos += `**Notas:** ${v.notes}\n\n`;
-          materiaisBrutos += `**Transcrição:**\n\n${v.transcript}\n\n---\n\n`;
-        });
-      }
-
-      // Textos
-      if (texts.length > 0) {
-        materiaisBrutos += `## 📄 TEXTOS DE REFERÊNCIA (${texts.length})\n\n`;
-        texts.forEach((t, i) => {
-          materiaisBrutos += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
-          if (t.description) materiaisBrutos += `**Descrição:** ${t.description}\n\n`;
-          materiaisBrutos += `${t.content}\n\n---\n\n`;
-        });
-      }
-
-      // Links processados
-      const completedLinks = links.filter(l => l.status === 'completed' && l.summary);
-      if (completedLinks.length > 0) {
-        materiaisBrutos += `## 🔗 ARTIGOS E LINKS PROCESSADOS (${completedLinks.length})\n\n`;
-        completedLinks.forEach((l, i) => {
-          materiaisBrutos += `### Link ${i + 1}: ${l.title || 'Sem título'}\n\n`;
-          materiaisBrutos += `**URL:** ${l.url}\n\n`;
-          if (l.notes) materiaisBrutos += `**Notas:** ${l.notes}\n\n`;
-          materiaisBrutos += `**Resumo:**\n\n${l.summary}\n\n---\n\n`;
-        });
-      }
-
-      // Verificar conteúdo
-      console.log('📊 Contagens:', {
-        transcribedVideos: transcribedVideos.length,
-        texts: texts.length,
-        completedLinks: completedLinks.length
+      materiaisBrutos += `---\n\n## 💬 CONVERSA COMPLETA\n\n`;
+      
+      chatHistory.forEach((msg, i) => {
+        const role = msg.role === 'user' ? '**👤 Usuário**' : '**🤖 Assistente**';
+        materiaisBrutos += `### Mensagem ${i + 1}\n${role}\n\n${msg.content}\n\n---\n\n`;
       });
 
-      if (transcribedVideos.length === 0 && texts.length === 0 && completedLinks.length === 0) {
-        throw new Error('Não há conteúdo suficiente para gerar o dossiê. Adicione pelo menos um vídeo transcrito, texto ou link processado.');
-      }
+      console.log('📊 Informações da conversa:', {
+        totalMessages: chatHistory.length,
+        userMessages: chatHistory.filter(m => m.role === 'user').length,
+        assistantMessages: chatHistory.filter(m => m.role === 'assistant').length
+      });
 
       // Buscar API key
       console.log('🔑 Buscando API key...');
