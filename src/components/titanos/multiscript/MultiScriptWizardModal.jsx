@@ -6,6 +6,7 @@ import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Reutilizar steps do ScriptWizard
 import { StepPostType } from "@/components/script/wizard/steps/StepPostType";
@@ -64,6 +65,7 @@ const STEPS = [
 
 export default function MultiScriptWizardModal({ open, onOpenChange, onCreate }) {
     const { selectedFocusId } = useSelectedFocus();
+    const queryClient = useQueryClient();
     const [currentStep, setCurrentStep] = useState(0);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationStatus, setGenerationStatus] = useState('');
@@ -304,6 +306,9 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
 
             setGenerationStatus('Concluído!');
             toast.success('Multi Script gerado com sucesso!');
+
+            // Invalida a lista de conversas para atualizar o sidebar
+            queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] });
 
             if (onCreate) {
                 onCreate(conversation);
