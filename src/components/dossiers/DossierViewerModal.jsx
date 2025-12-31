@@ -170,8 +170,8 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
         </div>
 
         {/* Content */}
-        <ScrollArea className="flex-1">
-          <div className="pr-4">
+        <ScrollArea className="flex-1 h-[600px]">
+          <div className="pr-6 py-4">
             {isEditing ? (
               <Textarea
                 value={editedContent}
@@ -180,7 +180,23 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
                 placeholder="Edite o conteúdo do dossiê em Markdown..."
               />
             ) : (
-              <div className="prose prose-sm max-w-none">
+              <div className="prose prose-slate max-w-none
+                prose-headings:font-bold prose-headings:text-slate-900
+                prose-h1:text-3xl prose-h1:mb-4 prose-h1:pb-3 prose-h1:border-b prose-h1:border-slate-200
+                prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-purple-700
+                prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-slate-800
+                prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-4
+                prose-strong:text-slate-900 prose-strong:font-semibold
+                prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
+                prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
+                prose-li:text-slate-700 prose-li:my-2
+                prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline
+                prose-blockquote:border-l-4 prose-blockquote:border-purple-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-slate-600
+                prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto
+                prose-hr:border-slate-200 prose-hr:my-8
+                prose-img:rounded-lg prose-img:shadow-md"
+              >
                 <ReactMarkdown>{dossier.full_content}</ReactMarkdown>
               </div>
             )}
