@@ -14,32 +14,54 @@ import DossierCard from "@/components/dossiers/DossierCard";
 import DossierViewerModal from "@/components/dossiers/DossierViewerModal";
 
 export default function ContentDossiers() {
+  console.log('🔍 ContentDossiers renderizando...');
+  
   const queryClient = useQueryClient();
   const { selectedFocusId } = useSelectedFocus();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingDossier, setViewingDossier] = useState(null);
 
-  // Fetch modelings to get titles
+  console.log('📍 Focus selecionado:', selectedFocusId);
+
+  // Fetch all dossiers (simpler approach)
+  const { data: allDossiers = [], isLoading: loadingDossiers } = useQuery({
+    queryKey: ['contentDossiers'],
+    queryFn: async () => {
+      console.log('📦 Buscando dossiês...');
+      const dossiers = await base44.entities.ContentDossier.list('-created_date', 200);
+      console.log('✅ Dossiês encontrados:', dossiers.length);
+      return dossiers;
+    }
+  });
+
+  // Fetch modelings to enrich dossiers
   const { data: modelings = [], isLoading: loadingModelings } = useQuery({
     queryKey: ['modelings', selectedFocusId],
-    queryFn: () => base44.entities.Modeling.filter({ focus_id: selectedFocusId }, '-created_date', 200),
+    queryFn: async () => {
+      if (!selectedFocusId) return [];
+      console.log('📦 Buscando modelagens para focus:', selectedFocusId);
+      const mods = await base44.entities.Modeling.filter({ focus_id: selectedFocusId }, '-created_date', 200);
+      console.log('✅ Modelagens encontradas:', mods.length);
+      return mods;
+    },
     enabled: !!selectedFocusId
   });
 
-  // Fetch dossiers
-  const { data: dossiers = [], isLoading: loadingDossiers } = useQuery({
-    queryKey: ['dossiers', selectedFocusId, modelings],
-    queryFn: async () => {
-      const allDossiers = await base44.entities.ContentDossier.list('-created_date', 200);
-      
-      // Filter by focus through modeling
-      const modelingIds = modelings.map(m => m.id);
-      return allDossiers.filter(d => modelingIds.includes(d.modeling_id));
-    },
-    enabled: !!selectedFocusId && !loadingModelings
-  });
-
   const isLoading = loadingModelings || loadingDossiers;
+
+  // Filter dossiers by focus
+  const dossiers = React.useMemo(() => {
+    if (!selectedFocusId) return allDossiers;
+    const modelingIds = modelings.map(m => m.id);
+    return allDossiers.filter(d => modelingIds.includes(d.modeling_id));
+  }, [allDossiers, modelings, selectedFocusId]);
+
+  console.log('📊 Stats:', { 
+    total: allDossiers.length, 
+    filtered: dossiers.length, 
+    modelings: modelings.length,
+    isLoading 
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
