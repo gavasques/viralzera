@@ -148,6 +148,10 @@ export async function sendMessage({
  */
 export async function fetchModels() {
   try {
+    if (!base44?.functions?.invoke) {
+      console.error('[fetchModels] base44.functions.invoke not available', { base44 });
+      throw new Error('Cliente base44 não inicializado corretamente');
+    }
     const response = await base44.functions.invoke('openrouter', { action: 'listModels' });
     return response.data?.models || [];
   } catch (error) {
