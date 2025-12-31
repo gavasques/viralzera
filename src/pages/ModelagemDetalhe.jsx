@@ -380,12 +380,22 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
   // Generate dossier and redirect to script wizard
   const handleCreateScript = async () => {
+    console.log('🚀 Iniciando geração de dossiê...');
     setGeneratingDossier(true);
     
     try {
+      console.log('📋 Dados da modelagem:', { 
+        id: modelingId, 
+        title: modeling.title,
+        videosCount: videos.length,
+        textsCount: texts.length,
+        linksCount: links.length
+      });
+
       // Buscar configuração do agente
       const dossierConfigs = await base44.entities.DossierGeneratorConfig.list();
       const config = dossierConfigs?.[0];
+      console.log('⚙️ Config do agente:', config);
 
       const model = config?.model || 'openai/gpt-4o-mini';
       const systemPrompt = config?.prompt || `Você é um organizador de conteúdo. Sua tarefa é pegar os diversos materiais brutos (transcrições, textos, notas) e organizá-los em um único documento coeso em formato Markdown, chamado 'Dossiê de Conteúdo'. Crie seções claras para cada tipo de material.`;
@@ -442,19 +452,28 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       }
 
       // Verificar conteúdo
+      console.log('📊 Contagens:', {
+        transcribedVideos: transcribedVideos.length,
+        texts: texts.length,
+        completedLinks: completedLinks.length
+      });
+
       if (transcribedVideos.length === 0 && texts.length === 0 && completedLinks.length === 0) {
-        throw new Error('Não há conteúdo suficiente para gerar o dossiê');
+        throw new Error('Não há conteúdo suficiente para gerar o dossiê. Adicione pelo menos um vídeo transcrito, texto ou link processado.');
       }
 
       // Buscar API key
+      console.log('🔑 Buscando API key...');
       const userConfigs = await base44.entities.UserConfig.list();
       const apiKey = userConfigs[0]?.openrouter_api_key;
 
       if (!apiKey) {
-        throw new Error('Configure sua API Key do OpenRouter');
+        throw new Error('Configure sua API Key do OpenRouter em Configurações');
       }
+      console.log('✅ API key encontrada');
 
       // Chamar OpenRouter
+      console.log('🤖 Chamando OpenRouter com modelo:', model);
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -476,17 +495,24 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Erro na API OpenRouter:', errorData);
         throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('📦 Resposta da API recebida, tokens:', data.usage);
+      
       const dossierContent = data.choices?.[0]?.message?.content;
 
       if (!dossierContent) {
+        console.error('❌ Conteúdo vazio na resposta:', data);
         throw new Error('Resposta inválida da API');
       }
 
+      console.log('✅ Dossiê gerado, tamanho:', dossierContent.length, 'caracteres');
+
       // Criar dossiê
+      console.log('💾 Salvando dossiê no banco...');
       const dossier = await base44.entities.ContentDossier.create({
         modeling_id: modelingId,
         full_content: dossierContent,
@@ -494,10 +520,16 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         token_estimate: Math.ceil(dossierContent.length / 4)
       });
 
+      console.log('✅ Dossiê salvo com ID:', dossier.id);
       toast.success('Dossiê gerado! Redirecionando...');
-      window.location.href = createPageUrl('YoutubeScripts') + `?action=new&dossierId=${dossier.id}`;
+      
+      const redirectUrl = createPageUrl('YoutubeScripts') + `?action=new&dossierId=${dossier.id}`;
+      console.log('🔄 Redirecionando para:', redirectUrl);
+      
+      window.location.href = redirectUrl;
       
     } catch (error) {
+      console.error('❌ ERRO COMPLETO:', error);
       toast.error('Erro ao gerar dossiê: ' + error.message);
     } finally {
       setGeneratingDossier(false);
