@@ -2,44 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, FileText, Video, Users, Bot, Library, Database } from "lucide-react";
+import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, Lightbulb, Video, Users, Database, Library } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 
-import { StepName } from "./steps/StepName";
+import { StepTema } from "./steps/StepTema";
 import { StepVideoType } from "./steps/StepVideoType";
 import { StepContext } from "./steps/StepContext";
-import { StepModel } from "./steps/StepModel";
-import { StepRefinement } from "./steps/StepRefinement";
 import { StepModelings } from "./steps/StepModelings";
-import { buildYoutubePrompt, getVideoTypeConfig } from "./buildYoutubePrompt";
+import { StepUserContent } from "./steps/StepUserContent";
+import { StepRefinement } from "./steps/StepRefinement";
 
 const STEPS = [
-  { id: 'name', title: 'Nome', description: 'Título do roteiro', icon: FileText },
+  { id: 'tema', title: 'Tema Central', description: 'Assunto do vídeo', icon: Lightbulb },
   { id: 'type', title: 'Tipo de Vídeo', description: 'Formato do conteúdo', icon: Video },
   { id: 'context', title: 'Contexto', description: 'Persona e Público', icon: Users },
   { id: 'modelings', title: 'Modelagens', description: 'Referências de sucesso', icon: Database },
-  { id: 'model', title: 'Inteligência', description: 'Modelo e Recursos', icon: Bot },
-  { id: 'refine', title: 'Refinamento', description: 'Materiais e Notas', icon: Library },
+  { id: 'userContent', title: 'Conteúdo Padrão', description: 'Intro e CTA', icon: Library },
 ];
 
 const INITIAL_FORM_DATA = {
-  title: '',
+  tema: '',
+  videoTypeId: '',
   videoType: '',
+  videoTypePrompt: '',
   personaId: '',
   audienceId: '',
   selectedMaterials: [],
   selectedModelings: [],
+  introductionId: null,
+  ctaId: null,
   userNotes: '',
-  duracaoEstimada: '',
-  model: '',
-  modelName: '',
-  enableReasoning: false,
-  reasoningEffort: 'medium',
-  enableWebSearch: false
+  duracaoEstimada: ''
 };
 
 export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
@@ -74,16 +71,18 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // 1. Fetch full data needed for prompt
-      const [persona, audience, materials] = await Promise.all([
+      // Fetch all needed data in parallel
+      const [persona, audience, materials, introduction, cta] = await Promise.all([
         formData.personaId ? base44.entities.Persona.get(formData.personaId) : null,
         formData.audienceId ? base44.entities.Audience.get(formData.audienceId) : null,
         formData.selectedMaterials.length > 0 
           ? base44.entities.Material.filter({ id: { $in: formData.selectedMaterials } }) 
-          : []
+          : [],
+        formData.introductionId ? base44.entities.UserIntroduction.get(formData.introductionId) : null,
+        formData.ctaId ? base44.entities.UserCTA.get(formData.ctaId) : null
       ]);
 
-      // 2. Fetch modelings content if selected
+      // Fetch modelings content if selected
       let modelingsContent = [];
       if (formData.selectedModelings?.length > 0) {
         const [modelingsData, videos, texts] = await Promise.all([
@@ -109,38 +108,30 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         }));
       }
 
-      // 3. Build prompt
-      const prompt = buildYoutubePrompt({
+      // Call AI via backend function
+      const aiResponse = await base44.functions.invoke('youtubeScriptGenerator', {
+        tema: formData.tema,
         videoType: formData.videoType,
-        title: formData.title,
+        videoTypePrompt: formData.videoTypePrompt,
         persona: persona?.data || persona,
         audience: audience?.data || audience,
         materials: Array.isArray(materials) ? materials : (materials?.data || []),
+        modelingsContent,
+        introduction: introduction?.data || introduction,
+        cta: cta?.data || cta,
         userNotes: formData.userNotes,
-        modelingsContent
-      });
-
-      // 3. Call AI via backend function
-      const aiResponse = await base44.functions.invoke('youtubeScriptGenerator', {
-        prompt: prompt,
-        model: formData.model,
-        enableReasoning: formData.enableReasoning,
-        reasoningEffort: formData.reasoningEffort,
-        enableWebSearch: formData.enableWebSearch
+        duracaoEstimada: formData.duracaoEstimada
       });
 
       if (!aiResponse.data?.success) {
         throw new Error(aiResponse.data?.error || 'Erro ao gerar roteiro');
       }
 
-      const generatedContent = aiResponse.data.content;
+      const { content: generatedContent, suggestedTitle } = aiResponse.data;
 
-      // 4. Get video type config for duration
-      const videoTypeConfig = getVideoTypeConfig(formData.videoType);
-
-      // 5. Create YoutubeScript record
+      // Create YoutubeScript record
       await base44.entities.YoutubeScript.create({
-        title: formData.title,
+        title: suggestedTitle || `Roteiro: ${formData.tema.substring(0, 50)}`,
         video_type: formData.videoType,
         corpo: generatedContent,
         duracao_estimada: formData.duracaoEstimada || null,
@@ -149,7 +140,6 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         modeling_ids: formData.selectedModelings || []
       });
 
-      // 6. Close modal and redirect
       onOpenChange(false);
       toast.success('Roteiro criado com sucesso!');
       navigate(createPageUrl('YoutubeScripts'));
@@ -164,25 +154,23 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <StepName value={formData} onChange={setFormData} />;
+        return <StepTema value={formData} onChange={setFormData} />;
       case 1:
-        return <StepVideoType value={formData} onChange={setFormData} />;
+        return <StepVideoType focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 2:
         return <StepContext focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 3:
         return <StepModelings focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 4:
-        return <StepModel value={formData} onChange={setFormData} />;
-      case 5:
-        return <StepRefinement focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+        return <StepUserContent focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       default:
         return null;
     }
   };
 
   const canProceed = () => {
-    if (currentStep === 0) return formData.title?.trim().length > 0;
-    if (currentStep === 1) return !!formData.videoType;
+    if (currentStep === 0) return formData.tema?.trim().length > 0;
+    if (currentStep === 1) return !!formData.videoTypeId;
     return true;
   };
 

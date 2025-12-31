@@ -1,116 +1,79 @@
 import React from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { 
-  GraduationCap, 
-  ListOrdered, 
-  Zap, 
-  FlaskConical,
-  GitCompare,
+import { FileText, Video, BookOpen, List, Lightbulb, Target, Layers, MessageSquare, Zap } from "lucide-react";
+
+const ICON_MAP = {
+  FileText,
+  Video,
+  BookOpen,
+  List,
   Lightbulb,
-  ShieldQuestion,
-  Newspaper,
   Target,
-  BookHeart
-} from "lucide-react";
-
-const VIDEO_TYPES = [
-  { 
-    id: 'tutorial', 
-    label: 'Tutorial Passo a Passo', 
-    description: 'Ensinar processo completo', 
-    duration: '10-30 min',
-    icon: GraduationCap, 
-    color: 'indigo' 
-  },
-  { 
-    id: 'lista', 
-    label: 'Lista', 
-    description: 'Formato de lista numerada', 
-    duration: '8-20 min',
-    icon: ListOrdered, 
-    color: 'purple' 
-  },
-  { 
-    id: 'dica_rapida', 
-    label: 'Dica Rápida', 
-    description: 'Uma técnica poderosa', 
-    duration: '3-8 min',
-    icon: Zap, 
-    color: 'amber' 
-  },
-  { 
-    id: 'estudo_caso', 
-    label: 'Estudo de Caso', 
-    description: 'Análise profunda de exemplo real', 
-    duration: '15-35 min',
-    icon: FlaskConical, 
-    color: 'emerald' 
-  },
-  { 
-    id: 'comparacao', 
-    label: 'Comparação', 
-    description: 'Comparar 2+ opções', 
-    duration: '10-25 min',
-    icon: GitCompare, 
-    color: 'cyan' 
-  },
-  { 
-    id: 'explicacao_conceito', 
-    label: 'Explicação de Conceito', 
-    description: 'Explicar conceito complexo', 
-    duration: '8-18 min',
-    icon: Lightbulb, 
-    color: 'yellow' 
-  },
-  { 
-    id: 'desmistificacao', 
-    label: 'Desmistificação', 
-    description: 'Desafiar crença comum', 
-    duration: '10-20 min',
-    icon: ShieldQuestion, 
-    color: 'rose' 
-  },
-  { 
-    id: 'novidade', 
-    label: 'Novidade', 
-    description: 'Falar sobre mudança recente', 
-    duration: '8-18 min',
-    icon: Newspaper, 
-    color: 'blue' 
-  },
-  { 
-    id: 'problema_solucao', 
-    label: 'Problema e Solução', 
-    description: 'Identificar problema e solução', 
-    duration: '10-25 min',
-    icon: Target, 
-    color: 'orange' 
-  },
-  { 
-    id: 'historia_pessoal', 
-    label: 'História Pessoal', 
-    description: 'Contar história com lições', 
-    duration: '12-30 min',
-    icon: BookHeart, 
-    color: 'pink' 
-  },
-];
-
-const COLOR_CLASSES = {
-  indigo: { bg: 'bg-indigo-50', border: 'border-indigo-500', text: 'text-indigo-700', iconBg: 'bg-indigo-100', duration: 'text-indigo-600' },
-  purple: { bg: 'bg-purple-50', border: 'border-purple-500', text: 'text-purple-700', iconBg: 'bg-purple-100', duration: 'text-purple-600' },
-  amber: { bg: 'bg-amber-50', border: 'border-amber-500', text: 'text-amber-700', iconBg: 'bg-amber-100', duration: 'text-amber-600' },
-  emerald: { bg: 'bg-emerald-50', border: 'border-emerald-500', text: 'text-emerald-700', iconBg: 'bg-emerald-100', duration: 'text-emerald-600' },
-  cyan: { bg: 'bg-cyan-50', border: 'border-cyan-500', text: 'text-cyan-700', iconBg: 'bg-cyan-100', duration: 'text-cyan-600' },
-  yellow: { bg: 'bg-yellow-50', border: 'border-yellow-500', text: 'text-yellow-700', iconBg: 'bg-yellow-100', duration: 'text-yellow-600' },
-  rose: { bg: 'bg-rose-50', border: 'border-rose-500', text: 'text-rose-700', iconBg: 'bg-rose-100', duration: 'text-rose-600' },
-  blue: { bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-700', iconBg: 'bg-blue-100', duration: 'text-blue-600' },
-  orange: { bg: 'bg-orange-50', border: 'border-orange-500', text: 'text-orange-700', iconBg: 'bg-orange-100', duration: 'text-orange-600' },
-  pink: { bg: 'bg-pink-50', border: 'border-pink-500', text: 'text-pink-700', iconBg: 'bg-pink-100', duration: 'text-pink-600' },
+  Layers,
+  MessageSquare,
+  Zap,
 };
 
-export function StepVideoType({ value, onChange }) {
+const COLORS = ['indigo', 'purple', 'amber', 'emerald', 'cyan', 'rose', 'blue', 'orange', 'pink', 'teal'];
+
+const COLOR_CLASSES = {
+  indigo: { bg: 'bg-indigo-50', border: 'border-indigo-500', text: 'text-indigo-700', iconBg: 'bg-indigo-100' },
+  purple: { bg: 'bg-purple-50', border: 'border-purple-500', text: 'text-purple-700', iconBg: 'bg-purple-100' },
+  amber: { bg: 'bg-amber-50', border: 'border-amber-500', text: 'text-amber-700', iconBg: 'bg-amber-100' },
+  emerald: { bg: 'bg-emerald-50', border: 'border-emerald-500', text: 'text-emerald-700', iconBg: 'bg-emerald-100' },
+  cyan: { bg: 'bg-cyan-50', border: 'border-cyan-500', text: 'text-cyan-700', iconBg: 'bg-cyan-100' },
+  rose: { bg: 'bg-rose-50', border: 'border-rose-500', text: 'text-rose-700', iconBg: 'bg-rose-100' },
+  blue: { bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-700', iconBg: 'bg-blue-100' },
+  orange: { bg: 'bg-orange-50', border: 'border-orange-500', text: 'text-orange-700', iconBg: 'bg-orange-100' },
+  pink: { bg: 'bg-pink-50', border: 'border-pink-500', text: 'text-pink-700', iconBg: 'bg-pink-100' },
+  teal: { bg: 'bg-teal-50', border: 'border-teal-500', text: 'text-teal-700', iconBg: 'bg-teal-100' },
+};
+
+export function StepVideoType({ focusId, value, onChange }) {
+  const { data: scriptTypes = [], isLoading } = useQuery({
+    queryKey: ['youtube-script-types-wizard', focusId],
+    queryFn: () => base44.entities.YoutubeScriptType.filter({ focus_id: focusId }, '-created_date', 50),
+    enabled: !!focusId
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (scriptTypes.length === 0) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="space-y-2">
+          <Label className="text-base font-semibold text-slate-900">
+            Tipo de Vídeo
+          </Label>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+          <p className="text-amber-800 font-medium mb-1">Nenhum tipo de roteiro cadastrado</p>
+          <p className="text-amber-600 text-sm">
+            Peça ao administrador para criar tipos de roteiros na área Admin.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="space-y-2">
@@ -123,15 +86,21 @@ export function StepVideoType({ value, onChange }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
-        {VIDEO_TYPES.map((type) => {
-          const isSelected = value.videoType === type.id;
-          const colors = COLOR_CLASSES[type.color];
-          const Icon = type.icon;
+        {scriptTypes.map((type, index) => {
+          const isSelected = value.videoTypeId === type.id;
+          const colorKey = COLORS[index % COLORS.length];
+          const colors = COLOR_CLASSES[colorKey];
+          const Icon = ICON_MAP[type.icon] || FileText;
 
           return (
             <div
               key={type.id}
-              onClick={() => onChange({ ...value, videoType: type.id })}
+              onClick={() => onChange({ 
+                ...value, 
+                videoTypeId: type.id,
+                videoType: type.title,
+                videoTypePrompt: type.prompt_template
+              })}
               className={cn(
                 "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
                 isSelected
@@ -151,15 +120,11 @@ export function StepVideoType({ value, onChange }) {
                     "font-semibold text-sm leading-tight",
                     isSelected ? colors.text : "text-slate-900"
                   )}>
-                    {type.label}
+                    {type.title}
                   </p>
-                  <p className="text-xs text-slate-500 mt-0.5">{type.description}</p>
-                  <p className={cn(
-                    "text-[10px] font-medium mt-1.5",
-                    isSelected ? colors.duration : "text-slate-400"
-                  )}>
-                    ⏱ {type.duration}
-                  </p>
+                  {type.description && (
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{type.description}</p>
+                  )}
                 </div>
               </div>
             </div>
