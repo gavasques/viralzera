@@ -43,24 +43,40 @@ Deno.serve(async (req) => {
       const systemPrompt = agentConfig.prompt || 
         'Você é um especialista em transcrição. Corrija, pontue e formate o texto abaixo mantendo o tom original. Retorne APENAS o texto limpo.';
 
-      // 3. Baixar legenda do YouTube (Raw)
+      // 3. Baixar legenda do YouTube (Raw) - Com Fallback
       console.log(`[modelingTranscribe] Fetching transcript for: ${video.url}`);
       let rawTranscript = '';
+      let detectedLang = 'pt';
+
       try {
-        const transcriptItems = await YoutubeTranscript.fetchTranscript(video.url);
-        rawTranscript = transcriptItems.map(item => item.text).join(' ');
+        // Tenta PT primeiro
+        try {
+          const items = await YoutubeTranscript.fetchTranscript(video.url, { lang: 'pt' });
+          rawTranscript = items.map(i => i.text).join(' ');
+          console.log('[modelingTranscribe] Found PT transcript');
+        } catch (e) {
+          console.log('[modelingTranscribe] PT transcript not found, trying English/Auto...');
+          // Fallback para qualquer idioma disponível (geralmente EN ou Auto)
+          const items = await YoutubeTranscript.fetchTranscript(video.url);
+          rawTranscript = items.map(i => i.text).join(' ');
+          detectedLang = 'unknown'; // Deixa a IA detectar/traduzir
+        }
       } catch (err) {
         console.error('[modelingTranscribe] YoutubeTranscript error:', err);
-        throw new Error(`Erro ao obter legenda do YouTube: ${err.message}. Verifique se o vídeo tem legendas disponíveis.`);
+        throw new Error(`Não foi possível extrair legendas deste vídeo. Certifique-se de que ele possui Closed Captions (CC) ativados. Erro: ${err.message}`);
       }
 
       if (!rawTranscript) {
-        throw new Error('Nenhuma legenda encontrada para este vídeo.');
+        throw new Error('Nenhuma legenda encontrada (conteúdo vazio).');
       }
 
-      // 4. Processar com OpenRouter (Limpeza/Formatação)
+      // 4. Processar com OpenRouter (Limpeza/Formatação + Tradução se necessário)
       console.log(`[modelingTranscribe] Processing with model: ${model}`);
       
+      const userPrompt = detectedLang === 'pt' 
+        ? `Transcreva, corrija e formate o texto abaixo mantendo o tom original:\n\n${rawTranscript}`
+        : `O texto abaixo é a legenda bruta de um vídeo (possivelmente em inglês ou outro idioma). Sua tarefa é:\n1. Traduzir para Português do Brasil (se não estiver).\n2. Corrigir e formatar mantendo o tom original do falante.\n\nTexto:\n${rawTranscript}`;
+
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -73,7 +89,7 @@ Deno.serve(async (req) => {
           model: model,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Transcreva e formate o seguinte texto:\n\n${rawTranscript}` }
+            { role: 'user', content: userPrompt }
           ]
         }),
       });
