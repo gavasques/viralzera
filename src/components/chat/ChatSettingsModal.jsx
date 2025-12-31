@@ -51,17 +51,24 @@ export default function ChatSettingsModal({
     staleTime: 1000 * 60 * 5
   });
 
-  // Fetch approved models from entity (admins pre-approved these)
+  // Fetch all OpenRouter models directly from API
   const { data: models = [], isLoading: loadingModels } = useQuery({
-    queryKey: ['approved-models-settings'],
+    queryKey: ['openrouter-all-models-settings'],
     queryFn: async () => {
-      const approvedModels = await base44.entities.ApprovedModel.filter({ is_active: true }, 'order', 100);
-      // Transform to expected format
-      return approvedModels.map(m => ({
-        id: m.model_id,
-        name: m.alias || m.model_id,
-        supported_parameters: m.model_capabilities?.supportedParams || []
-      }));
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/models');
+        const data = await response.json();
+        
+        // Transform to expected format
+        return data.data.map(m => ({
+          id: m.id,
+          name: m.name,
+          supported_parameters: m.supported_parameters || []
+        }));
+      } catch (error) {
+        console.error('Erro ao buscar modelos:', error);
+        return [];
+      }
     },
     staleTime: 1000 * 60 * 5,
     enabled: open
