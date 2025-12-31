@@ -124,6 +124,21 @@ export default function ModelagemDetalhe() {
     }
   });
 
+  // Stop transcription
+  const handleStopTranscription = async (videoId) => {
+    try {
+      await base44.entities.ModelingVideo.update(videoId, { 
+        status: 'pending', // Voltar para pendente para permitir nova tentativa
+        error_message: 'Interrompido pelo usuário'
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
+      toast.info('Transcrição interrompida');
+      setTranscribingId(null);
+    } catch (error) {
+      toast.error('Erro ao interromper: ' + error.message);
+    }
+  };
+
   // Transcribe video
   const handleTranscribe = async (videoId) => {
     setTranscribingId(videoId);
@@ -846,7 +861,9 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                     isTranscribing={transcribingId === video.id}
                     isAnalyzing={analyzingId === video.id}
                     onTranscribe={() => handleTranscribe(video.id)}
+                    onRetranscribe={() => handleTranscribe(video.id)}
                     onAnalyze={() => handleAnalyzeVideo(video.id)}
+                    onStopTranscription={() => handleStopTranscription(video.id)}
                     onView={() => setViewingVideo(video)}
                     onDelete={() => {
                       if (confirm('Excluir este vídeo?')) {

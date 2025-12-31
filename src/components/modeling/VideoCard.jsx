@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Sparkles
+  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Sparkles, RefreshCw, StopCircle
 } from "lucide-react";
 
 const statusConfig = {
@@ -14,7 +14,18 @@ const statusConfig = {
   error: { label: "Erro", color: "bg-red-100 text-red-700", icon: AlertCircle }
 };
 
-export default function VideoCard({ video, analysis, onTranscribe, onAnalyze, onView, onDelete, isTranscribing, isAnalyzing }) {
+export default function VideoCard({ 
+  video, 
+  analysis, 
+  onTranscribe, 
+  onAnalyze, 
+  onView, 
+  onDelete, 
+  onStopTranscription,
+  onRetranscribe,
+  isTranscribing, 
+  isAnalyzing 
+}) {
   const [showAnalysis, setShowAnalysis] = React.useState(false);
   const status = statusConfig[video.status] || statusConfig.pending;
   const StatusIcon = status.icon;
@@ -71,11 +82,30 @@ export default function VideoCard({ video, analysis, onTranscribe, onAnalyze, on
                   <DropdownMenuItem onClick={() => window.open(video.url, '_blank')}>
                     <ExternalLink className="w-4 h-4 mr-2" /> Abrir no YouTube
                   </DropdownMenuItem>
+                  
                   {video.transcript && (
                     <DropdownMenuItem onClick={onView}>
                       <Eye className="w-4 h-4 mr-2" /> Ver Transcrição
                     </DropdownMenuItem>
                   )}
+
+                  {video.status === 'transcribed' && (
+                    <>
+                      <DropdownMenuItem onClick={onRetranscribe}>
+                        <RefreshCw className="w-4 h-4 mr-2" /> Retranscrever
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={onAnalyze}>
+                        <Sparkles className="w-4 h-4 mr-2" /> Reanalisar Vídeo
+                      </DropdownMenuItem>
+                    </>
+                  )}
+
+                  {video.status === 'transcribing' && (
+                    <DropdownMenuItem onClick={onStopTranscription} className="text-amber-600">
+                      <StopCircle className="w-4 h-4 mr-2" /> Interromper Transcrição
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuItem onClick={onDelete} className="text-red-600">
                     <Trash2 className="w-4 h-4 mr-2" /> Excluir
                   </DropdownMenuItem>
