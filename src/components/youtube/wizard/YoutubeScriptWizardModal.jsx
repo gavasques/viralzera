@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, Lightbulb, Video, Users, Database, Library } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
@@ -202,7 +202,8 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden bg-white h-[600px] flex flex-row">
+      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden bg-white h-[600px] flex flex-row" aria-describedby={undefined}>
+        <DialogTitle className="sr-only">Criar Roteiro para YouTube</DialogTitle>
         
         {/* Sidebar Steps */}
         <div className="w-[280px] bg-slate-50 border-r border-slate-100 p-6 flex flex-col justify-between hidden md:flex">
