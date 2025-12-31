@@ -35,7 +35,7 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
       character_count: data.content.length,
       token_estimate: Math.ceil(data.content.length / 4)
     }),
-    onSuccess: async (newText) => {
+    onSuccess: (newText) => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       // Update totals
@@ -46,19 +46,16 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
       
       toast.success('Texto adicionado!');
 
-      // Executar análise individual do texto
-      try {
-        await base44.functions.invoke('runModelingAnalysis', {
-          modeling_id: modelingId,
-          material_id: newText.id,
-          material_type: 'text',
-          material_title: formData.title,
-          content: formData.content
-        });
-      } catch (analysisError) {
-        console.error('Erro na análise individual:', analysisError);
-      }
-
+      // Chamar análise individual
+      base44.functions.invoke('runModelingAnalysis', {
+        modeling_id: modelingId,
+        materialId: newText.id,
+        materialType: 'text',
+        content: newText.content
+      }).catch(err => {
+        console.error('Erro ao analisar texto:', err);
+      });
+      
       setFormData({ title: '', description: '', content: '', text_type: 'reference' });
       onOpenChange(false);
     },
