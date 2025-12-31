@@ -14,7 +14,7 @@ import MultiValueInput from '@/components/forms/MultiValueInput';
 
 export default function PromptFormModal({ open, onOpenChange, prompt }) {
     const queryClient = useQueryClient();
-    const isEditing = !!prompt;
+    const isEditing = !!prompt?.id;
 
     // Fetch folders for selection
     const { data: folders = [] } = useQuery({
