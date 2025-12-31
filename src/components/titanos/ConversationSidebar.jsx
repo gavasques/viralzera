@@ -81,7 +81,9 @@ function ConversationSidebar({ conversations, activeId, onNew, onNewInGroup, onD
   }, [conversations, searchQuery, filters]);
 
   const favoriteChats = useMemo(
-    () => filteredConversations.filter(c => c.is_favorite), 
+    () => filteredConversations
+      .filter(c => c.is_favorite)
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date)), 
     [filteredConversations]
   );
 
@@ -96,6 +98,12 @@ function ConversationSidebar({ conversations, activeId, onNew, onNewInGroup, onD
         ungrouped.push(c);
       }
     });
+    // Sort each group by most recent first
+    Object.keys(grouped).forEach(gId => {
+      grouped[gId].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    });
+    // Sort ungrouped by most recent first
+    ungrouped.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     return { grouped, ungrouped };
   }, [groups, filteredConversations]);
 
