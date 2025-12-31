@@ -212,19 +212,14 @@ function getDefaultPromptTemplate() {
 
 ## INSTRUÇÕES
 
-Crie um roteiro completo para YouTube seguindo a estrutura:
-
-1. **HOOK (30 segundos)** - Abertura impactante que prenda a atenção
-2. **APRESENTAÇÃO** - Breve apresentação do criador
-3. **PONTE** - Transição para o conteúdo principal
-4. **CORPO** - Conteúdo principal organizado em tópicos claros
-5. **RESUMO** - Recapitulação dos pontos principais
-6. **CTA** - Call-to-action final
+Crie um roteiro completo para YouTube.
+O roteiro deve fluir naturalmente, contendo Hook, Apresentação, Conteúdo Principal e CTA.
 
 O roteiro deve:
 - Usar o tom de voz da persona
 - Falar diretamente com o público-alvo
 - Incorporar referências dos materiais selecionados
 - Seguir o estilo das modelagens de sucesso
-- Ser escrito palavra por palavra, pronto para gravar`;
+- Ser escrito como um texto único e coeso, pronto para gravação.
+- Traga o retorno tudo junto, sem separar em seções rígidas.`;
 }
