@@ -76,23 +76,12 @@ export default function Layout({ children }) {
     refetchOnMount: false,
   });
 
-  // Landing Page Logic
-  const isLandingPage = location.pathname === createPageUrl('Landing');
-
-  if (isLandingPage) {
-    return (
-      <CanvasProvider>
-        {children}
-      </CanvasProvider>
-    );
-  }
-
-  // Auth Guard - Redirect to Landing if not authenticated
+  // Auth Guard - Redirect to login if not authenticated
   React.useEffect(() => {
     if (!isLoadingUser && !user) {
-      navigate(createPageUrl('Landing'));
+      base44.auth.redirectToLogin();
     }
-  }, [isLoadingUser, user, navigate]);
+  }, [isLoadingUser, user]);
 
   if (!isLoadingUser && !user) {
     return (
