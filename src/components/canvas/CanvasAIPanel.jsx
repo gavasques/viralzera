@@ -370,12 +370,19 @@ export default function CanvasAIPanel({
                     <div className="prose prose-sm max-w-none">
                       <ReactMarkdown
                         components={{
-                          p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
-                          ul: ({children}) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                          ol: ({children}) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                          p: ({children}) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+                          ul: ({children}) => <ul className="list-disc pl-4 mb-3 space-y-1">{children}</ul>,
+                          ol: ({children}) => <ol className="list-decimal pl-4 mb-3 space-y-1">{children}</ol>,
+                          li: ({children}) => <li className="leading-relaxed">{children}</li>,
+                          strong: ({children}) => <strong className="font-semibold text-slate-900">{children}</strong>,
+                          hr: () => <div className="my-4 flex items-center gap-2"><div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div></div>,
+                          h1: ({children}) => <h1 className="text-lg font-bold text-slate-900 mt-4 mb-2 pb-2 border-b border-slate-200">{children}</h1>,
+                          h2: ({children}) => <h2 className="text-base font-bold text-slate-800 mt-4 mb-2">{children}</h2>,
+                          h3: ({children}) => <h3 className="text-sm font-semibold text-indigo-700 mt-3 mb-1 uppercase tracking-wide">{children}</h3>,
+                          blockquote: ({children}) => <blockquote className="border-l-3 border-indigo-400 bg-indigo-50/50 pl-3 py-2 my-3 rounded-r-lg text-slate-700 italic">{children}</blockquote>,
                           code: ({inline, children}) => inline 
-                            ? <code className="bg-slate-200 px-1 rounded text-xs">{children}</code>
-                            : <pre className="bg-slate-800 text-slate-100 p-2 rounded text-xs overflow-x-auto my-2"><code>{children}</code></pre>
+                            ? <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                            : <pre className="bg-slate-800 text-slate-100 p-3 rounded-lg text-xs overflow-x-auto my-3 font-mono"><code>{children}</code></pre>
                         }}
                       >
                         {msg.content}
