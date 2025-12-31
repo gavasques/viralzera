@@ -1,353 +1,230 @@
 /**
- * Configurações específicas de cada tipo de vídeo para YouTube
+ * Utilitário para montar o prompt final do YouTube Script Generator
+ * Substitui placeholders no template com dados reais
  */
-const VIDEO_TYPE_CONFIG = {
-  tutorial: {
-    label: 'Tutorial Passo a Passo',
-    duration: '10-30 min',
-    structure: 'Vídeo que ensina um processo completo do início ao fim, dividido em etapas claras e acionáveis.',
-    hookInstructions: 'Mostre o RESULTADO final que a pessoa vai conseguir. Crie urgência mostrando o que ela está perdendo por não saber isso. Use uma promessa específica e mensurável.',
-    bodyInstructions: 'Divida em passos numerados e claros. Para cada passo: (1) explique O QUE fazer, (2) mostre COMO fazer, (3) explique POR QUE é importante. Use a técnica PSP entre os passos para manter engajamento.',
-    ctaInstructions: 'Convide para baixar um checklist, template ou material complementar. Peça para comentar qual passo foi mais útil.'
-  },
-  lista: {
-    label: 'Lista',
-    duration: '8-20 min',
-    structure: 'Vídeo no formato "X dicas/erros/ferramentas/etc" com itens numerados e organizados.',
-    hookInstructions: 'Mencione o número de itens e prometa uma transformação. Diga qual item é o mais impactante para criar curiosidade. Ex: "O item 7 mudou completamente meus resultados".',
-    bodyInstructions: 'Apresente cada item com: título claro, explicação do problema que resolve, exemplo prático. Varie o ritmo - alguns itens mais rápidos, outros mais profundos. Use PSP entre os itens principais.',
-    ctaInstructions: 'Peça para comentar qual item foi mais surpreendente ou qual eles já usavam. Ofereça uma lista expandida como lead magnet.'
-  },
-  dica_rapida: {
-    label: 'Dica Rápida',
-    duration: '3-8 min',
-    structure: 'Vídeo curto e direto ao ponto, focado em UMA técnica ou insight poderoso.',
-    hookInstructions: 'Vá direto ao ponto. Prometa resolver um problema específico em poucos minutos. Crie urgência mostrando o custo de não aplicar essa dica.',
-    bodyInstructions: 'Foque em UMA única ideia. Explique rapidamente o contexto, mostre a técnica e dê um exemplo prático. Seja conciso mas completo.',
-    ctaInstructions: 'Peça para testar a dica e comentar os resultados. Sugira um vídeo mais completo sobre o tema.'
-  },
-  estudo_caso: {
-    label: 'Estudo de Caso',
-    duration: '15-35 min',
-    structure: 'Análise profunda de um caso real (seu ou de terceiros), extraindo lições práticas.',
-    hookInstructions: 'Apresente o resultado impressionante do caso. Crie intriga sobre COMO foi possível. Prometa revelar os bastidores e estratégias.',
-    bodyInstructions: 'Estruture como uma história: situação inicial → desafios enfrentados → estratégias aplicadas → resultados. Para cada estratégia, explique como o espectador pode aplicar. Use PSP mostrando obstáculos superados.',
-    ctaInstructions: 'Convide para enviar seus próprios casos para análise. Ofereça uma consultoria ou análise personalizada.'
-  },
-  comparacao: {
-    label: 'Comparação',
-    duration: '10-25 min',
-    structure: 'Vídeo comparando 2 ou mais opções, ajudando o espectador a tomar uma decisão.',
-    hookInstructions: 'Apresente o dilema comum que o espectador enfrenta. Prometa uma resposta definitiva baseada em critérios objetivos. Revele qual é o vencedor para criar curiosidade sobre o porquê.',
-    bodyInstructions: 'Defina critérios claros de comparação. Para cada critério: explique sua importância, compare as opções, declare um vencedor parcial. Use PSP mostrando prós e contras. Termine com veredicto final.',
-    ctaInstructions: 'Peça para comentar qual opção eles escolheriam. Ofereça um guia de decisão mais completo.'
-  },
-  explicacao_conceito: {
-    label: 'Explicação de Conceito',
-    duration: '8-18 min',
-    structure: 'Vídeo que explica um conceito complexo de forma simples e aplicável.',
-    hookInstructions: 'Mostre como esse conceito impacta a vida/negócio do espectador. Prometa simplificar algo que parece complicado. Use uma analogia intrigante.',
-    bodyInstructions: 'Comece com uma analogia do dia a dia. Explique o conceito em camadas (básico → intermediário → avançado). Dê exemplos práticos de aplicação. Use PSP mostrando o antes/depois de entender o conceito.',
-    ctaInstructions: 'Peça para comentar se o conceito ficou claro. Sugira um vídeo de aplicação prática.'
-  },
-  desmistificacao: {
-    label: 'Desmistificação',
-    duration: '10-20 min',
-    structure: 'Vídeo que desafia uma crença comum ou mito, apresentando a verdade com evidências.',
-    hookInstructions: 'Declare a crença comum de forma provocativa. Diga que vai provar que está errada. Crie tensão antecipando a resistência do espectador.',
-    bodyInstructions: 'Apresente a crença comum e por que as pessoas acreditam nela. Mostre as evidências contrárias. Explique a verdade e por que é diferente. Use PSP confrontando objeções comuns.',
-    ctaInstructions: 'Peça para comentar se eles acreditavam no mito. Convide a compartilhar com alguém que ainda acredita.'
-  },
-  novidade: {
-    label: 'Novidade',
-    duration: '8-18 min',
-    structure: 'Vídeo sobre uma mudança recente, atualização ou tendência emergente.',
-    hookInstructions: 'Crie urgência sobre a novidade. Mostre o impacto imediato para quem não se adaptar. Prometa explicar tudo que mudou e como se preparar.',
-    bodyInstructions: 'Contextualize a mudança (o que era antes). Explique o que mudou especificamente. Analise os impactos positivos e negativos. Dê um plano de ação para se adaptar. Use PSP mostrando riscos de ignorar a mudança.',
-    ctaInstructions: 'Peça para comentar como essa mudança afeta eles. Ofereça atualizações via newsletter ou comunidade.'
-  },
-  problema_solucao: {
-    label: 'Problema e Solução',
-    duration: '10-25 min',
-    structure: 'Vídeo que identifica um problema específico e apresenta uma solução completa.',
-    hookInstructions: 'Descreva o problema de forma vívida - faça o espectador se sentir compreendido. Amplifique a dor mostrando as consequências. Prometa uma solução definitiva.',
-    bodyInstructions: 'Aprofunde no problema: causas, sintomas, consequências. Apresente a solução passo a passo. Mostre como prevenir que volte a acontecer. Use PSP intensamente - agite o problema antes de cada parte da solução.',
-    ctaInstructions: 'Peça para comentar se já passaram por esse problema. Ofereça uma solução mais completa ou personalizada.'
-  },
-  historia_pessoal: {
-    label: 'História Pessoal',
-    duration: '12-30 min',
-    structure: 'Vídeo contando uma história pessoal com lições valiosas para o espectador.',
-    hookInstructions: 'Comece pelo momento mais dramático ou transformador da história. Crie intriga sobre como você chegou lá. Prometa lições que vão ajudar o espectador.',
-    bodyInstructions: 'Estruture como jornada do herói: situação inicial → desafio/crise → transformação → nova realidade. Intercale a narrativa com as lições aprendidas. Use PSP nos momentos de tensão da história.',
-    ctaInstructions: 'Peça para compartilharem suas próprias histórias nos comentários. Convide para conhecer mais da sua jornada.'
-  }
-};
 
 /**
- * Formata os dados da persona para o prompt
+ * Formata dados da Persona para inclusão no prompt
  */
-function formatPersonaData(persona) {
-  if (!persona) return null;
+function formatPersona(persona) {
+  if (!persona) return 'Não especificada';
   
-  let text = `- Nome: ${persona.name}\n`;
+  const parts = [];
+  parts.push(`Nome: ${persona.name || 'N/A'}`);
   
   if (persona.who_am_i) {
-    text += `- Quem Sou Eu: ${persona.who_am_i}\n`;
-  }
-  
-  if (persona.story && typeof persona.story === 'object') {
-    const storyText = Object.entries(persona.story)
-      .map(([key, value]) => `  • ${key}: ${value}`)
-      .join('\n');
-    if (storyText) text += `- Minha História:\n${storyText}\n`;
+    parts.push(`Quem sou eu: ${persona.who_am_i}`);
   }
   
   if (persona.tone_of_voice) {
-    const toneText = typeof persona.tone_of_voice === 'object'
+    const toneStr = typeof persona.tone_of_voice === 'object' 
       ? JSON.stringify(persona.tone_of_voice, null, 2)
       : persona.tone_of_voice;
-    text += `- Tom de Voz: ${toneText}\n`;
+    parts.push(`Tom de voz: ${toneStr}`);
   }
   
   if (persona.thoughts_phrases) {
-    const phrasesText = typeof persona.thoughts_phrases === 'object'
+    const phrasesStr = typeof persona.thoughts_phrases === 'object'
       ? JSON.stringify(persona.thoughts_phrases, null, 2)
       : persona.thoughts_phrases;
-    text += `- Frases e Bordões: ${phrasesText}\n`;
+    parts.push(`Frases e pensamentos: ${phrasesStr}`);
   }
   
   if (persona.hobbies?.length > 0) {
-    const hobbiesText = Array.isArray(persona.hobbies) ? persona.hobbies.join(', ') : persona.hobbies;
-    text += `- Hobbies e Interesses: ${hobbiesText}\n`;
+    parts.push(`Hobbies: ${persona.hobbies.join(', ')}`);
   }
   
-  if (persona.beliefs && typeof persona.beliefs === 'object') {
-    text += `- Crenças: ${JSON.stringify(persona.beliefs, null, 2)}\n`;
-  }
-  
-  if (persona.hatred_list?.length > 0) {
-    const hatredText = persona.hatred_list.map(h => typeof h === 'object' ? h.item || JSON.stringify(h) : h).join(', ');
-    text += `- O que Odeia: ${hatredText}\n`;
-  }
-  
-  return text;
+  return parts.join('\n');
 }
 
 /**
- * Formata os dados do público-alvo para o prompt
+ * Formata dados do Público-Alvo para inclusão no prompt
  */
-function formatAudienceData(audience) {
-  if (!audience) return null;
+function formatAudience(audience) {
+  if (!audience) return 'Não especificado';
   
-  let text = `- Nome: ${audience.name}\n`;
-  
-  if (audience.funnel_stage) {
-    text += `- Etapa do Funil: ${audience.funnel_stage}\n`;
-  }
+  const parts = [];
+  parts.push(`Nome: ${audience.name || 'N/A'}`);
+  parts.push(`Etapa do Funil: ${audience.funnel_stage || 'N/A'}`);
   
   if (audience.description) {
-    text += `- Descrição: ${audience.description}\n`;
+    parts.push(`Descrição: ${audience.description}`);
   }
   
   if (audience.pains) {
-    text += `- Dores: ${audience.pains}\n`;
+    parts.push(`Dores: ${audience.pains}`);
   }
   
   if (audience.ambitions) {
-    text += `- Ambições: ${audience.ambitions}\n`;
+    parts.push(`Ambições: ${audience.ambitions}`);
   }
   
   if (audience.habits) {
-    text += `- Hábitos: ${audience.habits}\n`;
+    parts.push(`Hábitos: ${audience.habits}`);
   }
   
   if (audience.common_enemy) {
-    text += `- Inimigo Comum: ${audience.common_enemy}\n`;
+    parts.push(`Inimigo comum: ${audience.common_enemy}`);
   }
   
-  return text;
+  return parts.join('\n');
 }
 
 /**
- * Formata os materiais selecionados para o prompt
+ * Formata materiais de referência para inclusão no prompt
  */
-function formatMaterialsData(materials) {
-  if (!materials || materials.length === 0) return null;
+function formatMaterials(materials) {
+  if (!materials || materials.length === 0) return 'Nenhum material selecionado';
   
-  return materials.map((mat, i) => 
-    `--- ${mat.title} ---\n${mat.content}`
-  ).join('\n\n');
+  return materials.map((m, i) => {
+    return `### Material ${i + 1}: ${m.title}\n${m.content}`;
+  }).join('\n\n');
 }
 
 /**
- * Formata os dados das modelagens para o prompt
+ * Formata conteúdo das modelagens para inclusão no prompt
  */
-function formatModelingsData(modelingsContent) {
-  if (!modelingsContent || modelingsContent.length === 0) return null;
+function formatModelings(modelingsContent) {
+  if (!modelingsContent || modelingsContent.length === 0) return 'Nenhuma modelagem selecionada';
   
-  return modelingsContent.map((item, i) => {
-    let text = `\n--- Modelagem ${i + 1}: ${item.title} ---\n`;
+  return modelingsContent.map((m, i) => {
+    const parts = [`### Referência ${i + 1}: ${m.title}`];
     
-    if (item.creatorIdea) {
-      text += `📝 Insights do Criador:\n${item.creatorIdea}\n\n`;
+    if (m.creatorIdea) {
+      parts.push(`**Ideia do Criador:** ${m.creatorIdea}`);
     }
     
-    if (item.transcripts && item.transcripts.length > 0) {
-      text += `🎬 Transcrições de Vídeos:\n`;
-      item.transcripts.forEach((t, j) => {
-        text += `[Vídeo ${j + 1}: ${t.title}]\n${t.content}\n\n`;
+    if (m.transcripts?.length > 0) {
+      parts.push('\n**Transcrições:**');
+      m.transcripts.forEach(t => {
+        parts.push(`- ${t.title}: ${t.content?.substring(0, 500)}...`);
       });
     }
     
-    if (item.texts && item.texts.length > 0) {
-      text += `📄 Textos de Referência:\n`;
-      item.texts.forEach((t, j) => {
-        text += `[Texto ${j + 1}: ${t.title}]\n${t.content}\n\n`;
+    if (m.texts?.length > 0) {
+      parts.push('\n**Textos de Referência:**');
+      m.texts.forEach(t => {
+        parts.push(`- ${t.title}: ${t.content?.substring(0, 300)}...`);
       });
     }
     
-    return text;
-  }).join('\n');
+    return parts.join('\n');
+  }).join('\n\n---\n\n');
 }
 
 /**
- * Constrói o prompt completo para geração de roteiro YouTube
+ * Formata introdução padrão do usuário
  */
-export function buildYoutubePrompt({ videoType, title, persona, audience, materials, userNotes, modelingsContent }) {
-  const typeConfig = VIDEO_TYPE_CONFIG[videoType];
+function formatIntroduction(introduction) {
+  if (!introduction) return '';
+  return `\n\n## INTRODUÇÃO PADRÃO DO CRIADOR (use como base para a apresentação):\n${introduction.content}`;
+}
+
+/**
+ * Formata CTA padrão do usuário
+ */
+function formatCTA(cta) {
+  if (!cta) return '';
+  return `\n\n## CTA PADRÃO DO CRIADOR (use como base para o call-to-action):\n${cta.content}`;
+}
+
+/**
+ * Monta o prompt final substituindo placeholders no template
+ * @param {Object} params - Parâmetros para montagem do prompt
+ * @param {string} params.promptTemplate - Template do prompt do tipo de roteiro
+ * @param {string} params.tema - Tema central do vídeo
+ * @param {Object} params.persona - Dados da persona
+ * @param {Object} params.audience - Dados do público-alvo
+ * @param {Array} params.materials - Lista de materiais selecionados
+ * @param {Array} params.modelingsContent - Conteúdo das modelagens
+ * @param {Object} params.introduction - Introdução padrão do usuário
+ * @param {Object} params.cta - CTA padrão do usuário
+ * @param {string} params.userNotes - Notas adicionais do usuário
+ * @param {number} params.duracaoEstimada - Duração estimada em minutos
+ * @param {string} params.videoType - Nome do tipo de vídeo
+ */
+export function buildYoutubePrompt({
+  promptTemplate,
+  tema,
+  persona,
+  audience,
+  materials,
+  modelingsContent,
+  introduction,
+  cta,
+  userNotes,
+  duracaoEstimada,
+  videoType
+}) {
+  // Se não há template customizado, usa um padrão
+  const baseTemplate = promptTemplate || getDefaultPromptTemplate();
   
-  if (!typeConfig) {
-    console.error(`Tipo de vídeo não encontrado: ${videoType}`);
-    return '';
-  }
+  // Substitui placeholders
+  let finalPrompt = baseTemplate
+    .replace(/\{\{tema\}\}/gi, tema || 'Não especificado')
+    .replace(/\{\{video_type\}\}/gi, videoType || 'Não especificado')
+    .replace(/\{\{duracao\}\}/gi, duracaoEstimada ? `${duracaoEstimada} minutos` : 'Não especificada')
+    .replace(/\{\{persona\}\}/gi, formatPersona(persona))
+    .replace(/\{\{publico\}\}/gi, formatAudience(audience))
+    .replace(/\{\{materiais\}\}/gi, formatMaterials(materials))
+    .replace(/\{\{modelagens\}\}/gi, formatModelings(modelingsContent));
+
+  // Adiciona introdução e CTA se existirem
+  finalPrompt += formatIntroduction(introduction);
+  finalPrompt += formatCTA(cta);
   
-  let prompt = `Olá! Preciso que você me ajude a criar um roteiro magnético para YouTube.
-
-📹 **TIPO DE VÍDEO:** ${typeConfig.label}
-**Duração esperada:** ${typeConfig.duration}
-**Estrutura específica deste tipo:** ${typeConfig.structure}
-
-📝 **TÍTULO DO VÍDEO:** ${title}
-`;
-
-  // Persona
-  const personaText = formatPersonaData(persona);
-  if (personaText) {
-    prompt += `
-👤 **MINHA PERSONA:**
-${personaText}`;
+  // Adiciona notas do usuário se existirem
+  if (userNotes?.trim()) {
+    finalPrompt += `\n\n## INSTRUÇÕES ADICIONAIS DO CRIADOR:\n${userNotes}`;
   }
 
-  // Público-alvo
-  const audienceText = formatAudienceData(audience);
-  if (audienceText) {
-    prompt += `
-🎯 **PÚBLICO-ALVO:**
-${audienceText}`;
-  }
+  return finalPrompt;
+}
 
-  // Materiais
-  const materialsText = formatMaterialsData(materials);
-  if (materialsText) {
-    prompt += `
-📋 **MATERIAIS DE REFERÊNCIA:**
-Use estas referências para criar o conteúdo:
+/**
+ * Template padrão caso o tipo de roteiro não tenha um template customizado
+ */
+function getDefaultPromptTemplate() {
+  return `# CRIAR ROTEIRO DE YOUTUBE
 
-${materialsText}
-`;
-  }
+## TEMA CENTRAL
+{{tema}}
 
-  // Modelagens de Referência
-  const modelingsText = formatModelingsData(modelingsContent);
-  if (modelingsText) {
-    prompt += `
-🎯 **MODELAGENS DE REFERÊNCIA:**
-Analise os padrões de sucesso destas referências e use como inspiração para criar um roteiro ainda melhor.
-Identifique: estrutura, ganchos, transições, técnicas de engajamento, tom de voz, e aplique no novo roteiro.
+## TIPO DE VÍDEO
+{{video_type}}
 
-${modelingsText}
-`;
-  }
+## DURAÇÃO ESTIMADA
+{{duracao}}
 
-  // Notas extras
-  if (userNotes && userNotes.trim()) {
-    prompt += `
-📝 **NOTAS EXTRAS DO CRIADOR:**
-"${userNotes}"
-`;
-  }
+## PERSONA DO CRIADOR
+{{persona}}
 
-  // Instruções de estrutura
-  prompt += `
----
+## PÚBLICO-ALVO
+{{publico}}
 
-Com base nessas informações, crie um roteiro completo seguindo esta estrutura:
+## MATERIAIS DE REFERÊNCIA
+{{materiais}}
 
-## HOOK (0-30 segundos)
-${typeConfig.hookInstructions}
-
-Escreva o texto completo do hook, palavra por palavra, pronto para ser lido/gravado.
-
-## APRESENTAÇÃO (30s - 1min)
-Apresente brevemente quem você é e por que o espectador deve ouvir você sobre este assunto. Use o tom de voz da persona. Seja breve mas crie autoridade.
-
-Escreva o texto completo da apresentação.
-
-## PONTE (1-2min)
-Faça a transição do hook para o conteúdo principal. Explique o que será abordado e por que é importante. Crie expectativa.
-
-Escreva o texto completo da ponte.
-
-## CORPO (Conteúdo Principal)
-${typeConfig.bodyInstructions}
-
-**IMPORTANTE:** Aplique a técnica PSP (Problema-Solução-Problema) para manter o engajamento:
-- Antes de cada seção importante, agite um problema ou dor
-- Entregue a solução/conteúdo
-- Introduza um novo problema que leva à próxima seção
-
-Escreva o texto completo do corpo, dividido em seções claras.
-
-## RESUMO / PONTE PARA CTA
-Recapitule os principais pontos de forma rápida. Reforce a transformação que o espectador terá ao aplicar o conteúdo. Crie uma transição natural para o CTA.
-
-Escreva o texto completo do resumo.
-
-## CTA FINAL
-${typeConfig.ctaInstructions}
-
-Escreva o texto completo do CTA, incluindo:
-- Chamada para like e inscrição (de forma criativa, não genérica)
-- Sugestão de próximo vídeo
-- Chamada para comentários
+## MODELAGENS E REFERÊNCIAS DE SUCESSO
+{{modelagens}}
 
 ---
 
-**IMPORTANTE:**
-1. Escreva o roteiro COMPLETO, palavra por palavra, pronto para ser lido
-2. Use a linguagem e tom de voz da persona
-3. Foque nas dores e desejos do público-alvo
-4. Seja específico e prático, não genérico
-5. Inclua marcações [CORTE], [B-ROLL], [TEXTO NA TELA] quando apropriado
-6. Mantenha parágrafos curtos para facilitar a leitura durante gravação`;
+## INSTRUÇÕES
 
-  return prompt;
-}
+Crie um roteiro completo para YouTube seguindo a estrutura:
 
-/**
- * Retorna a configuração de um tipo de vídeo específico
- */
-export function getVideoTypeConfig(videoType) {
-  return VIDEO_TYPE_CONFIG[videoType] || null;
-}
+1. **HOOK (30 segundos)** - Abertura impactante que prenda a atenção
+2. **APRESENTAÇÃO** - Breve apresentação do criador
+3. **PONTE** - Transição para o conteúdo principal
+4. **CORPO** - Conteúdo principal organizado em tópicos claros
+5. **RESUMO** - Recapitulação dos pontos principais
+6. **CTA** - Call-to-action final
 
-/**
- * Retorna todos os tipos de vídeo disponíveis
- */
-export function getAllVideoTypes() {
-  return Object.entries(VIDEO_TYPE_CONFIG).map(([id, config]) => ({
-    id,
-    ...config
-  }));
+O roteiro deve:
+- Usar o tom de voz da persona
+- Falar diretamente com o público-alvo
+- Incorporar referências dos materiais selecionados
+- Seguir o estilo das modelagens de sucesso
+- Ser escrito palavra por palavra, pronto para gravar`;
 }

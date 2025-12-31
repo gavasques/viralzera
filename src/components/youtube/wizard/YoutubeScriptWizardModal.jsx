@@ -14,7 +14,7 @@ import { StepVideoType } from "./steps/StepVideoType";
 import { StepContext } from "./steps/StepContext";
 import { StepModelings } from "./steps/StepModelings";
 import { StepUserContent } from "./steps/StepUserContent";
-import { StepRefinement } from "./steps/StepRefinement";
+import { buildYoutubePrompt } from "./buildYoutubePrompt";
 
 const STEPS = [
   { id: 'tema', title: 'Tema Central', description: 'Assunto do vídeo', icon: Lightbulb },
@@ -71,18 +71,32 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // Fetch all needed data in parallel
+      // 1. Buscar configurações do agente (modelo e prompt do sistema)
+      const agentConfigs = await base44.entities.YoutubeGeneratorConfig.filter({});
+      const agentConfig = agentConfigs[0];
+
+      if (!agentConfig?.model) {
+        throw new Error('Modelo de IA não configurado. Peça ao administrador para configurar em Configurações de Agentes.');
+      }
+
+      // 2. Buscar o tipo de roteiro selecionado para pegar o prompt_template
+      const scriptType = await base44.entities.YoutubeScriptType.get(formData.videoTypeId);
+      if (!scriptType) {
+        throw new Error('Tipo de roteiro não encontrado.');
+      }
+
+      // 3. Buscar todos os dados necessários em paralelo
       const [persona, audience, materials, introduction, cta] = await Promise.all([
         formData.personaId ? base44.entities.Persona.get(formData.personaId) : null,
         formData.audienceId ? base44.entities.Audience.get(formData.audienceId) : null,
-        formData.selectedMaterials.length > 0 
+        formData.selectedMaterials?.length > 0 
           ? base44.entities.Material.filter({ id: { $in: formData.selectedMaterials } }) 
           : [],
         formData.introductionId ? base44.entities.UserIntroduction.get(formData.introductionId) : null,
         formData.ctaId ? base44.entities.UserCTA.get(formData.ctaId) : null
       ]);
 
-      // Fetch modelings content if selected
+      // 4. Buscar conteúdo das modelagens se selecionadas
       let modelingsContent = [];
       if (formData.selectedModelings?.length > 0) {
         const [modelingsData, videos, texts] = await Promise.all([
@@ -108,31 +122,40 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         }));
       }
 
-      // Call AI via backend function
-      const aiResponse = await base44.functions.invoke('youtubeScriptGenerator', {
+      // 5. Montar o prompt final usando o template do tipo de roteiro
+      const finalPrompt = buildYoutubePrompt({
+        promptTemplate: scriptType.prompt_template,
         tema: formData.tema,
-        videoType: formData.videoType,
-        videoTypePrompt: formData.videoTypePrompt,
-        persona: persona?.data || persona,
-        audience: audience?.data || audience,
-        materials: Array.isArray(materials) ? materials : (materials?.data || []),
+        persona,
+        audience,
+        materials: Array.isArray(materials) ? materials : [],
         modelingsContent,
-        introduction: introduction?.data || introduction,
-        cta: cta?.data || cta,
+        introduction,
+        cta,
         userNotes: formData.userNotes,
-        duracaoEstimada: formData.duracaoEstimada
+        duracaoEstimada: formData.duracaoEstimada,
+        videoType: scriptType.title
+      });
+
+      // 6. Chamar a função backend com o modelo configurado
+      const aiResponse = await base44.functions.invoke('youtubeScriptGenerator', {
+        prompt: finalPrompt,
+        model: agentConfig.model,
+        enableReasoning: agentConfig.enable_reasoning || false,
+        reasoningEffort: agentConfig.reasoning_effort || 'medium',
+        enableWebSearch: agentConfig.enable_web_search || false
       });
 
       if (!aiResponse.data?.success) {
         throw new Error(aiResponse.data?.error || 'Erro ao gerar roteiro');
       }
 
-      const { content: generatedContent, suggestedTitle } = aiResponse.data;
+      const generatedContent = aiResponse.data.content;
 
-      // Create YoutubeScript record
-      await base44.entities.YoutubeScript.create({
-        title: suggestedTitle || `Roteiro: ${formData.tema.substring(0, 50)}`,
-        video_type: formData.videoType,
+      // 7. Criar registro do YoutubeScript
+      const newScript = await base44.entities.YoutubeScript.create({
+        title: formData.tema.substring(0, 100),
+        video_type: scriptType.title,
         corpo: generatedContent,
         duracao_estimada: formData.duracaoEstimada || null,
         status: 'Rascunho',
@@ -142,7 +165,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
 
       onOpenChange(false);
       toast.success('Roteiro criado com sucesso!');
-      navigate(createPageUrl('YoutubeScripts'));
+      navigate(createPageUrl(`YoutubeScriptDetail?id=${newScript.id}`));
 
     } catch (error) {
       console.error("Error generating youtube script:", error);
