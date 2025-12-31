@@ -588,16 +588,27 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         }
       }
 
-      // Save dossier
-      const dossier = await base44.entities.ContentDossier.create({
-        modeling_id: modelingId,
-        full_content: dossierContent,
-        character_count: dossierContent.length,
-        token_estimate: Math.ceil(dossierContent.length / 4)
-      });
+      // Save or update dossier
+      if (dossier) {
+        // Update existing
+        await base44.entities.ContentDossier.update(dossier.id, {
+          full_content: dossierContent,
+          character_count: dossierContent.length,
+          token_estimate: Math.ceil(dossierContent.length / 4)
+        });
+        toast.success('Dossiê atualizado com sucesso!');
+      } else {
+        // Create new
+        await base44.entities.ContentDossier.create({
+          modeling_id: modelingId,
+          full_content: dossierContent,
+          character_count: dossierContent.length,
+          token_estimate: Math.ceil(dossierContent.length / 4)
+        });
+        toast.success('Dossiê gerado com sucesso!');
+      }
 
       queryClient.invalidateQueries({ queryKey: ['modelingDossier', modelingId] });
-      toast.success('Dossiê gerado com sucesso!');
       
     } catch (error) {
       console.error('Erro ao gerar dossiê:', error);
