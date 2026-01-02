@@ -2,8 +2,9 @@ import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, Megaphone, Check } from "lucide-react";
+import { MessageSquare, Megaphone, Check, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function StepUserContent({ focusId, value, onChange }) {
@@ -48,6 +49,28 @@ export function StepUserContent({ focusId, value, onChange }) {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+      {/* Estimated Duration */}
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <Label className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-purple-600" />
+            Duração Estimada
+          </Label>
+          <p className="text-sm text-slate-500">
+            Quanto tempo você espera que o vídeo tenha? (em minutos)
+          </p>
+        </div>
+        <Input 
+          type="number" 
+          placeholder="Ex: 8" 
+          value={value.duracaoEstimada || ''} 
+          onChange={(e) => onChange({...value, duracaoEstimada: e.target.value})}
+          className="max-w-[200px]"
+        />
+      </div>
+
+      <div className="h-px bg-slate-100" />
+
       {/* Introductions */}
       <div className="space-y-3">
         <div className="space-y-1">

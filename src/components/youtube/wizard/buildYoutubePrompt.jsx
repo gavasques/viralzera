@@ -163,7 +163,7 @@ export function buildYoutubePrompt({
   let finalPrompt = baseTemplate
     .replace(/\{\{tema\}\}/gi, tema || 'Não especificado')
     .replace(/\{\{video_type\}\}/gi, videoType || 'Não especificado')
-    .replace(/\{\{duracao\}\}/gi, duracaoEstimada ? `${duracaoEstimada} minutos` : 'Não especificada')
+    .replace(/\{\{duracao\}\}/gi, duracaoEstimada ? `${duracaoEstimada} minutos (considerando velocidade média de fala de 130 palavras/min, o roteiro deve ter aproximadamente ${parseInt(duracaoEstimada) * 130} palavras)` : 'Não especificada')
     .replace(/\{\{persona\}\}/gi, formatPersona(persona))
     .replace(/\{\{publico\}\}/gi, formatAudience(audience))
     .replace(/\{\{materiais\}\}/gi, formatMaterials(materials))
