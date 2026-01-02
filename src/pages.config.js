@@ -74,6 +74,6 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "AgentSettings",
+    mainPage: "Dashboard",
     Pages: PAGES,
 };
