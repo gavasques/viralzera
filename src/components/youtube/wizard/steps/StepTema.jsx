@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,8 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Lightbulb, Database, Sparkles, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { sendMessage } from "@/components/services/OpenRouterDirectService";
+import CreativeDirectiveCard from "../CreativeDirectiveCard";
 
 export function StepTema({ focusId, value, onChange }) {
+  const [isGeneratingDirective, setIsGeneratingDirective] = useState(false);
+  const [directiveError, setDirectiveError] = useState(null);
+
   // Fetch modelings for selector
   const { data: modelings = [] } = useQuery({
     queryKey: ['modelings-wizard-tema', focusId],
@@ -16,11 +21,100 @@ export function StepTema({ focusId, value, onChange }) {
     enabled: !!focusId
   });
 
-  const handleModelingChange = (modelingId) => {
+  // Fetch dossiers
+  const { data: dossiers = [] } = useQuery({
+    queryKey: ['dossiers-wizard', focusId],
+    queryFn: async () => {
+      const allDossiers = await base44.entities.ContentDossier.list('-created_date', 100);
+      // Filter by modelings from this focus
+      const modelingIds = modelings.map(m => m.id);
+      return allDossiers.filter(d => modelingIds.includes(d.modeling_id));
+    },
+    enabled: modelings.length > 0
+  });
+
+  const generateCreativeDirective = async (dossierContent) => {
+    setIsGeneratingDirective(true);
+    setDirectiveError(null);
+    
+    try {
+      // Fetch agent config
+      const agentConfigs = await base44.entities.YoutubeCreativeDirectiveConfig.filter({});
+      const config = agentConfigs[0];
+      
+      if (!config?.model) {
+        throw new Error('Configure o agente "YouTube - Diretriz Criativa" em Configurações de Agentes');
+      }
+
+      const systemPrompt = config.prompt || `# PROMPT PARA O AGENTE DE DIRETRIZ CRIATIVA
+
+## SUA IDENTIDADE
+Você é um Estrategista de Conteúdo Sênior para YouTube.
+
+## SUA MISSÃO
+Analisar o dossiê de inteligência e sintetizar a Diretriz Criativa Central para um novo vídeo. Sua resposta DEVE ser um objeto JSON válido.
+
+## REGRAS
+- Seja conciso e impactante.
+- A resposta deve ser apenas o JSON, sem introduções.
+
+## JSON DE SAÍDA
+{
+  "tese_principal": "A grande ideia do vídeo em uma frase impactante",
+  "grande_porque": "A razão emocional pela qual alguém assistiria este vídeo",
+  "angulo_unico": "O que torna essa abordagem diferente de outros vídeos sobre o tema",
+  "conflito_central": "A tensão principal que será explorada no vídeo"
+}`;
+
+      const finalPrompt = systemPrompt.replace('{{dossier_content}}', dossierContent);
+
+      const response = await sendMessage({
+        model: config.model,
+        messages: [
+          { role: 'system', content: finalPrompt },
+          { role: 'user', content: `Analise o dossiê abaixo e gere a diretriz criativa:\n\n${dossierContent}` }
+        ],
+        options: {
+          enableReasoning: config.enable_reasoning || false,
+          reasoningEffort: config.reasoning_effort || 'medium',
+          enableWebSearch: config.enable_web_search || false,
+          feature: 'YoutubeCreativeDirective'
+        }
+      });
+
+      // Parse JSON from response
+      const content = response.content;
+      let directive;
+      
+      // Try to extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        directive = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Resposta não contém JSON válido');
+      }
+
+      onChange({ 
+        ...value, 
+        creativeDirective: directive 
+      });
+
+      toast.success('Diretriz criativa gerada!');
+    } catch (error) {
+      console.error('Error generating creative directive:', error);
+      setDirectiveError(error.message);
+      toast.error('Erro ao gerar diretriz: ' + error.message);
+    } finally {
+      setIsGeneratingDirective(false);
+    }
+  };
+
+  const handleModelingChange = async (modelingId) => {
     if (modelingId === 'none') {
       onChange({ 
         ...value, 
-        selectedModelings: [] 
+        selectedModelings: [],
+        creativeDirective: null
       });
       return;
     }
@@ -36,13 +130,30 @@ export function StepTema({ focusId, value, onChange }) {
       onChange({ 
         ...value, 
         tema: newTema,
-        selectedModelings: [modelingId]
+        selectedModelings: [modelingId],
+        creativeDirective: null
       });
 
       if (idea) {
         toast.success("Tema preenchido com a Ideia do Criador do Dossiê");
       } else {
         toast.info("Tema preenchido com o título da Modelagem");
+      }
+
+      // Check if there's a dossier for this modeling
+      const dossier = dossiers.find(d => d.modeling_id === modelingId);
+      if (dossier?.full_content) {
+        generateCreativeDirective(dossier.full_content);
+      }
+    }
+  };
+
+  const handleRegenerateDirective = () => {
+    const currentModelingId = value.selectedModelings?.[0];
+    if (currentModelingId) {
+      const dossier = dossiers.find(d => d.modeling_id === currentModelingId);
+      if (dossier?.full_content) {
+        generateCreativeDirective(dossier.full_content);
       }
     }
   };
@@ -104,6 +215,14 @@ export function StepTema({ focusId, value, onChange }) {
           autoFocus
         />
       </div>
+
+      {/* Creative Directive Card */}
+      <CreativeDirectiveCard 
+        directive={value.creativeDirective}
+        isLoading={isGeneratingDirective}
+        error={directiveError}
+        onRegenerate={handleRegenerateDirective}
+      />
 
       <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
         <Sparkles className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
