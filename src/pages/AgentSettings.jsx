@@ -165,6 +165,13 @@ const AGENT_CARDS = [
     description: 'Analisa o Dossiê e define a Tese, Porquê, Ângulo e Conflito do vídeo.',
     icon: BrainCircuit,
     color: 'bg-yellow-500'
+  },
+  {
+    key: 'youtubeFormatSelector',
+    title: 'YouTube - Seletor de Formato',
+    description: 'Recomenda o melhor formato de vídeo baseado na Diretriz Criativa.',
+    icon: Youtube,
+    color: 'bg-red-400'
   }
 ];
 
