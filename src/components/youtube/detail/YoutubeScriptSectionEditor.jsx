@@ -2,9 +2,29 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, Save, MessageSquareText } from "lucide-react";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
+
+const VIDEO_TYPE_COLORS = {
+  tutorial: "bg-blue-100 text-blue-700",
+  lista: "bg-purple-100 text-purple-700",
+  dica_rapida: "bg-green-100 text-green-700",
+  estudo_caso: "bg-amber-100 text-amber-700",
+  comparacao: "bg-pink-100 text-pink-700",
+  explicacao_conceito: "bg-indigo-100 text-indigo-700",
+  desmistificacao: "bg-red-100 text-red-700",
+  novidade: "bg-cyan-100 text-cyan-700",
+  problema_solucao: "bg-orange-100 text-orange-700",
+  historia_pessoal: "bg-violet-100 text-violet-700",
+};
+
+const STATUS_COLORS = {
+  Rascunho: "bg-slate-100 text-slate-700",
+  Finalizado: "bg-green-100 text-green-700",
+  Publicado: "bg-blue-100 text-blue-700",
+};
 
 // Basic Markdown to HTML converter
 const markdownToHtml = (text) => {
@@ -35,7 +55,13 @@ export default function YoutubeScriptSectionEditor({
   content, 
   onChange,
   onOpenRefiner,
-  scriptTitle = ""
+  scriptTitle = "",
+  videoType,
+  status,
+  onSave,
+  isSaving,
+  hasChanges,
+  onChatToggle
 }) {
   const quillRef = useRef(null);
   const [selection, setSelection] = useState(null);
@@ -133,7 +159,45 @@ export default function YoutubeScriptSectionEditor({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+             <Button
+                variant="ghost"
+                size="sm"
+                onClick={onChatToggle}
+                className="h-8 px-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              >
+                <MessageSquareText className="w-4 h-4 mr-1.5" />
+                Chat IA
+              </Button>
+
+            {videoType && (
+              <Badge className={VIDEO_TYPE_COLORS[videoType] || "bg-slate-100 text-slate-700"}>
+                {videoType.replace(/_/g, ' ')}
+              </Badge>
+            )}
+            
+            {status && (
+              <Badge className={STATUS_COLORS[status] || "bg-slate-100 text-slate-700"}>
+                {status}
+              </Badge>
+            )}
+
+            <Button 
+              onClick={onSave}
+              disabled={isSaving || !hasChanges}
+              size="sm"
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white gap-2 h-8"
+            >
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              {hasChanges ? 'Salvar' : 'Salvo'}
+            </Button>
+
+            <div className="w-px h-6 bg-slate-200 mx-1" />
+
             <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
                 <span className="text-[10px] font-medium text-slate-500">
                 {charCount.toLocaleString()} chars
@@ -143,7 +207,7 @@ export default function YoutubeScriptSectionEditor({
                 {estimatedTime}
                 </span>
             </div>
-            <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
+            {/* <RefinerButton onClick={() => onOpenRefiner(sectionKey)} /> */}
           </div>
         </div>
       

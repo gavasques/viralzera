@@ -188,6 +188,13 @@ export default function YoutubeScriptDetail() {
               onChange={(_, val) => setContent(val)}
               onOpenRefiner={handleOpenRefiner}
               scriptTitle={title}
+              // Toolbar props
+              videoType={script?.video_type}
+              status={script?.status}
+              onSave={handleSave}
+              isSaving={saveMutation.isPending}
+              hasChanges={hasChanges}
+              onChatToggle={() => setShowRightPanel(prev => !prev)}
             />
           </div>
         </div>
