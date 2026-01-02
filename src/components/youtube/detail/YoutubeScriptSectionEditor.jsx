@@ -207,7 +207,7 @@ export default function YoutubeScriptSectionEditor({
                 {estimatedTime}
                 </span>
             </div>
-            {/* <RefinerButton onClick={() => onOpenRefiner(sectionKey)} /> */}
+            <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
           </div>
         </div>
       
