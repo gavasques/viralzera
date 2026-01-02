@@ -38,7 +38,27 @@ export default function Modelagem() {
 
   const { data: modelings = [], isLoading } = useQuery({
     queryKey: ['modelings', selectedFocusId],
-    queryFn: () => base44.entities.Modeling.filter({ focus_id: selectedFocusId }, '-created_date', 100),
+    queryFn: async () => {
+      const modelingsList = await base44.entities.Modeling.filter({ focus_id: selectedFocusId }, '-created_date', 100);
+      
+      // Fetch counts for each modeling
+      const modelingsWithCounts = await Promise.all(modelingsList.map(async (modeling) => {
+        const [videos, texts, links] = await Promise.all([
+          base44.entities.ModelingVideo.filter({ modeling_id: modeling.id }),
+          base44.entities.ModelingText.filter({ modeling_id: modeling.id }),
+          base44.entities.ModelingLink.filter({ modeling_id: modeling.id })
+        ]);
+        
+        return {
+          ...modeling,
+          video_count: videos.length,
+          text_count: texts.length,
+          link_count: links.length
+        };
+      }));
+      
+      return modelingsWithCounts;
+    },
     enabled: !!selectedFocusId
   });
 
