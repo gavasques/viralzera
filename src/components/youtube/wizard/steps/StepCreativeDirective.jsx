@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Target } from "lucide-react";
+import { Target, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
 import CreativeDirectiveCard from "../CreativeDirectiveCard";
@@ -34,6 +34,73 @@ export function StepCreativeDirective({ focusId, value, onChange }) {
   // Initialize history if not present
   const directiveHistory = value.directiveHistory || [];
   const currentHistoryIndex = value.currentHistoryIndex ?? (directiveHistory.length - 1);
+
+  const generateFormatRecommendation = async (directive) => {
+    if (!directive) return;
+
+    try {
+      const agentConfigs = await base44.entities.YoutubeFormatSelectorConfig.filter({});
+      const config = agentConfigs[0];
+      
+      if (!config?.model) {
+        console.log('Format selector agent not configured, skipping');
+        return;
+      }
+
+      const systemPrompt = config.prompt || `# PROMPT PARA O AGENTE SELETOR DE FORMATO
+
+## SUA IDENTIDADE
+Você é um Seletor Inteligente de Formato de Vídeo.
+
+## SUA MISSÃO
+Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxonomia. Sua resposta DEVE ser um objeto JSON válido.
+
+## TAXONOMIA DE FORMATOS
+- Tutorial Passo a Passo
+- Explainer / Deep Dive
+- Mitos vs. Verdades
+- Análise Crítica / Review
+- Comparativo
+- Estudo de Caso
+- React / Comentário
+- Lista / Top X
+
+## JSON DE SAÍDA
+{
+  "formato_recomendado": "Nome exato do formato da taxonomia",
+  "justificativa_estrategica": "Explicação de 2-3 frases de por que esse formato é ideal"
+}`;
+
+      const directiveJson = JSON.stringify(directive, null, 2);
+
+      const response = await sendMessage({
+        model: config.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Analise a diretriz criativa abaixo e recomende o melhor formato:\n\n${directiveJson}` }
+        ],
+        options: {
+          enableReasoning: config.enable_reasoning || false,
+          reasoningEffort: config.reasoning_effort || 'medium',
+          enableWebSearch: config.enable_web_search || false,
+          feature: 'YoutubeFormatSelector'
+        }
+      });
+
+      const content = response.content;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const formatRecommendation = JSON.parse(jsonMatch[0]);
+        onChange(prev => ({ 
+          ...prev, 
+          formatRecommendation 
+        }));
+      }
+    } catch (err) {
+      console.error('Error generating format recommendation:', err);
+      // Don't show error to user, this is optional
+    }
+  };
 
   const generateCreativeDirective = async (userFeedback = '') => {
     if (!currentDossier?.full_content) {
@@ -122,6 +189,9 @@ IMPORTANTE: Considere este feedback ao gerar a nova Diretriz Criativa. Ajuste o 
       });
 
       toast.success('Diretriz criativa gerada!');
+
+      // Auto-generate format recommendation
+      generateFormatRecommendation(directive);
     } catch (err) {
       console.error('Error generating creative directive:', err);
       setError(err.message);

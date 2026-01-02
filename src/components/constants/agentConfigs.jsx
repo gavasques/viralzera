@@ -555,6 +555,40 @@ Analisar o dossiê de inteligência e sintetizar a Diretriz Criativa Central par
     promptPlaceholders: [
       { key: '{{dossier_content}}', description: 'Conteúdo completo do dossiê de inteligência' }
     ]
+  },
+
+  youtubeFormatSelector: {
+    configEntity: 'YoutubeFormatSelectorConfig',
+    title: 'YouTube - Seletor de Formato',
+    defaultPrompt: `# PROMPT PARA O AGENTE SELETOR DE FORMATO
+
+## SUA IDENTIDADE
+Você é um Seletor Inteligente de Formato de Vídeo.
+
+## SUA MISSÃO
+Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxonomia. Sua resposta DEVE ser um objeto JSON válido.
+
+## TAXONOMIA DE FORMATOS
+- Tutorial Passo a Passo
+- Explainer / Deep Dive
+- Mitos vs. Verdades
+- Análise Crítica / Review
+- Comparativo
+- Estudo de Caso
+- React / Comentário
+- Lista / Top X
+
+## JSON DE SAÍDA
+{
+  "formato_recomendado": "Nome exato do formato da taxonomia",
+  "justificativa_estrategica": "Explicação de 2-3 frases de por que esse formato é ideal"
+}
+
+## DIRETRIZ CRIATIVA PARA ANÁLISE
+{{creative_directive_json}}`,
+    promptPlaceholders: [
+      { key: '{{creative_directive_json}}', description: 'JSON da diretriz criativa gerada' }
+    ]
   }
 };
 

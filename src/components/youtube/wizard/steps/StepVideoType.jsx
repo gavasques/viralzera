@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { FileText, Video, BookOpen, List, Lightbulb, Target, Layers, MessageSquare, Zap } from "lucide-react";
+import { FileText, Video, BookOpen, List, Lightbulb, Target, Layers, MessageSquare, Zap, Sparkles } from "lucide-react";
 
 const ICON_MAP = {
   FileText,
@@ -39,6 +39,28 @@ export function StepVideoType({ focusId, value, onChange }) {
     queryFn: () => base44.entities.YoutubeScriptType.filter({ focus_id: focusId }, '-created_date', 50),
     enabled: !!focusId
   });
+
+  const formatRecommendation = value.formatRecommendation;
+
+  // Auto-select format based on AI recommendation
+  useEffect(() => {
+    if (formatRecommendation?.formato_recomendado && scriptTypes.length > 0 && !value.videoTypeId) {
+      const recommended = formatRecommendation.formato_recomendado.toLowerCase();
+      const matchingType = scriptTypes.find(t => 
+        t.title.toLowerCase().includes(recommended) || 
+        recommended.includes(t.title.toLowerCase())
+      );
+      
+      if (matchingType) {
+        onChange({ 
+          ...value, 
+          videoTypeId: matchingType.id,
+          videoType: matchingType.title,
+          videoTypePrompt: matchingType.prompt_template
+        });
+      }
+    }
+  }, [formatRecommendation, scriptTypes, value.videoTypeId]);
 
   if (isLoading) {
     return (
@@ -85,12 +107,37 @@ export function StepVideoType({ focusId, value, onChange }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
+      {/* AI Recommendation Card */}
+      {formatRecommendation && (
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="bg-emerald-500 p-1.5 rounded-lg shrink-0">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-emerald-900 mb-1">
+                Recomendação da IA: {formatRecommendation.formato_recomendado}
+              </p>
+              <p className="text-xs text-emerald-700 leading-relaxed">
+                {formatRecommendation.justificativa_estrategica}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[320px] overflow-y-auto pr-1">
         {scriptTypes.map((type, index) => {
           const isSelected = value.videoTypeId === type.id;
           const colorKey = COLORS[index % COLORS.length];
           const colors = COLOR_CLASSES[colorKey];
           const Icon = ICON_MAP[type.icon] || FileText;
+          
+          // Check if this is the AI recommended format
+          const isRecommended = formatRecommendation?.formato_recomendado && (
+            type.title.toLowerCase().includes(formatRecommendation.formato_recomendado.toLowerCase()) ||
+            formatRecommendation.formato_recomendado.toLowerCase().includes(type.title.toLowerCase())
+          );
 
           return (
             <div
@@ -102,23 +149,30 @@ export function StepVideoType({ focusId, value, onChange }) {
                 videoTypePrompt: type.prompt_template
               })}
               className={cn(
-                "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                "p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 relative",
                 isSelected
                   ? `${colors.bg} ${colors.border} shadow-md`
-                  : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
+                  : isRecommended
+                    ? "border-emerald-300 bg-emerald-50/50 hover:border-emerald-400"
+                    : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
               )}
             >
+              {isRecommended && !isSelected && (
+                <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium">
+                  IA ⭐
+                </div>
+              )}
               <div className="flex items-start gap-3">
                 <div className={cn(
                   "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                  isSelected ? colors.iconBg : "bg-slate-100"
+                  isSelected ? colors.iconBg : isRecommended ? "bg-emerald-100" : "bg-slate-100"
                 )}>
-                  <Icon className={cn("w-5 h-5", isSelected ? colors.text : "text-slate-500")} />
+                  <Icon className={cn("w-5 h-5", isSelected ? colors.text : isRecommended ? "text-emerald-600" : "text-slate-500")} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className={cn(
                     "font-semibold text-sm leading-tight",
-                    isSelected ? colors.text : "text-slate-900"
+                    isSelected ? colors.text : isRecommended ? "text-emerald-700" : "text-slate-900"
                   )}>
                     {type.title}
                   </p>
