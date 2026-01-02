@@ -536,12 +536,139 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     setGeneratingDossier(true);
     
     try {
-      toast.info('Iniciando agente gerador de dossiê...');
+      toast.info('Coletando materiais...');
+
+      // Buscar configuração do agente
+      const generatorConfigs = await base44.entities.DossierGeneratorConfig.list();
+      const config = generatorConfigs?.[0];
+      const model = config?.model || 'openai/gpt-4o-mini';
+      const systemPrompt = config?.prompt || `Você é um organizador de conteúdo. Sua tarefa é pegar os diversos materiais brutos (transcrições, textos, notas) e organizá-los em um único documento coeso em formato Markdown, chamado 'Dossiê de Conteúdo'. Crie seções claras para cada tipo de material.`;
+
+      // Montar materiais brutos
+      let materiaisBrutos = `# DOSSIÊ DE CONTEÚDO: ${modeling.title}\n\n`;
       
-      // Call backend function
-      await base44.functions.invoke('generateDossier', { modeling_id: modelingId });
+      if (modeling.description) {
+        materiaisBrutos += `**Descrição:** ${modeling.description}\n\n`;
+      }
+
+      if (modeling.target_platform) {
+        materiaisBrutos += `**Plataforma:** ${modeling.target_platform}\n`;
+      }
+
+      if (modeling.content_type) {
+        materiaisBrutos += `**Tipo de Conteúdo:** ${modeling.content_type}\n\n`;
+      }
+
+      if (modeling.creator_idea) {
+        materiaisBrutos += `## 💡 Ideia do Criador\n\n${modeling.creator_idea}\n\n`;
+      }
+
+      // Adicionar análises de vídeos
+      const videoAnalyses = analyses.filter(a => a.material_type === 'video' && a.status === 'completed');
+      if (videoAnalyses.length > 0) {
+        materiaisBrutos += `---\n\n## 🎥 ANÁLISES DE VÍDEOS DE REFERÊNCIA (${videoAnalyses.length})\n\n`;
+        videoAnalyses.forEach((a, i) => {
+          const video = videos.find(v => v.id === a.material_id);
+          materiaisBrutos += `### ${a.material_title || video?.title || 'Sem título'}\n\n`;
+          if (video?.channel_name) {
+            materiaisBrutos += `**Canal:** ${video.channel_name}\n`;
+          }
+          if (video?.url) {
+            materiaisBrutos += `**URL:** ${video.url}\n\n`;
+          }
+          materiaisBrutos += `${a.analysis_summary}\n\n`;
+          materiaisBrutos += `---\n\n`;
+        });
+      } else {
+        // Fallback para transcrições se não houver análises
+        const transcribedVideos = videos.filter(v => v.status === 'transcribed' && v.transcript);
+        if (transcribedVideos.length > 0) {
+          materiaisBrutos += `---\n\n## 🎥 VÍDEOS TRANSCRITOS (${transcribedVideos.length})\n\n`;
+          transcribedVideos.forEach((v, i) => {
+            materiaisBrutos += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
+            materiaisBrutos += `**Transcrição:**\n\n${v.transcript}\n\n`;
+            materiaisBrutos += `---\n\n`;
+          });
+        }
+      }
+
+      // Adicionar textos
+      if (texts.length > 0) {
+        materiaisBrutos += `## 📄 TEXTOS DE REFERÊNCIA (${texts.length})\n\n`;
+        texts.forEach((t, i) => {
+          materiaisBrutos += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
+          if (t.description) {
+            materiaisBrutos += `**Descrição:** ${t.description}\n\n`;
+          }
+          materiaisBrutos += `${t.content}\n\n`;
+          materiaisBrutos += `---\n\n`;
+        });
+      }
+
+      // Adicionar links processados
+      const completedLinks = links.filter(l => l.status === 'completed' && l.summary);
+      if (completedLinks.length > 0) {
+        materiaisBrutos += `## 🔗 ARTIGOS E LINKS PROCESSADOS (${completedLinks.length})\n\n`;
+        completedLinks.forEach((l, i) => {
+          materiaisBrutos += `### Link ${i + 1}: ${l.title || 'Sem título'}\n\n`;
+          materiaisBrutos += `**URL:** ${l.url}\n\n`;
+          if (l.notes) {
+            materiaisBrutos += `**Notas:** ${l.notes}\n\n`;
+          }
+          materiaisBrutos += `**Resumo:**\n\n${l.summary}\n\n`;
+          materiaisBrutos += `---\n\n`;
+        });
+      }
+
+      // Verificar se há conteúdo suficiente
+      const hasContent = videoAnalyses.length > 0 || texts.length > 0 || completedLinks.length > 0 || (videos.some(v => v.status === 'transcribed')) || modeling.creator_idea;
       
-      toast.success('Dossiê gerado com sucesso!');
+      if (!hasContent) {
+        throw new Error('Não há conteúdo suficiente para gerar o dossiê. Adicione vídeos analisados, textos, links processados ou uma ideia do criador.');
+      }
+
+      // Substituir placeholder e preparar prompt
+      const finalSystemPrompt = systemPrompt.replace(/\{\{materiais_brutos\}\}/g, materiaisBrutos);
+
+      toast.info('Gerando dossiê com IA...');
+
+      // Chamar OpenRouter diretamente
+      const aiResponse = await sendMessage({
+        model,
+        messages: [
+          { role: 'system', content: finalSystemPrompt },
+          { role: 'user', content: 'Organize todos esses materiais em um Dossiê de Conteúdo bem estruturado em Markdown.' }
+        ],
+        options: {
+          enableReasoning: config?.enable_reasoning || false,
+          reasoningEffort: config?.reasoning_effort || 'medium',
+          enableWebSearch: config?.enable_web_search || false,
+          feature: 'DossierGenerator'
+        }
+      });
+
+      const dossierContent = aiResponse.content;
+      const charCount = dossierContent.length;
+      const tokenEstimate = Math.ceil(charCount / 4);
+
+      // Salvar ou atualizar dossiê
+      if (dossier) {
+        await base44.entities.ContentDossier.update(dossier.id, {
+          full_content: dossierContent,
+          character_count: charCount,
+          token_estimate: tokenEstimate
+        });
+        toast.success('Dossiê atualizado com sucesso!');
+      } else {
+        await base44.entities.ContentDossier.create({
+          modeling_id: modelingId,
+          full_content: dossierContent,
+          character_count: charCount,
+          token_estimate: tokenEstimate
+        });
+        toast.success('Dossiê gerado com sucesso!');
+      }
+
       queryClient.invalidateQueries({ queryKey: ['modelingDossier', modelingId] });
       
     } catch (error) {
