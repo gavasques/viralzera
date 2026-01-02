@@ -117,7 +117,7 @@ function formatModelings(modelingsContent) {
  */
 function formatIntroduction(introduction) {
   if (!introduction) return '';
-  return `\n\n## INTRODUÇÃO PADRÃO DO CRIADOR (use como base para a apresentação):\n${introduction.content}`;
+  return `\n\n## INTRODUÇÃO PADRÃO DO CRIADOR\nINICIO INTRODUÇÃO\n${introduction.content}\nFIM INTRODUÇÃO`;
 }
 
 /**
@@ -125,7 +125,7 @@ function formatIntroduction(introduction) {
  */
 function formatCTA(cta) {
   if (!cta) return '';
-  return `\n\n## CTA PADRÃO DO CRIADOR (use como base para o call-to-action):\n${cta.content}`;
+  return `\n\n## CTA PADRÃO DO CRIADOR\nINICIO CTA\n${cta.content}\nFIM CTA`;
 }
 
 /**
@@ -175,7 +175,7 @@ export function buildYoutubePrompt({
   
   // Adiciona notas do usuário se existirem
   if (userNotes?.trim()) {
-    finalPrompt += `\n\n## INSTRUÇÕES ADICIONAIS DO CRIADOR:\n${userNotes}`;
+    finalPrompt += `\n\n## INSTRUÇÕES ADICIONAIS DO CRIADOR\nINICIO INSTRUÇÕES ADICIONAIS\n${userNotes}\nFIM INSTRUÇÕES ADICIONAIS`;
   }
 
   return finalPrompt;
@@ -188,25 +188,39 @@ function getDefaultPromptTemplate() {
   return `# CRIAR ROTEIRO DE YOUTUBE
 
 ## TEMA CENTRAL
+INICIO TEMA CENTRAL
 {{tema}}
+FIM TEMA CENTRAL
 
 ## TIPO DE VÍDEO
+INICIO TIPO DE VÍDEO
 {{video_type}}
+FIM TIPO DE VÍDEO
 
 ## DURAÇÃO ESTIMADA
+INICIO DURAÇÃO ESTIMADA
 {{duracao}}
+FIM DURAÇÃO ESTIMADA
 
 ## PERSONA DO CRIADOR
+INICIO PERSONA DO CRIADOR
 {{persona}}
+FIM PERSONA DO CRIADOR
 
 ## PÚBLICO-ALVO
+INICIO PÚBLICO-ALVO
 {{publico}}
+FIM PÚBLICO-ALVO
 
 ## MATERIAIS DE REFERÊNCIA
+INICIO MATERIAIS DE REFERÊNCIA
 {{materiais}}
+FIM MATERIAIS DE REFERÊNCIA
 
 ## MODELAGENS E REFERÊNCIAS DE SUCESSO
+INICIO MODELAGENS E REFERÊNCIAS DE SUCESSO
 {{modelagens}}
+FIM MODELAGENS E REFERÊNCIAS DE SUCESSO
 
 ---
 
