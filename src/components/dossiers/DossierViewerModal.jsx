@@ -210,7 +210,7 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
                       placeholder="Edite o conteúdo do dossiê em Markdown..."
                     />
                   ) : (
-                    <article className="prose prose-slate max-w-none
+                    <article className="prose prose-slate max-w-none w-full break-words
                       prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900 
                       prose-h1:text-3xl prose-h1:pb-6 prose-h1:mb-8 prose-h1:border-b prose-h1:border-slate-100
                       prose-h2:text-xl prose-h2:text-purple-700 prose-h2:mt-12 prose-h2:mb-6 prose-h2:flex prose-h2:items-center prose-h2:gap-2
@@ -246,7 +246,7 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
                     </div>
                     <div className="p-6 md:p-8">
                       {dossier.raw_materials ? (
-                         <article className="prose prose-slate max-w-none text-sm
+                         <article className="prose prose-slate max-w-none text-sm w-full break-words
                           prose-headings:text-slate-800 prose-p:text-slate-600
                           prose-pre:bg-slate-50 prose-pre:border prose-pre:border-slate-200 prose-pre:text-slate-700"
                         >
