@@ -84,8 +84,15 @@ export default function YoutubeScriptSectionEditor({
       editor.deleteText(selection.range.index, selection.range.length);
       editor.insertText(selection.range.index, newText);
       setSelection(null);
-      // Trigger onChange manually as Quill might not trigger it for API calls sometimes
-      // onChange(sectionKey, editor.root.innerHTML); // ReactQuill onChange should handle it
+    }
+  };
+
+  const handleInsertBelow = (newText) => {
+    if (quillRef.current && selection) {
+      const editor = quillRef.current.getEditor();
+      const insertIndex = selection.range.index + selection.range.length;
+      editor.insertText(insertIndex, '\n' + newText);
+      setSelection(null);
     }
   };
 
@@ -188,6 +195,7 @@ export default function YoutubeScriptSectionEditor({
             position={selection?.position}
             onClose={() => setSelection(null)}
             onReplaceText={handleReplaceText}
+            onInsertBelow={handleInsertBelow}
             fullContent={content}
             scriptTitle={scriptTitle}
             />

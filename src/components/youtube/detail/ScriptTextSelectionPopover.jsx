@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
-import { Sparkles, Wand2, ArrowRight, Loader2, Check, X } from "lucide-react";
+import { Sparkles, Wand2, ArrowRight, Loader2, Check, X, ArrowDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ export default function ScriptTextSelectionPopover({
   position, 
   onClose,
   onReplaceText,
+  onInsertBelow,
   fullContent,
   scriptTitle
 }) {
@@ -139,6 +140,14 @@ CONTEXTO DO ROTEIRO (Título: ${scriptTitle}):
     }
   };
 
+  const handleConfirmInsertBelow = () => {
+    if (generatedText) {
+      onInsertBelow(generatedText);
+      toast.success('Texto adicionado abaixo!');
+      onClose();
+    }
+  };
+
   const handleDiscard = () => {
     setGeneratedText(null);
     setIsReviewing(false);
@@ -218,6 +227,15 @@ CONTEXTO DO ROTEIRO (Título: ${scriptTitle}):
               Descartar
             </Button>
             <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleConfirmInsertBelow}
+                className="h-8 px-3 text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              >
+                <ArrowDown className="w-3.5 h-3.5 mr-1.5" />
+                Abaixo
+              </Button>
               <Button
                 size="sm"
                 onClick={handleConfirmReplace}
