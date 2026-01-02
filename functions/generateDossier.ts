@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
     // Buscar todos os materiais da modelagem
     const modeling = await base44.entities.Modeling.filter({ id: modeling_id });
     const videos = await base44.entities.ModelingVideo.filter({ modeling_id });
+    const analyses = await base44.entities.ModelingAnalysis.filter({ modeling_id });
     const texts = await base44.entities.ModelingText.filter({ modeling_id });
     const links = await base44.entities.ModelingLink.filter({ modeling_id });
 
@@ -51,24 +52,33 @@ Deno.serve(async (req) => {
       materiaisBrutos += `## 💡 Ideia do Criador\n\n${modeling[0].creator_idea}\n\n`;
     }
 
-    // Adicionar vídeos transcritos
-    const transcribedVideos = videos.filter(v => v.status === 'transcribed' && v.transcript);
-    if (transcribedVideos.length > 0) {
-      materiaisBrutos += `---\n\n## 🎥 VÍDEOS ANALISADOS (${transcribedVideos.length})\n\n`;
-      transcribedVideos.forEach((v, i) => {
-        materiaisBrutos += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
-        if (v.channel_name) {
-          materiaisBrutos += `**Canal:** ${v.channel_name}\n`;
+    // Adicionar análises de vídeos
+    const videoAnalyses = analyses.filter(a => a.material_type === 'video' && a.status === 'completed');
+    if (videoAnalyses.length > 0) {
+      materiaisBrutos += `---\n\n## 🎥 ANÁLISES DE VÍDEOS DE REFERÊNCIA (${videoAnalyses.length})\n\n`;
+      videoAnalyses.forEach((a, i) => {
+        const video = videos.find(v => v.id === a.material_id);
+        materiaisBrutos += `### ${a.material_title || video?.title || 'Sem título'}\n\n`;
+        if (video?.channel_name) {
+          materiaisBrutos += `**Canal:** ${video.channel_name}\n`;
         }
-        if (v.url) {
-          materiaisBrutos += `**URL:** ${v.url}\n\n`;
+        if (video?.url) {
+          materiaisBrutos += `**URL:** ${video.url}\n\n`;
         }
-        if (v.notes) {
-          materiaisBrutos += `**Notas:** ${v.notes}\n\n`;
-        }
-        materiaisBrutos += `**Transcrição:**\n\n${v.transcript}\n\n`;
+        materiaisBrutos += `${a.analysis_summary}\n\n`;
         materiaisBrutos += `---\n\n`;
       });
+    } else {
+      // Fallback para transcrições se não houver análises (para manter compatibilidade)
+      const transcribedVideos = videos.filter(v => v.status === 'transcribed' && v.transcript);
+      if (transcribedVideos.length > 0) {
+        materiaisBrutos += `---\n\n## 🎥 VÍDEOS TRANSCRITOS (${transcribedVideos.length})\n\n`;
+        transcribedVideos.forEach((v, i) => {
+          materiaisBrutos += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
+          materiaisBrutos += `**Transcrição:**\n\n${v.transcript}\n\n`;
+          materiaisBrutos += `---\n\n`;
+        });
+      }
     }
 
     // Adicionar textos
@@ -100,9 +110,10 @@ Deno.serve(async (req) => {
     }
 
     // Verificar se há conteúdo suficiente
-    if (transcribedVideos.length === 0 && texts.length === 0 && completedLinks.length === 0) {
+    const hasContent = videoAnalyses.length > 0 || texts.length > 0 || completedLinks.length > 0 || (videos.some(v => v.status === 'transcribed'));
+    if (!hasContent && !modeling[0].creator_idea) {
       return Response.json({ 
-        error: 'Não há conteúdo suficiente para gerar o dossiê. Adicione vídeos transcritos, textos ou links processados.' 
+        error: 'Não há conteúdo suficiente para gerar o dossiê. Adicione vídeos analisados, textos, links processados ou uma ideia do criador.' 
       }, { status: 400 });
     }
 

@@ -536,93 +536,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     setGeneratingDossier(true);
     
     try {
-      // Build complete Markdown dossier
-      let dossierContent = `# Dossiê de Conteúdo: ${modeling.title}\n\n`;
+      toast.info('Iniciando agente gerador de dossiê...');
       
-      dossierContent += `**Data de Criação:** ${new Date().toLocaleDateString('pt-BR')}\n`;
-      dossierContent += `**Plataforma:** ${modeling.target_platform}\n`;
-      dossierContent += `**Tipo de Conteúdo:** ${modeling.content_type}\n\n`;
+      // Call backend function
+      await base44.functions.invoke('generateDossier', { modeling_id: modelingId });
       
-      if (modeling.description) {
-        dossierContent += `**Descrição:** ${modeling.description}\n\n`;
-      }
-
-      dossierContent += `---\n\n`;
-
-      // IDEIA DO CRIADOR
-      if (modeling.creator_idea) {
-        dossierContent += `## 💡 Ideia do Criador\n\n`;
-        dossierContent += `${modeling.creator_idea}\n\n`;
-        dossierContent += `---\n\n`;
-      }
-
-      // ANÁLISES DE VÍDEOS
-      const videoAnalyses = analyses.filter(a => a.material_type === 'video' && a.status === 'completed');
-      if (videoAnalyses.length > 0) {
-        dossierContent += `## 🎥 Análises de Vídeos de Referência\n\n`;
-        
-        for (const analysis of videoAnalyses) {
-          const video = videos.find(v => v.id === analysis.material_id);
-          if (video) {
-            dossierContent += `### ${analysis.material_title || video.title}\n\n`;
-            dossierContent += `**Canal:** ${video.channel_name}\n`;
-            dossierContent += `**URL:** ${video.url}\n\n`;
-            dossierContent += `${analysis.analysis_summary}\n\n`;
-            dossierContent += `---\n\n`;
-          }
-        }
-      }
-
-      // TEXTOS DE REFERÊNCIA
-      if (texts.length > 0) {
-        dossierContent += `## 📄 Textos de Referência\n\n`;
-        
-        for (const text of texts) {
-          dossierContent += `### ${text.title}\n\n`;
-          if (text.description) {
-            dossierContent += `**Descrição:** ${text.description}\n\n`;
-          }
-          dossierContent += `${text.content}\n\n`;
-          dossierContent += `---\n\n`;
-        }
-      }
-
-      // CONTEÚDO DE LINKS
-      const completedLinks = links.filter(l => l.status === 'completed' && l.summary);
-      if (completedLinks.length > 0) {
-        dossierContent += `## 🔗 Conteúdo de Links\n\n`;
-        
-        for (const link of completedLinks) {
-          dossierContent += `### ${link.title || 'Link'}\n\n`;
-          dossierContent += `**URL:** ${link.url}\n\n`;
-          dossierContent += `**Resumo:**\n\n${link.summary}\n\n`;
-          if (link.notes) {
-            dossierContent += `**Notas:** ${link.notes}\n\n`;
-          }
-          dossierContent += `---\n\n`;
-        }
-      }
-
-      // Save or update dossier
-      if (dossier) {
-        // Update existing
-        await base44.entities.ContentDossier.update(dossier.id, {
-          full_content: dossierContent,
-          character_count: dossierContent.length,
-          token_estimate: Math.ceil(dossierContent.length / 4)
-        });
-        toast.success('Dossiê atualizado com sucesso!');
-      } else {
-        // Create new
-        await base44.entities.ContentDossier.create({
-          modeling_id: modelingId,
-          full_content: dossierContent,
-          character_count: dossierContent.length,
-          token_estimate: Math.ceil(dossierContent.length / 4)
-        });
-        toast.success('Dossiê gerado com sucesso!');
-      }
-
+      toast.success('Dossiê gerado com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['modelingDossier', modelingId] });
       
     } catch (error) {
