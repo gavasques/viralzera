@@ -1,6 +1,6 @@
 import { 
   Users, User, Package, Library, Dna, 
-  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon 
+  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, BrainCircuit 
 } from 'lucide-react';
 
 export const AGENT_CARDS = [
@@ -88,5 +88,12 @@ export const AGENT_CARDS = [
     icon: ImageIcon,
     color: 'bg-teal-500',
     customModal: true
+  },
+  {
+    key: 'youtubeCreativeDirective',
+    title: 'YouTube - Diretriz Criativa',
+    description: 'Analisa o Dossiê e define a Tese, Porquê, Ângulo e Conflito do vídeo',
+    icon: BrainCircuit,
+    color: 'bg-yellow-500'
   }
 ];
