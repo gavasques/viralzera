@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { 
   Copy, Check, Hash, FileText, Edit2, Save, X, Download, 
-  Sparkles, Layers, Calendar 
+  Sparkles, Layers, Calendar, Database, Eye, Terminal
 } from "lucide-react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
@@ -19,6 +20,7 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
+  const [activeTab, setActiveTab] = useState("analysis");
 
   // Update mutation
   const updateMutation = useMutation({
@@ -125,11 +127,21 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
 
         {/* Toolbar */}
         <div className="shrink-0 bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between sticky top-0 z-10">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Visualizador de Dossiê
-          </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
+            <TabsList className="bg-slate-100 p-0.5 h-9">
+              <TabsTrigger value="analysis" className="text-xs h-8 px-4 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 mr-2" />
+                Análise Gerada (Retorno)
+              </TabsTrigger>
+              <TabsTrigger value="input" className="text-xs h-8 px-4 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Database className="w-3.5 h-3.5 mr-2" />
+                Dados Enviados (Dossiê + Prompt)
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <div className="flex items-center gap-2">
-            {isEditing ? (
+            {isEditing && activeTab === 'analysis' ? (
               <>
                 <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="h-8">
                   <X className="w-3.5 h-3.5 mr-1.5" />
@@ -147,10 +159,12 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
               </>
             ) : (
               <>
-                <Button variant="ghost" size="sm" onClick={handleEdit} className="h-8 text-slate-600">
-                  <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-                  Editar
-                </Button>
+                {activeTab === 'analysis' && (
+                  <Button variant="ghost" size="sm" onClick={handleEdit} className="h-8 text-slate-600">
+                    <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                    Editar
+                  </Button>
+                )}
                 <div className="w-px h-4 bg-slate-200 mx-1" />
                 <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8 text-slate-600">
                   {copied ? (
@@ -186,41 +200,88 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
         <div className="flex-1 overflow-hidden bg-slate-50">
           <ScrollArea className="h-full w-full">
             <div className="max-w-4xl mx-auto my-8">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[800px] p-8 md:p-12 transition-all">
-                {isEditing ? (
-                  <Textarea
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                    className="min-h-[700px] w-full border-0 focus-visible:ring-0 p-0 resize-none font-mono text-sm leading-relaxed text-slate-700"
-                    placeholder="Edite o conteúdo do dossiê em Markdown..."
-                  />
-                ) : (
-                  <article className="prose prose-slate max-w-none
-                    prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900 
-                    prose-h1:text-3xl prose-h1:pb-6 prose-h1:mb-8 prose-h1:border-b prose-h1:border-slate-100
-                    prose-h2:text-xl prose-h2:text-purple-700 prose-h2:mt-12 prose-h2:mb-6 prose-h2:flex prose-h2:items-center prose-h2:gap-2
-                    prose-h3:text-lg prose-h3:font-semibold prose-h3:text-slate-800 prose-h3:mt-8 prose-h3:mb-4
-                    prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-base prose-p:mb-6
-                    prose-strong:text-slate-900 prose-strong:font-semibold
-                    prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6
-                    prose-li:text-slate-600 prose-li:my-2
-                    prose-blockquote:border-l-4 prose-blockquote:border-purple-200 prose-blockquote:bg-purple-50/30 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:italic prose-blockquote:rounded-r-lg
-                    prose-hr:my-10 prose-hr:border-slate-100
-                    prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline
-                    prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium before:prose-code:content-none after:prose-code:content-none"
-                  >
-                    <ReactMarkdown 
-                      components={{
-                        p: ({node, ...props}) => <p style={{whiteSpace: 'pre-wrap'}} {...props} />,
-                        h2: ({node, ...props}) => <h2 {...props} className="group flex items-center"><span className="w-1.5 h-6 bg-purple-500 rounded-full mr-3 inline-block"></span>{props.children}</h2>,
-                        hr: () => <hr className="border-t-2 border-slate-100 my-10" />
-                      }}
+              {activeTab === 'analysis' ? (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[800px] p-8 md:p-12 transition-all">
+                  {isEditing ? (
+                    <Textarea
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
+                      className="min-h-[700px] w-full border-0 focus-visible:ring-0 p-0 resize-none font-mono text-sm leading-relaxed text-slate-700"
+                      placeholder="Edite o conteúdo do dossiê em Markdown..."
+                    />
+                  ) : (
+                    <article className="prose prose-slate max-w-none
+                      prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900 
+                      prose-h1:text-3xl prose-h1:pb-6 prose-h1:mb-8 prose-h1:border-b prose-h1:border-slate-100
+                      prose-h2:text-xl prose-h2:text-purple-700 prose-h2:mt-12 prose-h2:mb-6 prose-h2:flex prose-h2:items-center prose-h2:gap-2
+                      prose-h3:text-lg prose-h3:font-semibold prose-h3:text-slate-800 prose-h3:mt-8 prose-h3:mb-4
+                      prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-base prose-p:mb-6
+                      prose-strong:text-slate-900 prose-strong:font-semibold
+                      prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6
+                      prose-li:text-slate-600 prose-li:my-2
+                      prose-blockquote:border-l-4 prose-blockquote:border-purple-200 prose-blockquote:bg-purple-50/30 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:italic prose-blockquote:rounded-r-lg
+                      prose-hr:my-10 prose-hr:border-slate-100
+                      prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline
+                      prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium before:prose-code:content-none after:prose-code:content-none"
                     >
-                      {dossier.full_content}
-                    </ReactMarkdown>
-                  </article>
-                )}
-              </div>
+                      <ReactMarkdown 
+                        components={{
+                          p: ({node, ...props}) => <p style={{whiteSpace: 'pre-wrap'}} {...props} />,
+                          h2: ({node, ...props}) => <h2 {...props} className="group flex items-center"><span className="w-1.5 h-6 bg-purple-500 rounded-full mr-3 inline-block"></span>{props.children}</h2>,
+                          hr: () => <hr className="border-t-2 border-slate-100 my-10" />
+                        }}
+                      >
+                        {dossier.full_content}
+                      </ReactMarkdown>
+                    </article>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Dados Enviados (Materiais) */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center gap-2">
+                      <Database className="w-4 h-4 text-purple-600" />
+                      <h3 className="font-semibold text-slate-900">Materiais Brutos Enviados</h3>
+                    </div>
+                    <div className="p-6 md:p-8">
+                      {dossier.raw_materials ? (
+                         <article className="prose prose-slate max-w-none text-sm
+                          prose-headings:text-slate-800 prose-p:text-slate-600
+                          prose-pre:bg-slate-50 prose-pre:border prose-pre:border-slate-200 prose-pre:text-slate-700"
+                        >
+                          <ReactMarkdown>{dossier.raw_materials}</ReactMarkdown>
+                        </article>
+                      ) : (
+                        <div className="text-center py-12 text-slate-500">
+                          <Database className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                          <p>Nenhum material bruto salvo para este dossiê.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Prompt do Sistema */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                     <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center gap-2">
+                      <Terminal className="w-4 h-4 text-slate-600" />
+                      <h3 className="font-semibold text-slate-900">Prompt do Sistema</h3>
+                    </div>
+                    <div className="p-6 bg-slate-900 overflow-x-auto">
+                      {dossier.system_prompt ? (
+                        <pre className="text-slate-200 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                          {dossier.system_prompt}
+                        </pre>
+                      ) : (
+                        <div className="text-center py-12 text-slate-500">
+                           <Terminal className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                           <p>Nenhum prompt salvo para este dossiê.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="h-10" /> {/* Spacer */}
             </div>
           </ScrollArea>

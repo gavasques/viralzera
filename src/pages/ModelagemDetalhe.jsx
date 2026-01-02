@@ -655,6 +655,8 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       if (dossier) {
         await base44.entities.ContentDossier.update(dossier.id, {
           full_content: dossierContent,
+          raw_materials: materiaisBrutos,
+          system_prompt: finalSystemPrompt,
           character_count: charCount,
           token_estimate: tokenEstimate
         });
@@ -663,6 +665,8 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         await base44.entities.ContentDossier.create({
           modeling_id: modelingId,
           full_content: dossierContent,
+          raw_materials: materiaisBrutos,
+          system_prompt: finalSystemPrompt,
           character_count: charCount,
           token_estimate: tokenEstimate
         });
