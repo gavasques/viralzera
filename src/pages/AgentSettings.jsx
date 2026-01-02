@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube, BrainCircuit, Globe, FileArchive, FileScan } from 'lucide-react';
+import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube, BrainCircuit, Globe, FileArchive, FileScan, Search } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AdminProtection } from '@/components/admin/AdminProtection';
 import AdminLayout from '@/components/admin/AdminLayout';
 import PageHeader from "@/components/common/PageHeader";
@@ -163,6 +164,12 @@ const AGENT_CARDS = [
 export default function AgentSettings() {
   const [openModal, setOpenModal] = useState(null);
   const [showPostTypeModal, setShowPostTypeModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredAgents = AGENT_CARDS.filter(agent => 
+    agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleOpenSettings = (agentKey) => {
     const agent = AGENT_CARDS.find(a => a.key === agentKey);
@@ -191,8 +198,18 @@ export default function AgentSettings() {
         icon={Settings}
       />
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Input 
+          placeholder="Buscar agente..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {AGENT_CARDS.map((agent) => (
+        {filteredAgents.map((agent) => (
           <Card 
             key={agent.key}
             className="hover:shadow-md transition-shadow cursor-pointer group"
