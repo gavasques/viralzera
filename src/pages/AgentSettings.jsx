@@ -158,6 +158,13 @@ const AGENT_CARDS = [
     description: 'Pesquisa profunda com web search e reasoning avançado.',
     icon: Sparkles,
     color: 'bg-purple-600'
+  },
+  {
+    key: 'youtubeCreativeDirective',
+    title: 'YouTube - Diretriz Criativa',
+    description: 'Analisa o Dossiê e define a Tese, Porquê, Ângulo e Conflito do vídeo.',
+    icon: BrainCircuit,
+    color: 'bg-yellow-500'
   }
 ];
 
