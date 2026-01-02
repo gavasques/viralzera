@@ -82,124 +82,146 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] flex flex-col p-0">
-        <DialogHeader className="shrink-0 pb-4 border-b px-6 pt-6">
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-purple-600" />
-            {dossier.modeling?.title || 'Dossiê de Conteúdo'}
-          </DialogTitle>
-          <div className="flex items-center gap-2 flex-wrap pt-2">
-            {dossier.modeling?.target_platform && (
-              <Badge variant="outline">{dossier.modeling.target_platform}</Badge>
-            )}
-            {dossier.modeling?.content_type && (
-              <Badge variant="outline" className="bg-slate-50">
-                {dossier.modeling.content_type}
-              </Badge>
-            )}
-            <Badge variant="outline" className="text-xs">
-              <Calendar className="w-3 h-3 mr-1" />
-              {format(new Date(dossier.created_date), 'dd/MM/yyyy HH:mm')}
-            </Badge>
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-slate-50/50">
+        <DialogHeader className="shrink-0 bg-white border-b border-slate-200 px-6 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1.5">
+              <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-slate-900">
+                <FileText className="w-5 h-5 text-purple-600" />
+                {dossier.modeling?.title || 'Dossiê de Conteúdo'}
+              </DialogTitle>
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {format(new Date(dossier.created_date), "dd 'de' MMMM, HH:mm")}
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5" />
+                  {formatNumber(dossier.character_count)} caracteres
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  ~{formatNumber(dossier.token_estimate)} tokens
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {dossier.modeling?.target_platform && (
+                <Badge variant="secondary" className="bg-slate-100 text-slate-700 font-normal">
+                  {dossier.modeling.target_platform}
+                </Badge>
+              )}
+              {dossier.modeling?.content_type && (
+                <Badge variant="secondary" className="bg-slate-100 text-slate-700 font-normal">
+                  {dossier.modeling.content_type}
+                </Badge>
+              )}
+            </div>
           </div>
         </DialogHeader>
 
-        {/* Stats Bar */}
-        <div className="flex items-center justify-between py-3 border-b border-slate-100 shrink-0 px-6">
-          <div className="flex items-center gap-4">
-            <div className="text-xs text-slate-500">
-              <Hash className="w-3 h-3 inline mr-1" />
-              {formatNumber(dossier.character_count)} caracteres
-            </div>
-            <div className="text-xs text-slate-500">
-              <Layers className="w-3 h-3 inline mr-1" />
-              ~{formatNumber(dossier.token_estimate)} tokens
-            </div>
+        {/* Toolbar */}
+        <div className="shrink-0 bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between sticky top-0 z-10">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+            Visualizador de Dossiê
           </div>
-
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {isEditing ? (
               <>
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                  <X className="w-3 h-3 mr-1" />
+                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="h-8">
+                  <X className="w-3.5 h-3.5 mr-1.5" />
                   Cancelar
                 </Button>
                 <Button 
                   size="sm" 
                   onClick={handleSave}
                   disabled={updateMutation.isPending}
+                  className="h-8 bg-purple-600 hover:bg-purple-700 text-white"
                 >
-                  <Save className="w-3 h-3 mr-1" />
-                  {updateMutation.isPending ? 'Salvando...' : 'Salvar'}
+                  <Save className="w-3.5 h-3.5 mr-1.5" />
+                  {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" size="sm" onClick={handleEdit}>
-                  <Edit2 className="w-3 h-3 mr-1" />
+                <Button variant="ghost" size="sm" onClick={handleEdit} className="h-8 text-slate-600">
+                  <Edit2 className="w-3.5 h-3.5 mr-1.5" />
                   Editar
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleCopy}>
+                <div className="w-px h-4 bg-slate-200 mx-1" />
+                <Button variant="ghost" size="sm" onClick={handleCopy} className="h-8 text-slate-600">
                   {copied ? (
                     <>
-                      <Check className="w-3 h-3 mr-1 text-green-600" />
-                      Copiado!
+                      <Check className="w-3.5 h-3.5 mr-1.5 text-green-600" />
+                      Copiado
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3 mr-1" />
+                      <Copy className="w-3.5 h-3.5 mr-1.5" />
                       Copiar
                     </>
                   )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDownload}>
-                  <Download className="w-3 h-3 mr-1" />
-                  Baixar MD
+                <Button variant="ghost" size="sm" onClick={handleDownload} className="h-8 text-slate-600">
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                  Baixar
                 </Button>
                 <Button 
                   size="sm"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  className="h-8 ml-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-sm"
                   onClick={handleUseForScript}
                 >
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Usar para Roteiro
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Gerar Roteiro
                 </Button>
               </>
             )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden px-6 pb-6 min-h-0">
-          <ScrollArea className="h-[calc(90vh-180px)] w-full pr-4">
-            <div className="pb-8 pt-4">
-              {isEditing ? (
-                <Textarea
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  className="min-h-[600px] font-mono text-sm"
-                  placeholder="Edite o conteúdo do dossiê em Markdown..."
-                />
-              ) : (
-                <div className="prose prose-slate max-w-none
-                  prose-headings:font-bold prose-headings:text-slate-900 
-                  prose-h1:text-3xl prose-h1:border-b prose-h1:pb-4 prose-h1:mb-8
-                  prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-purple-800
-                  prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-slate-800
-                  prose-p:text-slate-700 prose-p:leading-8 prose-p:mb-6 prose-p:text-lg
-                  prose-li:text-slate-700 prose-li:leading-7
-                  prose-strong:text-slate-900 prose-strong:font-bold
-                  prose-hr:my-8 prose-hr:border-slate-200"
-                >
-                  <ReactMarkdown 
-                    components={{
-                      p: ({node, ...props}) => <p style={{whiteSpace: 'pre-wrap'}} {...props} />
-                    }}
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden bg-slate-50/50">
+          <ScrollArea className="h-full w-full">
+            <div className="max-w-4xl mx-auto my-8">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[800px] p-8 md:p-12 transition-all">
+                {isEditing ? (
+                  <Textarea
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className="min-h-[700px] w-full border-0 focus-visible:ring-0 p-0 resize-none font-mono text-sm leading-relaxed text-slate-700"
+                    placeholder="Edite o conteúdo do dossiê em Markdown..."
+                  />
+                ) : (
+                  <article className="prose prose-slate max-w-none
+                    prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900 
+                    prose-h1:text-3xl prose-h1:pb-6 prose-h1:mb-8 prose-h1:border-b prose-h1:border-slate-100
+                    prose-h2:text-xl prose-h2:text-purple-700 prose-h2:mt-12 prose-h2:mb-6 prose-h2:flex prose-h2:items-center prose-h2:gap-2
+                    prose-h3:text-lg prose-h3:font-semibold prose-h3:text-slate-800 prose-h3:mt-8 prose-h3:mb-4
+                    prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-base prose-p:mb-6
+                    prose-strong:text-slate-900 prose-strong:font-semibold
+                    prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6
+                    prose-li:text-slate-600 prose-li:my-2
+                    prose-blockquote:border-l-4 prose-blockquote:border-purple-200 prose-blockquote:bg-purple-50/30 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:italic prose-blockquote:rounded-r-lg
+                    prose-hr:my-10 prose-hr:border-slate-100
+                    prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline
+                    prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium before:prose-code:content-none after:prose-code:content-none"
                   >
-                    {dossier.full_content}
-                  </ReactMarkdown>
-                </div>
-              )}
+                    <ReactMarkdown 
+                      components={{
+                        p: ({node, ...props}) => <p style={{whiteSpace: 'pre-wrap'}} {...props} />,
+                        h2: ({node, ...props}) => <h2 {...props} className="group flex items-center"><span className="w-1.5 h-6 bg-purple-500 rounded-full mr-3 inline-block"></span>{props.children}</h2>,
+                        hr: () => <hr className="border-t-2 border-slate-100 my-10" />
+                      }}
+                    >
+                      {dossier.full_content}
+                    </ReactMarkdown>
+                  </article>
+                )}
+              </div>
+              <div className="h-10" /> {/* Spacer */}
             </div>
           </ScrollArea>
         </div>
