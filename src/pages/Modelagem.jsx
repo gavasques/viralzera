@@ -4,6 +4,16 @@ import { base44 } from "@/api/base44Client";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { 
   Layers, Plus, Search, Youtube
@@ -24,6 +34,7 @@ export default function Modelagem() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingModeling, setEditingModeling] = useState(null);
+  const [modelingToDelete, setModelingToDelete] = useState(null);
 
   const { data: modelings = [], isLoading } = useQuery({
     queryKey: ['modelings', selectedFocusId],
@@ -54,8 +65,13 @@ export default function Modelagem() {
   });
 
   const handleDelete = (modeling) => {
-    if (confirm(`Excluir "${modeling.title}" e todos os vídeos/textos relacionados?`)) {
-      deleteMutation.mutate(modeling.id);
+    setModelingToDelete(modeling);
+  };
+
+  const confirmDelete = () => {
+    if (modelingToDelete) {
+      deleteMutation.mutate(modelingToDelete.id);
+      setModelingToDelete(null);
     }
   };
 
@@ -160,6 +176,32 @@ export default function Modelagem() {
         modeling={editingModeling}
         focusId={selectedFocusId}
       />
+
+      <AlertDialog open={!!modelingToDelete} onOpenChange={(open) => !open && setModelingToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir modelagem?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação excluirá permanentemente a modelagem 
+              <span className="font-medium text-slate-900 mx-1">
+                "{modelingToDelete?.title}"
+              </span>
+              e todos os vídeos, textos e links relacionados a ela.
+              <br /><br />
+              Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+            >
+              Excluir Definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
