@@ -82,7 +82,7 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-slate-50/50">
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-slate-50">
         <DialogHeader className="shrink-0 bg-white border-b border-slate-200 px-6 py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1.5">
@@ -183,7 +183,7 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-hidden bg-slate-50/50">
+        <div className="flex-1 overflow-hidden bg-slate-50">
           <ScrollArea className="h-full w-full">
             <div className="max-w-4xl mx-auto my-8">
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[800px] p-8 md:p-12 transition-all">
