@@ -140,6 +140,19 @@ export default function VideoCard({
               )}
             </div>
 
+            {analysis?.status === 'completed' && (
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+                  <FileText className="w-3 h-3 mr-1" />
+                  {formatNumber(analysis.character_count)} chars
+                </Badge>
+                <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+                  <Hash className="w-3 h-3 mr-1" />
+                  ~{formatNumber(analysis.token_estimate)} tokens
+                </Badge>
+              </div>
+            )}
+
             {video.status === 'error' && video.error_message && (
               <p className="text-xs text-red-600 mt-2 truncate">{video.error_message}</p>
             )}
