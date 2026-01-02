@@ -216,14 +216,6 @@ Analisar o dossiê de inteligência e sintetizar a Diretriz Criativa Central par
         />
       </div>
 
-      {/* Creative Directive Card */}
-      <CreativeDirectiveCard 
-        directive={value.creativeDirective}
-        isLoading={isGeneratingDirective}
-        error={directiveError}
-        onRegenerate={handleRegenerateDirective}
-      />
-
       <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
         <Sparkles className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
         <p className="text-xs text-slate-500 leading-relaxed">
