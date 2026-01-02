@@ -202,6 +202,17 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
             <div className="max-w-4xl mx-auto my-8">
               {activeTab === 'analysis' ? (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[800px] p-8 md:p-12 transition-all overflow-hidden">
+                  <style>{`
+                    .dossier-content * {
+                      white-space: normal !important;
+                      word-wrap: break-word !important;
+                      overflow-wrap: break-word !important;
+                    }
+                    .dossier-content pre,
+                    .dossier-content code {
+                      white-space: pre-wrap !important;
+                    }
+                  `}</style>
                   {isEditing ? (
                     <Textarea
                       value={editedContent}
@@ -210,7 +221,7 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
                       placeholder="Edite o conteúdo do dossiê em Markdown..."
                     />
                   ) : (
-                    <div className="overflow-hidden" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                    <div className="dossier-content">
                       <article className="prose prose-slate max-w-none
                         prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900 
                         prose-h1:text-3xl prose-h1:pb-6 prose-h1:mb-8 prose-h1:border-b prose-h1:border-slate-100
@@ -228,9 +239,7 @@ export default function DossierViewerModal({ open, onOpenChange, dossier }) {
                         <ReactMarkdown 
                           components={{
                             h2: ({node, ...props}) => <h2 {...props} className="group flex items-center"><span className="w-1.5 h-6 bg-purple-500 rounded-full mr-3 inline-block shrink-0"></span>{props.children}</h2>,
-                            hr: () => <hr className="border-t-2 border-slate-100 my-10" />,
-                            p: ({node, ...props}) => <p style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }} {...props} />,
-                            li: ({node, ...props}) => <li style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }} {...props} />
+                            hr: () => <hr className="border-t-2 border-slate-100 my-10" />
                           }}
                         >
                           {dossier.full_content}
