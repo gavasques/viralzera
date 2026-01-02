@@ -10,7 +10,7 @@ import YoutubeScriptHeader from "@/components/youtube/detail/YoutubeScriptHeader
 import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScriptSectionEditor";
 import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
-import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptChatDrawer";
+import YoutubeRightPanel from "@/components/youtube/detail/YoutubeRightPanel";
 // import { 
 //   parseScript, 
 //   rebuildScript, 
@@ -37,8 +37,31 @@ export default function YoutubeScriptDetail() {
   // Title suggestions modal state
   const [showTitleModal, setShowTitleModal] = useState(false);
 
-  // Chat drawer state
-  const [chatOpen, setChatOpen] = useState(false);
+  // Right panel state
+  const [showRightPanel, setShowRightPanel] = useState(true);
+  const [rightPanelWidth, setRightPanelWidth] = useState(350);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Resizing logic
+  const startResizing = React.useCallback(() => setIsResizing(true), []);
+  const stopResizing = React.useCallback(() => setIsResizing(false), []);
+  const resize = React.useCallback((e) => {
+    if (isResizing) {
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 250 && newWidth < 800) {
+        setRightPanelWidth(newWidth);
+      }
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
 
   // Fetch script data
   const { data: script, isLoading, error } = useQuery({
@@ -150,19 +173,49 @@ export default function YoutubeScriptDetail() {
         isSaving={saveMutation.isPending}
         hasChanges={hasChanges}
         onSuggestTitles={() => setShowTitleModal(true)}
-        onChatOpen={() => setChatOpen(true)}
+        onChatOpen={() => setShowRightPanel(true)}
       />
 
-      <div className="space-y-6 pb-12">
-        <YoutubeScriptSectionEditor
-          sectionKey="corpo"
-          title="Roteiro Completo"
-          description="Edite o conteúdo completo do roteiro"
-          content={content}
-          onChange={(_, val) => setContent(val)}
-          onOpenRefiner={handleOpenRefiner}
-          scriptTitle={title}
-        />
+      <div className="flex-1 flex overflow-hidden h-[calc(100vh-140px)]">
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+          <div className="max-w-4xl mx-auto h-full flex flex-col">
+            <YoutubeScriptSectionEditor
+              sectionKey="corpo"
+              title="Roteiro Completo"
+              description="Edite o conteúdo completo do roteiro"
+              content={content}
+              onChange={(_, val) => setContent(val)}
+              onOpenRefiner={handleOpenRefiner}
+              scriptTitle={title}
+            />
+          </div>
+        </div>
+
+        {/* Right Panel */}
+        {showRightPanel && (
+          <div 
+            className="flex-shrink-0 z-10 relative flex flex-col h-full"
+            style={{ width: rightPanelWidth }}
+          >
+            {/* Resize Handle */}
+            <div
+              className="absolute left-0 top-0 bottom-0 w-1 bg-transparent hover:bg-red-400 cursor-ew-resize z-50 transition-colors"
+              onMouseDown={startResizing}
+            />
+            
+            <YoutubeRightPanel 
+              scriptId={scriptId}
+              scriptContext={{
+                title: title,
+                content: content,
+                videoType: script?.video_type,
+                status: script?.status
+              }}
+              onClose={() => setShowRightPanel(false)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Refiner Drawer */}
@@ -192,18 +245,6 @@ export default function YoutubeScriptDetail() {
         }}
       />
 
-      {/* Chat Drawer */}
-      <YoutubeScriptChatDrawer
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        scriptId={scriptId}
-        scriptContext={{
-          title: title,
-          content: content,
-          videoType: script?.video_type,
-          status: script?.status
-        }}
-      />
     </div>
   );
 }

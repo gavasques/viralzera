@@ -112,71 +112,85 @@ export default function YoutubeScriptSectionEditor({
     : `~${Math.round(estimatedSeconds / 60)}min`;
 
   return (
-    <Card className="border-slate-200">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        {/* Editor Toolbar Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white">
           <div className="flex items-center gap-2">
             <div>
-              <CardTitle className="text-base font-semibold text-slate-900">
+              <h3 className="text-sm font-semibold text-slate-900">
                 {title}
-              </CardTitle>
+              </h3>
               {description && (
-                <p className="text-sm text-slate-500 mt-0.5">{description}</p>
+                <p className="text-xs text-slate-500">{description}</p>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs font-normal">
-              {charCount.toLocaleString()} chars
-            </Badge>
-            {charCount > 0 && (
-              <Badge variant="secondary" className="text-xs font-normal">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
+                <span className="text-[10px] font-medium text-slate-500">
+                {charCount.toLocaleString()} chars
+                </span>
+                <span className="text-[10px] text-slate-300">|</span>
+                <span className="text-[10px] font-medium text-slate-500">
                 {estimatedTime}
-              </Badge>
-            )}
+                </span>
+            </div>
             <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0 relative">
-        <style>{`
-          .ql-container {
-            font-size: 1.1rem;
-          }
-          .ql-editor {
-            font-size: 1.1rem;
-            line-height: 1.75;
-          }
-        `}</style>
-        <div className="h-[600px] mb-12">
-          <ReactQuill
-            ref={quillRef}
-            theme="snow"
-            value={displayContent}
-            onChange={(val) => onChange(sectionKey, val)}
-            onChangeSelection={handleSelectionChange}
-            placeholder={`Escreva o conteúdo da seção ${title}...`}
-            className="h-full"
-            modules={{
-              toolbar: [
-                [{ 'header': [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['clean']
-              ],
-            }}
-          />
+      
+        <div className="flex-1 overflow-hidden relative flex flex-col">
+            <style>{`
+            .ql-container {
+                font-size: 1.1rem;
+                border: none !important;
+                height: 100%;
+            }
+            .ql-toolbar {
+                border: none !important;
+                border-bottom: 1px solid #f1f5f9 !important;
+                padding: 12px 16px !important;
+            }
+            .ql-editor {
+                font-size: 1.1rem;
+                line-height: 1.8;
+                padding: 32px 48px !important;
+                height: 100%;
+                overflow-y: auto;
+            }
+            `}</style>
+            
+            <div className="flex-1 flex flex-col min-h-0">
+                <ReactQuill
+                    ref={quillRef}
+                    theme="snow"
+                    value={displayContent}
+                    onChange={(val) => onChange(sectionKey, val)}
+                    onChangeSelection={handleSelectionChange}
+                    placeholder={`Escreva o conteúdo da seção ${title}...`}
+                    className="flex-1 flex flex-col min-h-0"
+                    modules={{
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'align': [] }],
+                        ['blockquote', 'code-block'],
+                        ['clean']
+                    ],
+                    }}
+                />
+            </div>
+            
+            <ScriptTextSelectionPopover
+            selectedText={selection?.text}
+            position={selection?.position}
+            onClose={() => setSelection(null)}
+            onReplaceText={handleReplaceText}
+            fullContent={content}
+            scriptTitle={scriptTitle}
+            />
         </div>
-        
-        <ScriptTextSelectionPopover
-          selectedText={selection?.text}
-          position={selection?.position}
-          onClose={() => setSelection(null)}
-          onReplaceText={handleReplaceText}
-          fullContent={content}
-          scriptTitle={scriptTitle}
-        />
-      </CardContent>
-    </Card>
+    </div>
   );
 }
