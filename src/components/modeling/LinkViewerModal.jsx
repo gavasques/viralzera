@@ -96,7 +96,7 @@ export default function LinkViewerModal({ open, onOpenChange, link }) {
               </div>
             </div>
 
-            <ScrollArea className="flex-1 mt-2">
+            <div className="flex-1 mt-2 overflow-y-auto">
               <div className="pr-4">
                 {link.summary ? (
                   <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
@@ -109,7 +109,7 @@ export default function LinkViewerModal({ open, onOpenChange, link }) {
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           <TabsContent value="content" className="flex-1 flex flex-col min-h-0 mt-3">
@@ -135,7 +135,7 @@ export default function LinkViewerModal({ open, onOpenChange, link }) {
               </div>
             </div>
 
-            <ScrollArea className="flex-1 mt-2">
+            <div className="flex-1 mt-2 overflow-y-auto">
               <div className="pr-4">
                 {link.content ? (
                   <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed font-mono">
@@ -148,7 +148,7 @@ export default function LinkViewerModal({ open, onOpenChange, link }) {
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
