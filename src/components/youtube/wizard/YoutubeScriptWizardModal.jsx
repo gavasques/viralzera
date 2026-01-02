@@ -10,15 +10,18 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 
 import { StepTema } from "./steps/StepTema";
+import { StepCreativeDirective } from "./steps/StepCreativeDirective";
 import { StepVideoType } from "./steps/StepVideoType";
 import { StepContext } from "./steps/StepContext";
 import { StepModelings } from "./steps/StepModelings";
 import { StepUserContent } from "./steps/StepUserContent";
 import { buildYoutubePrompt } from "./buildYoutubePrompt";
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
+import { Target } from "lucide-react";
 
 const STEPS = [
   { id: 'tema', title: 'Tema Central', description: 'Assunto do vídeo', icon: Lightbulb },
+  { id: 'directive', title: 'Diretriz Criativa', description: 'Estratégia do vídeo', icon: Target },
   { id: 'type', title: 'Tipo de Vídeo', description: 'Formato do conteúdo', icon: Video },
   { id: 'context', title: 'Contexto', description: 'Persona e Público', icon: Users },
   { id: 'modelings', title: 'Modelagens', description: 'Referências de sucesso', icon: Database },
@@ -202,12 +205,14 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       case 0:
         return <StepTema focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 1:
-        return <StepVideoType focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+        return <StepCreativeDirective focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 2:
-        return <StepContext focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+        return <StepVideoType focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 3:
-        return <StepModelings focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+        return <StepContext focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 4:
+        return <StepModelings focusId={selectedFocusId} value={formData} onChange={setFormData} />;
+      case 5:
         return <StepUserContent focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       default:
         return null;
@@ -216,7 +221,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
 
   const canProceed = () => {
     if (currentStep === 0) return formData.tema?.trim().length > 0;
-    if (currentStep === 1) return !!formData.videoTypeId;
+    if (currentStep === 2) return !!formData.videoTypeId;
     return true;
   };
 
