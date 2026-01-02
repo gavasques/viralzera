@@ -31,7 +31,11 @@ export function StepCreativeDirective({ focusId, value, onChange }) {
   const currentModelingId = value.selectedModelings?.[0];
   const currentDossier = dossiers.find(d => d.modeling_id === currentModelingId);
 
-  const generateCreativeDirective = async () => {
+  // Initialize history if not present
+  const directiveHistory = value.directiveHistory || [];
+  const currentHistoryIndex = value.currentHistoryIndex ?? (directiveHistory.length - 1);
+
+  const generateCreativeDirective = async (userFeedback = '') => {
     if (!currentDossier?.full_content) {
       toast.error('Dossiê sem conteúdo para analisar');
       return;
@@ -49,7 +53,7 @@ export function StepCreativeDirective({ focusId, value, onChange }) {
         throw new Error('Configure o agente "YouTube - Diretriz Criativa" em Configurações de Agentes');
       }
 
-      const systemPrompt = config.prompt || `# PROMPT PARA O AGENTE DE DIRETRIZ CRIATIVA
+      let systemPrompt = config.prompt || `# PROMPT PARA O AGENTE DE DIRETRIZ CRIATIVA
 
 ## SUA IDENTIDADE
 Você é um Estrategista de Conteúdo Sênior para YouTube.
@@ -68,6 +72,16 @@ Analisar o dossiê de inteligência e sintetizar a Diretriz Criativa Central par
   "angulo_unico": "O que torna essa abordagem diferente de outros vídeos sobre o tema",
   "conflito_central": "A tensão principal que será explorada no vídeo"
 }`;
+
+      // Add user feedback to prompt if provided
+      if (userFeedback) {
+        systemPrompt += `
+
+## FEEDBACK DO USUÁRIO PARA AJUSTE
+${userFeedback}
+
+IMPORTANTE: Considere este feedback ao gerar a nova Diretriz Criativa. Ajuste o tom, ângulo ou foco conforme solicitado.`;
+      }
 
       const finalPrompt = systemPrompt.replace('{{dossier_content}}', currentDossier.full_content);
 
@@ -96,9 +110,15 @@ Analisar o dossiê de inteligência e sintetizar a Diretriz Criativa Central par
         throw new Error('Resposta não contém JSON válido');
       }
 
+      // Add to history
+      const newHistory = [...directiveHistory, directive];
+      const newIndex = newHistory.length - 1;
+
       onChange({ 
         ...value, 
-        creativeDirective: directive 
+        creativeDirective: directive,
+        directiveHistory: newHistory,
+        currentHistoryIndex: newIndex
       });
 
       toast.success('Diretriz criativa gerada!');
@@ -111,9 +131,20 @@ Analisar o dossiê de inteligência e sintetizar a Diretriz Criativa Central par
     }
   };
 
+  const handleSelectVersion = (index) => {
+    const selectedDirective = directiveHistory[index];
+    if (selectedDirective) {
+      onChange({
+        ...value,
+        creativeDirective: selectedDirective,
+        currentHistoryIndex: index
+      });
+    }
+  };
+
   // Auto-generate on mount if dossiê exists and no directive yet
   useEffect(() => {
-    if (currentDossier?.full_content && !value.creativeDirective && !isGenerating) {
+    if (currentDossier?.full_content && !value.creativeDirective && !isGenerating && directiveHistory.length === 0) {
       generateCreativeDirective();
     }
   }, [currentDossier?.id]);
@@ -143,9 +174,12 @@ Analisar o dossiê de inteligência e sintetizar a Diretriz Criativa Central par
       ) : (
         <CreativeDirectiveCard 
           directive={value.creativeDirective}
+          directiveHistory={directiveHistory}
+          currentHistoryIndex={currentHistoryIndex >= 0 ? currentHistoryIndex : directiveHistory.length - 1}
           isLoading={isGenerating}
           error={error}
           onRegenerate={generateCreativeDirective}
+          onSelectVersion={handleSelectVersion}
         />
       )}
 
