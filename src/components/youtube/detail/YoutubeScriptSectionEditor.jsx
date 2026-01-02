@@ -41,21 +41,22 @@ export default function YoutubeScriptSectionEditor({
   const [selection, setSelection] = useState(null);
 
   // Handle selection change
-  const handleSelectionChange = (range, source, editor) => {
+  const handleSelectionChange = (range, source, editorProxy) => {
     // Only update if we have a valid range (ignore blur/null range to keep popover open)
     if (range) {
       if (range.length > 0) {
-        const text = editor.getText(range.index, range.length);
+        const text = editorProxy.getText(range.index, range.length);
         
         if (!text.trim()) {
            setSelection(null);
            return;
         }
 
-        // Get bounds
+        // Get bounds using real Quill instance to ensure access to container
         try {
-          const bounds = editor.getBounds(range.index, range.length);
-          const editorContainer = editor.container;
+          const quill = quillRef.current.getEditor();
+          const bounds = quill.getBounds(range.index, range.length);
+          const editorContainer = quill.container;
           const editorRect = editorContainer.getBoundingClientRect();
           
           setSelection({

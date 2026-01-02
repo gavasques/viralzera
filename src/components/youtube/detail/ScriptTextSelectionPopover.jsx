@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Sparkles, Wand2, ArrowRight, Loader2, Check, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -184,7 +185,7 @@ CONTEXTO DO ROTEIRO (Título: ${scriptTitle}):
 
   if (!selectedText || !position) return null;
 
-  return (
+  return createPortal(
     <div
       ref={popoverRef}
       style={getPopoverStyle()}
@@ -286,6 +287,7 @@ CONTEXTO DO ROTEIRO (Título: ${scriptTitle}):
           </button>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
