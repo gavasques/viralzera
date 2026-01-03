@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Save, MessageSquareText, Sparkles } from "lucide-react";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
+import ScriptActionsDropdown from "./ScriptActionsDropdown";
+import ScriptSectionNavigator from "./ScriptSectionNavigator";
 
 const VIDEO_TYPE_COLORS = {
   tutorial: "bg-blue-100 text-blue-700",
