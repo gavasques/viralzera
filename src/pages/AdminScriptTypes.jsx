@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ScrollText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,39 @@ import EmptyState from "@/components/common/EmptyState";
 import { PageSkeleton } from "@/components/common/LoadingSkeleton";
 import ScriptTypeCard from "@/components/admin/script-types/ScriptTypeCard";
 import ScriptTypeFormModal from "@/components/admin/script-types/ScriptTypeFormModal";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminScriptTypes() {
   const [showModal, setShowModal] = useState(false);
   const [editingType, setEditingType] = useState(null);
+  const [deletingType, setDeletingType] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: scriptTypes = [], isLoading } = useQuery({
     queryKey: ['youtube-script-types'],
     queryFn: () => base44.entities.YoutubeScriptType.list('-created_date', 100),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.YoutubeScriptType.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['youtube-script-types'] });
+      toast.success('Tipo de roteiro excluído!');
+      setDeletingType(null);
+    },
+    onError: (error) => {
+      toast.error('Erro ao excluir: ' + error.message);
+    }
   });
 
   const handleNew = () => {
@@ -32,6 +57,16 @@ export default function AdminScriptTypes() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingType(null);
+  };
+
+  const handleDelete = (scriptType) => {
+    setDeletingType(scriptType);
+  };
+
+  const confirmDelete = () => {
+    if (deletingType) {
+      deleteMutation.mutate(deletingType.id);
+    }
   };
 
   return (
@@ -66,6 +101,7 @@ export default function AdminScriptTypes() {
                 key={scriptType.id}
                 scriptType={scriptType}
                 onEdit={() => handleEdit(scriptType)}
+                onDelete={() => handleDelete(scriptType)}
               />
             ))}
           </div>
@@ -76,6 +112,26 @@ export default function AdminScriptTypes() {
           onOpenChange={handleCloseModal}
           scriptType={editingType}
         />
+
+        <AlertDialog open={!!deletingType} onOpenChange={(open) => !open && setDeletingType(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir tipo de roteiro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir "{deletingType?.title}"? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminProtection>
   );
