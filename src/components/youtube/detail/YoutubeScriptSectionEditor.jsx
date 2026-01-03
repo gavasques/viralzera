@@ -60,6 +60,67 @@ const markdownToHtml = (text) => {
   return html;
 };
 
+// Convert HTML to Markdown for clean export
+const htmlToMarkdown = (htmlContent) => {
+  if (!htmlContent) return '';
+
+  // Create temp element
+  const div = document.createElement('div');
+  div.innerHTML = htmlContent;
+
+  function processNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent;
+    }
+    
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+    const tagName = node.tagName.toLowerCase();
+    let inner = '';
+    
+    // Handle children
+    Array.from(node.childNodes).forEach(child => {
+      inner += processNode(child);
+    });
+
+    switch (tagName) {
+      case 'h1': return `# ${inner}\n\n`;
+      case 'h2': return `## ${inner}\n\n`;
+      case 'h3': return `### ${inner}\n\n`;
+      case 'h4': return `#### ${inner}\n\n`;
+      case 'h5': return `##### ${inner}\n\n`;
+      case 'h6': return `###### ${inner}\n\n`;
+      case 'p': return `${inner}\n\n`;
+      case 'br': return '\n';
+      case 'div': return `${inner}\n`;
+      case 'strong':
+      case 'b': return `**${inner}**`;
+      case 'em':
+      case 'i': return `*${inner}*`;
+      case 'u': return inner;
+      case 'strike':
+      case 's': return `~~${inner}~~`;
+      case 'blockquote': return `> ${inner}\n\n`;
+      case 'code': return `\`${inner}\``;
+      case 'pre': return `\`\`\`\n${inner}\n\`\`\`\n\n`;
+      case 'ul': return `${inner}\n`;
+      case 'ol': return `${inner}\n`;
+      case 'li': return `- ${inner}\n`;
+      default: return inner;
+    }
+  }
+
+  let markdown = '';
+  Array.from(div.childNodes).forEach(node => {
+    markdown += processNode(node);
+  });
+
+  // Clean up excessive newlines
+  return markdown
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 export default function YoutubeScriptSectionEditor({ 
   sectionKey,
   title, 
