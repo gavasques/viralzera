@@ -62,13 +62,15 @@ CONTEÚDO ORIGINAL DO ROTEIRO:
 ${scriptContext?.content || '(Roteiro vazio)'}
 
 INSTRUÇÕES DE FORMATAÇÃO:
-1. Formate sua resposta de forma CLARA e ESTRUTURADA (use Markdown).
-2. Use Títulos (##) para separar seções.
-3. Use Negrito (**) para destaques importantes.
-4. Se for reescrever o roteiro ou parte dele, apresente o novo texto de forma clara.
-5. Seja direto, não fique de conversinha. Entregue o que foi pedido.
+1. Use Markdown para estruturar o texto visualmente.
+2. NUNCA use linhas de caracteres (ex: "________________") para separar seções.
+3. Use Títulos H2 (##) para separar as grandes seções do roteiro.
+4. Use Títulos H3 (###) para subseções ou notas.
+5. Use Negrito (**) para destacar falas ou ações importantes.
+6. Use Citações (>) para notas de direção ou visuais.
+7. Se for reescrever, apresente o roteiro completo e formatado.
 
-Se o usuário pedir para reescrever, entregue o novo texto pronto para uso.`;
+O estilo deve ser moderno, limpo e profissional.`;
 
       const messages = [
         { role: 'system', content: systemPrompt },
@@ -201,15 +203,25 @@ Se o usuário pedir para reescrever, entregue o novo texto pronto para uso.`;
                       <div className="prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 break-words overflow-hidden text-slate-700">
                         <ReactMarkdown
                           components={{
-                            pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-3 bg-slate-800 rounded-lg p-3 text-white shadow-sm"><pre {...props} /></div>,
+                            pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-4 bg-slate-900 rounded-lg p-4 text-white shadow-md"><pre {...props} /></div>,
                             code: ({node, inline, ...props}) => inline 
-                              ? <code className="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono text-xs border border-slate-200" {...props} />
+                              ? <code className="bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs border border-indigo-100" {...props} />
                               : <code className="bg-transparent text-white font-mono text-xs whitespace-pre-wrap break-words" {...props} />,
-                            h1: ({node, ...props}) => <h1 className="text-lg font-bold text-slate-900 mt-4 mb-2 border-b pb-1" {...props} />,
-                            h2: ({node, ...props}) => <h2 className="text-base font-bold text-slate-800 mt-3 mb-2" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-2 leading-relaxed" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc pl-4 space-y-1 mb-2" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal pl-4 space-y-1 mb-2" {...props} />,
+                            h1: ({node, ...props}) => <h1 className="text-xl font-bold text-slate-900 mt-6 mb-4 pb-2 border-b border-slate-100" {...props} />,
+                            h2: ({node, ...props}) => (
+                              <div className="mt-8 mb-4">
+                                <h2 className="text-base font-bold text-indigo-950 bg-indigo-50/80 border border-indigo-100 px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm" {...props} />
+                              </div>
+                            ),
+                            h3: ({node, ...props}) => <h3 className="text-sm font-bold text-slate-800 mt-5 mb-2 pl-3 border-l-2 border-indigo-400" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-3 leading-relaxed text-slate-700" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc pl-5 space-y-1.5 mb-4 text-slate-700" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 space-y-1.5 mb-4 text-slate-700" {...props} />,
+                            blockquote: ({node, ...props}) => (
+                              <blockquote className="border-l-4 border-indigo-300 pl-4 py-2 my-4 bg-slate-50 rounded-r-lg text-slate-600 italic text-sm" {...props} />
+                            ),
+                            hr: ({node, ...props}) => <hr className="my-6 border-slate-100" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-bold text-slate-900" {...props} />,
                           }}
                         >
                           {msg.content}
