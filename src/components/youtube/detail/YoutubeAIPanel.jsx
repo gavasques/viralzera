@@ -129,7 +129,7 @@ Responda em Português do Brasil.`;
 
   return (
     <div className="flex flex-col h-full w-full bg-white">
-      <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
+      <div className="flex items-center justify-between p-4 pr-12 border-b border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-2">
             <Bot className="w-4 h-4 text-red-600" />
             <h3 className="text-sm font-semibold text-slate-700">Assistente IA</h3>
