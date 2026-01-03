@@ -301,7 +301,7 @@ export default function YoutubeScriptDetail() {
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden flex">
         <div className="flex-1 overflow-y-auto">
-          <div className={`mx-auto p-6 md:p-8 pb-32 min-h-full transition-all ${notesVisible ? 'max-w-4xl' : 'max-w-5xl'}`}>
+          <div className={`mx-auto p-6 md:p-8 pb-32 min-h-full transition-all ${notesVisible ? 'max-w-4xl xl:max-w-5xl' : 'max-w-5xl'}`}>
             <YoutubeScriptSectionEditor
               sectionKey="corpo"
               title="Roteiro Completo"
