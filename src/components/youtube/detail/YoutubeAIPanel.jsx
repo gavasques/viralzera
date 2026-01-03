@@ -190,7 +190,7 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
                   </div>
                 )}
                 <div
-                  className={`rounded-lg px-3 py-2 max-w-[85%] text-sm break-words ${
+                  className={`rounded-lg px-4 py-3 max-w-[90%] text-base break-words ${
                     msg.role === 'user'
                       ? 'bg-red-600 text-white'
                       : 'bg-slate-100 text-slate-800'
@@ -198,30 +198,30 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
                 >
                   {msg.role === 'assistant' ? (
                     <div className="flex flex-col gap-3">
-                      <div className="prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 break-words overflow-hidden text-slate-700">
+                      <div className="prose max-w-none prose-p:my-2 prose-headings:my-4 break-words overflow-hidden text-slate-700">
                         <ReactMarkdown
                           components={{
-                            pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-4 bg-slate-900 rounded-xl p-4 text-slate-50 shadow-sm border border-slate-800"><pre {...props} /></div>,
+                            pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-5 bg-slate-900 rounded-xl p-5 text-slate-50 shadow-sm border border-slate-800"><pre {...props} /></div>,
                             code: ({node, inline, ...props}) => inline 
-                              ? <code className="bg-indigo-50 px-1.5 py-0.5 rounded-md text-indigo-600 font-mono text-[11px] font-medium border border-indigo-100" {...props} />
-                              : <code className="bg-transparent text-slate-50 font-mono text-xs whitespace-pre-wrap break-words" {...props} />,
-                            h1: ({node, ...props}) => <h1 className="text-xl font-bold text-slate-900 mt-6 mb-4 pb-2 border-b border-slate-100" {...props} />,
+                              ? <code className="bg-indigo-50 px-1.5 py-0.5 rounded-md text-indigo-700 font-mono text-sm font-medium border border-indigo-100" {...props} />
+                              : <code className="bg-transparent text-slate-50 font-mono text-sm whitespace-pre-wrap break-words" {...props} />,
+                            h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-slate-900 mt-8 mb-5 pb-3 border-b border-slate-100" {...props} />,
                             h2: ({node, ...props}) => (
-                              <h2 className="flex items-center gap-2 text-base font-bold text-slate-800 mt-8 mb-4 px-4 py-2.5 bg-gradient-to-r from-slate-50 to-white rounded-lg border-l-4 border-indigo-500 shadow-sm" {...props}>
+                              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800 mt-10 mb-5 px-5 py-3 bg-gradient-to-r from-slate-50 to-white rounded-lg border-l-4 border-indigo-500 shadow-sm" {...props}>
                                 {props.children}
                               </h2>
                             ),
                             h3: ({node, ...props}) => (
-                              <h3 className="text-sm font-bold text-indigo-700 mt-5 mb-2 flex items-center gap-2" {...props}>
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/60" />
+                              <h3 className="text-base font-bold text-indigo-700 mt-6 mb-3 flex items-center gap-2" {...props}>
+                                <span className="w-2 h-2 rounded-full bg-indigo-400/60" />
                                 {props.children}
                               </h3>
                             ),
-                            p: ({node, ...props}) => <p className="mb-3 leading-7 text-slate-600" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc pl-5 space-y-1.5 mb-4 text-slate-600 marker:text-slate-400" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 space-y-1.5 mb-4 text-slate-600 marker:text-slate-400" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-4 leading-relaxed text-slate-700 text-[15px]" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc pl-6 space-y-2 mb-5 text-slate-700 marker:text-slate-400" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal pl-6 space-y-2 mb-5 text-slate-700 marker:text-slate-400" {...props} />,
                             blockquote: ({node, ...props}) => (
-                              <blockquote className="border-l-4 border-amber-300 bg-amber-50/50 p-4 my-4 rounded-r-lg text-slate-700 italic text-sm relative" {...props} />
+                              <blockquote className="border-l-4 border-amber-300 bg-amber-50/50 p-5 my-6 rounded-r-lg text-slate-700 italic text-base relative" {...props} />
                             ),
                             strong: ({node, ...props}) => <strong className="font-bold text-slate-900" {...props} />,
                             hr: ({node, ...props}) => <hr className="my-8 border-slate-100" {...props} />,
