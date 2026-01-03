@@ -8,7 +8,8 @@ export default function YoutubeScriptHeader({
   onTitleChange, 
   onSuggestTitles,
   onGenerateKit,
-  onNavigateBack
+  onNavigateBack,
+  onHistoryOpen
 }) {
   return (
     <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-200 -mx-6 px-6 py-4">
@@ -31,27 +32,43 @@ export default function YoutubeScriptHeader({
             placeholder="Título do roteiro..."
           />
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSuggestTitles}
-            className="shrink-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-          >
-            <Sparkles className="w-4 h-4 mr-1" />
-            Sugerir Títulos
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSuggestTitles}
+              className="shrink-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+            >
+              <Sparkles className="w-4 h-4 mr-1" />
+              Sugerir Títulos
+            </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onGenerateKit}
-            className="shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-          >
-            <Package className="w-4 h-4 mr-1" />
-            Gerar Kit YouTube
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onGenerateKit}
+              className="shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            >
+              <Package className="w-4 h-4 mr-1" />
+              Gerar Kit YouTube
+            </Button>
+            
+            {onHistoryOpen && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onHistoryOpen}
+                className="shrink-0 text-slate-500 hover:text-slate-700"
+                title="Histórico de Versões"
+              >
+                <History className="w-4 h-4 mr-2" />
+                Histórico
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+import { History } from "lucide-react";

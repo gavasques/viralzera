@@ -22,7 +22,7 @@ import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
 import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptChatDrawer";
 import YoutubeKitModal from "@/components/youtube/detail/YoutubeKitModal";
-import YoutubeScriptHistoryDrawer from "@/components/youtube/history/YoutubeScriptHistoryDrawer";
+import ScriptHistoryDrawer from "@/components/youtube/history/ScriptHistoryDrawer";
 
 export default function YoutubeScriptDetail() {
   const navigate = useNavigate();
@@ -40,10 +40,10 @@ export default function YoutubeScriptDetail() {
   // Drawers & Modals state
   const [refinerOpen, setRefinerOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [showKitModal, setShowKitModal] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   
   const pendingNavigation = useRef(null);
 
@@ -113,31 +113,26 @@ export default function YoutubeScriptDetail() {
 
   // Save mutation
   const saveMutation = useMutation({
-    mutationFn: async (options = { createVersion: true }) => {
-      // 1. Update script
+    mutationFn: async () => {
+      // 1. Update Script
       await base44.entities.YoutubeScript.update(scriptId, {
         title,
         corpo: content
       });
 
-      // 2. Create version history if requested
-      if (options.createVersion) {
-        await base44.entities.YoutubeScriptVersion.create({
-          script_id: scriptId,
-          title: title,
-          content: content,
-          change_type: 'manual'
-        });
-      }
-      
-      return true;
+      // 2. Create Version
+      await base44.entities.YoutubeScriptVersion.create({
+        script_id: scriptId,
+        title,
+        corpo: content,
+        video_type: script?.video_type,
+        change_description: "Versão salva"
+      });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['script-versions', scriptId] });
       queryClient.invalidateQueries({ queryKey: ['youtube-script', scriptId] });
       queryClient.invalidateQueries({ queryKey: ['youtube-scripts'] });
-      // Invalidate versions too so the drawer updates if open
-      queryClient.invalidateQueries({ queryKey: ['script-versions', scriptId] });
-      
       setInitialData({
         title,
         corpo: content
@@ -146,45 +141,6 @@ export default function YoutubeScriptDetail() {
     },
     onError: (error) => {
       toast.error('Erro ao salvar: ' + (error.message || 'Tente novamente'));
-    }
-  });
-
-  // Restore version mutation
-  const restoreMutation = useMutation({
-    mutationFn: async (version) => {
-      // 1. Update script with version content
-      await base44.entities.YoutubeScript.update(scriptId, {
-        title: version.title,
-        corpo: version.content
-      });
-
-      // 2. Create a "restore" version to keep track
-      await base44.entities.YoutubeScriptVersion.create({
-        script_id: scriptId,
-        title: version.title,
-        content: version.content,
-        change_type: 'restore'
-      });
-      
-      return version;
-    },
-    onSuccess: (version) => {
-      // Update local state
-      setTitle(version.title);
-      setContent(version.content);
-      setInitialData({
-        title: version.title,
-        corpo: version.content
-      });
-
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['youtube-script', scriptId] });
-      queryClient.invalidateQueries({ queryKey: ['script-versions', scriptId] });
-      
-      toast.success('Versão restaurada com sucesso!');
-    },
-    onError: (error) => {
-      toast.error('Erro ao restaurar versão: ' + error.message);
     }
   });
 
@@ -208,6 +164,37 @@ export default function YoutubeScriptDetail() {
   const handleRefinerInsertBelow = (sectionKey, newContent) => {
     setContent(prev => prev + '\n\n' + newContent);
     toast.success('Conteúdo inserido');
+  };
+
+  // Handle restore version
+  const handleRestoreVersion = async (version) => {
+    // 1. Save current state as backup
+    await base44.entities.YoutubeScriptVersion.create({
+      script_id: scriptId,
+      title: title,
+      corpo: content,
+      video_type: script?.video_type,
+      change_description: "Backup automático antes de restaurar versão"
+    });
+
+    // 2. Update local state
+    setTitle(version.title);
+    setContent(version.corpo);
+
+    // 3. Update database
+    await base44.entities.YoutubeScript.update(scriptId, {
+      title: version.title,
+      corpo: version.corpo
+    });
+
+    // 4. Reset unsaved state
+    setInitialData({
+      title: version.title,
+      corpo: version.corpo
+    });
+
+    queryClient.invalidateQueries({ queryKey: ['youtube-script', scriptId] });
+    queryClient.invalidateQueries({ queryKey: ['script-versions', scriptId] });
   };
 
   // Redirect if no ID
@@ -256,8 +243,8 @@ export default function YoutubeScriptDetail() {
             onSuggestTitles={() => setShowTitleModal(true)}
             onChatOpen={() => setChatOpen(true)}
             onGenerateKit={() => setShowKitModal(true)}
-            onHistoryOpen={() => setHistoryOpen(true)}
             onNavigateBack={handleNavigateBack}
+            onHistoryOpen={() => setHistoryOpen(true)}
           />
         </div>
       </div>
@@ -330,11 +317,11 @@ export default function YoutubeScriptDetail() {
         scriptTitle={title}
       />
 
-      <YoutubeScriptHistoryDrawer
+      <ScriptHistoryDrawer
         open={historyOpen}
         onOpenChange={setHistoryOpen}
         scriptId={scriptId}
-        onRestore={(version) => restoreMutation.mutate(version)}
+        onRestore={handleRestoreVersion}
       />
 
       {/* Unsaved Changes Dialog */}
