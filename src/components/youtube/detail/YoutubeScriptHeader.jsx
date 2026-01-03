@@ -1,14 +1,15 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function YoutubeScriptHeader({ 
   title, 
   onTitleChange, 
-  onSuggestTitles
+  onSuggestTitles,
+  onGenerateKit
 }) {
   const navigate = useNavigate();
 
@@ -41,6 +42,16 @@ export default function YoutubeScriptHeader({
           >
             <Sparkles className="w-4 h-4 mr-1" />
             Sugerir Títulos
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onGenerateKit}
+            className="shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+          >
+            <Package className="w-4 h-4 mr-1" />
+            Gerar Kit YouTube
           </Button>
         </div>
       </div>
