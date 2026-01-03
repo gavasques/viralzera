@@ -98,8 +98,8 @@ export default function ScriptHistoryDrawer({
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs font-normal bg-slate-50 text-slate-600 border-slate-200">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-xs font-normal bg-slate-50 text-slate-600 border-slate-200 shrink-0">
                           {versions.length - index}
                         </Badge>
                         <span className="text-sm font-medium text-slate-900">
