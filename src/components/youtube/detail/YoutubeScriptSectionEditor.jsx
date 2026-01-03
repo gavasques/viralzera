@@ -151,87 +151,89 @@ export default function YoutubeScriptSectionEditor({
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Editor Toolbar Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
-          {/* Left: Info & Metadata */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-3">
-              <h3 className="text-base font-semibold text-slate-900 tracking-tight">
-                {title}
-              </h3>
-              <div className="flex items-center gap-2">
-                {status && (
-                  <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-full ${STATUS_COLORS[status] || "bg-slate-100 text-slate-600"}`}>
-                    {status}
-                  </Badge>
-                )}
-                {videoType && (
-                  <Badge variant="outline" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-full border-0 ${VIDEO_TYPE_COLORS[videoType] || "bg-slate-100 text-slate-600"}`}>
-                    {videoType.replace(/_/g, ' ')}
-                  </Badge>
-                )}
+        {/* Modern Editor Header */}
+        <div className="flex flex-col gap-4 px-6 pt-5 pb-2 bg-white">
+          <div className="flex items-start justify-between">
+            {/* Left: Info & Metadata */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  {title}
+                </h3>
+                <div className="flex items-center gap-2">
+                  {status && (
+                    <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-md ${STATUS_COLORS[status] || "bg-slate-100 text-slate-600"}`}>
+                      {status}
+                    </Badge>
+                  )}
+                  {videoType && (
+                    <Badge variant="outline" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-md border-0 ${VIDEO_TYPE_COLORS[videoType] || "bg-slate-100 text-slate-600"}`}>
+                      {videoType.replace(/_/g, ' ')}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-6 text-xs text-slate-500">
+                <span className="max-w-[200px] truncate" title={description}>{description}</span>
+                
+                <div className="flex items-center gap-4 pl-4 border-l border-slate-100">
+                  <div className="flex flex-col">
+                     <span className="font-bold text-slate-700 tabular-nums text-sm leading-none">{charCount.toLocaleString()}</span>
+                     <span className="text-[10px] text-slate-400">caracteres</span>
+                  </div>
+                  <div className="flex flex-col">
+                     <span className="font-bold text-slate-700 tabular-nums text-sm leading-none">{estimatedTime}</span>
+                     <span className="text-[10px] text-slate-400">leitura</span>
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3 text-xs text-slate-500">
-              {description && <span>{description}</span>}
-              <span className="w-1 h-1 rounded-full bg-slate-300" />
-              <span className="font-medium text-slate-600 tabular-nums">
-                {charCount.toLocaleString()} chars
-              </span>
-              <span className="text-slate-300">|</span>
-              <span className="font-medium text-slate-600 tabular-nums">
-                {estimatedTime} leitura
-              </span>
-            </div>
-          </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-2">
-            <ScriptSectionNavigator content={content} editorRef={quillRef} />
-            
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={onChatToggle}
-                className="h-9 px-3 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all rounded-full"
-            >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Recriar com IA
-            </Button>
+            {/* Right: Actions */}
+            <div className="flex items-center gap-1">
+              <ScriptSectionNavigator content={content} editorRef={quillRef} />
+              
+              <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onChatToggle}
+                  className="h-8 px-3 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all rounded-md gap-2"
+              >
+                  <Sparkles className="w-4 h-4" />
+                  <span className="text-xs font-medium">Recriar com IA</span>
+              </Button>
 
-            <div className="w-px h-6 bg-slate-100 mx-2" />
+              <div className="w-px h-5 bg-slate-200 mx-2" />
 
-            <div className="flex items-center gap-2">
-                <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
-                
-                <Button 
-                    onClick={onSave}
-                    disabled={isSaving || !hasChanges}
-                    size="sm"
-                    variant={hasChanges ? "default" : "ghost"}
-                    className={`h-9 min-w-[100px] transition-all duration-300 rounded-full ${
-                        hasChanges 
-                        ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-100' 
-                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                    }`}
-                >
-                    {isSaving ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
-                    ) : hasChanges ? (
-                        <Save className="w-3.5 h-3.5 mr-2" />
-                    ) : (
-                        <span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                    )}
-                    {isSaving ? 'Salvando...' : hasChanges ? 'Salvar' : 'Salvo'}
-                </Button>
-                
-                <ScriptActionsDropdown 
-                  content={content}
-                  title={scriptTitle}
-                  notesVisible={notesVisible}
-                  onToggleNotes={onToggleNotes}
-                />
+              <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
+              
+              <Button 
+                  onClick={onSave}
+                  disabled={isSaving || !hasChanges}
+                  size="sm"
+                  className={`h-8 px-4 transition-all duration-300 rounded-md ml-2 ${
+                      hasChanges 
+                      ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-100' 
+                      : 'bg-transparent text-green-600 hover:bg-green-50 border border-transparent'
+                  }`}
+              >
+                  {isSaving ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
+                  ) : hasChanges ? (
+                      <Save className="w-3.5 h-3.5 mr-2" />
+                  ) : (
+                      <span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                  )}
+                  {isSaving ? 'Salvando...' : hasChanges ? 'Salvar' : 'Salvo'}
+              </Button>
+              
+              <ScriptActionsDropdown 
+                content={content}
+                title={scriptTitle}
+                notesVisible={notesVisible}
+                onToggleNotes={onToggleNotes}
+              />
             </div>
           </div>
         </div>
@@ -245,16 +247,34 @@ export default function YoutubeScriptSectionEditor({
             }
             .ql-toolbar {
                 border: none !important;
+                border-top: 1px solid #f1f5f9 !important;
                 border-bottom: 1px solid #f1f5f9 !important;
-                padding: 12px 16px !important;
+                padding: 8px 24px !important;
+                background-color: #fcfcfc;
+            }
+            .ql-toolbar button {
+                color: #64748b; 
+            }
+            .ql-toolbar button:hover {
+                color: #0f172a;
+            }
+            .ql-toolbar .ql-active {
+                color: #dc2626 !important;
             }
             .ql-editor {
-                font-size: 1.1rem;
+                font-family: 'Inter', sans-serif;
+                font-size: 1.125rem;
                 line-height: 1.8;
-                padding: 32px 48px !important;
+                padding: 40px 60px !important;
                 height: 100%;
                 overflow-y: auto;
+                color: #1e293b;
             }
+            .ql-editor h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; color: #0f172a; }
+            .ql-editor h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; }
+            .ql-editor h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #334155; }
+            .ql-editor p { margin-bottom: 1.2rem; }
+            .ql-editor blockquote { border-left: 4px solid #e2e8f0; padding-left: 1rem; color: #64748b; font-style: italic; }
             `}</style>
             
             <div className="flex-1 flex flex-col min-h-0">
@@ -264,7 +284,7 @@ export default function YoutubeScriptSectionEditor({
                     value={displayContent}
                     onChange={(val) => onChange(sectionKey, val)}
                     onChangeSelection={handleSelectionChange}
-                    placeholder={`Escreva o conteúdo da seção ${title}...`}
+                    placeholder={`Escreva aqui o seu roteiro incrível...`}
                     className="flex-1 flex flex-col min-h-0"
                     modules={{
                     toolbar: [
