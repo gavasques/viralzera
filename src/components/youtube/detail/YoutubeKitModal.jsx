@@ -6,10 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, Youtube, Copy, Check, Type, Image, FileText, 
-  Tags, Sparkles, RefreshCw 
+  Loader2, 
+  Sparkles, 
+  Type, 
+  Image, 
+  FileText, 
+  Tags, 
+  Copy, 
+  Check,
+  RefreshCw
 } from "lucide-react";
 
 export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scriptTitle }) {
@@ -18,8 +24,14 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
   const [copiedItem, setCopiedItem] = useState(null);
 
   const generateKit = async () => {
+    if (!scriptContent) {
+      toast.error('O roteiro precisa ter conteúdo para gerar o kit');
+      return;
+    }
+
     setIsGenerating(true);
     try {
+      // Buscar configuração do agente
       const configs = await base44.entities.YoutubeKitGeneratorConfig.filter({});
       const config = configs[0];
 
@@ -27,13 +39,15 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         throw new Error('Configure o agente "YouTube - Gerador de Kit" em Configurações de Agentes');
       }
 
-      const promptWithContent = (config.prompt || '').replace('{{roteiro_final}}', scriptContent);
+      // Preparar prompt com substituição do placeholder
+      let systemPrompt = config.prompt || '';
+      systemPrompt = systemPrompt.replace('{{roteiro_final}}', scriptContent);
 
       const response = await sendMessage({
         model: config.model,
         messages: [
-          { role: 'system', content: promptWithContent },
-          { role: 'user', content: `Gere o kit completo de publicação para este roteiro:\n\n${scriptContent}` }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Gere o kit completo de publicação para o seguinte roteiro:\n\n${scriptContent}` }
         ],
         options: {
           enableReasoning: config.enable_reasoning || false,
@@ -43,25 +57,27 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         }
       });
 
-      // Parse JSON from response
-      const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+      // Parse JSON da resposta
+      const content = response.content;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      
       if (jsonMatch) {
-        const kitData = JSON.parse(jsonMatch[0]);
-        setKit(kitData);
+        const parsedKit = JSON.parse(jsonMatch[0]);
+        setKit(parsedKit);
         toast.success('Kit gerado com sucesso!');
       } else {
-        throw new Error('Resposta inválida da IA');
+        throw new Error('Resposta não contém JSON válido');
       }
-    } catch (error) {
-      console.error('Error generating kit:', error);
-      toast.error(error.message || 'Erro ao gerar kit');
+    } catch (err) {
+      console.error('Error generating kit:', err);
+      toast.error('Erro ao gerar kit: ' + err.message);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const copyToClipboard = async (text, itemId) => {
-    await navigator.clipboard.writeText(text);
+  const copyToClipboard = (text, itemId) => {
+    navigator.clipboard.writeText(text);
     setCopiedItem(itemId);
     toast.success('Copiado!');
     setTimeout(() => setCopiedItem(null), 2000);
@@ -70,14 +86,14 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
   const CopyButton = ({ text, itemId }) => (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon"
+      className="h-7 w-7 shrink-0"
       onClick={() => copyToClipboard(text, itemId)}
-      className="h-7 px-2"
     >
       {copiedItem === itemId ? (
-        <Check className="w-3.5 h-3.5 text-green-500" />
+        <Check className="w-4 h-4 text-green-500" />
       ) : (
-        <Copy className="w-3.5 h-3.5" />
+        <Copy className="w-4 h-4 text-slate-400" />
       )}
     </Button>
   );
@@ -87,171 +103,166 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Youtube className="w-5 h-5 text-red-600" />
-            Kit de Publicação YouTube
+            <Sparkles className="w-5 h-5 text-red-500" />
+            Kit YouTube
           </DialogTitle>
         </DialogHeader>
 
-        <AnimatePresence mode="wait">
-          {!kit && !isGenerating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-12 px-4"
-            >
-              <div className="bg-red-100 p-4 rounded-full mb-4">
-                <Sparkles className="w-8 h-8 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Gerar Kit Completo
-              </h3>
-              <p className="text-sm text-slate-500 text-center max-w-md mb-6">
-                A IA vai analisar seu roteiro e criar títulos otimizados, ideias de thumbnail, 
+        {!kit && !isGenerating && (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <div className="bg-red-50 p-4 rounded-full">
+              <Sparkles className="w-10 h-10 text-red-500" />
+            </div>
+            <div className="text-center">
+              <h3 className="font-semibold text-lg text-slate-900 mb-1">Gerar Kit de Publicação</h3>
+              <p className="text-sm text-slate-500 max-w-md">
+                A IA irá analisar seu roteiro e gerar títulos otimizados, ideias de thumbnail, 
                 descrição completa e tags SEO.
               </p>
-              <Button onClick={generateKit} className="bg-red-600 hover:bg-red-700">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Gerar Kit
+            </div>
+            <Button 
+              onClick={generateKit} 
+              className="bg-red-600 hover:bg-red-700 mt-2"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Gerar Kit Agora
+            </Button>
+          </div>
+        )}
+
+        {isGenerating && (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="w-10 h-10 text-red-500 animate-spin" />
+            <p className="text-slate-600">Gerando kit de publicação...</p>
+            <p className="text-xs text-slate-400">Isso pode levar alguns segundos</p>
+          </div>
+        )}
+
+        {kit && !isGenerating && (
+          <>
+            <div className="flex justify-end mb-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={generateKit}
+                className="gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Regenerar
               </Button>
-            </motion.div>
-          )}
+            </div>
 
-          {isGenerating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-16"
-            >
-              <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
-              <p className="text-slate-600 font-medium">Gerando kit de publicação...</p>
-              <p className="text-sm text-slate-400 mt-1">Isso pode levar alguns segundos</p>
-            </motion.div>
-          )}
+            <Tabs defaultValue="titulos" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="titulos" className="gap-1.5">
+                  <Type className="w-4 h-4" />
+                  <span className="hidden sm:inline">Títulos</span>
+                </TabsTrigger>
+                <TabsTrigger value="thumbnails" className="gap-1.5">
+                  <Image className="w-4 h-4" />
+                  <span className="hidden sm:inline">Thumbnails</span>
+                </TabsTrigger>
+                <TabsTrigger value="descricao" className="gap-1.5">
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">Descrição</span>
+                </TabsTrigger>
+                <TabsTrigger value="tags" className="gap-1.5">
+                  <Tags className="w-4 h-4" />
+                  <span className="hidden sm:inline">Tags</span>
+                </TabsTrigger>
+              </TabsList>
 
-          {kit && !isGenerating && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex-1 overflow-hidden flex flex-col"
-            >
-              <div className="flex justify-end mb-2">
-                <Button variant="outline" size="sm" onClick={generateKit}>
-                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                  Regenerar
-                </Button>
-              </div>
+              <div className="flex-1 overflow-y-auto mt-4">
+                <TabsContent value="titulos" className="mt-0 space-y-2">
+                  <p className="text-sm text-slate-500 mb-3">
+                    Clique para copiar o título desejado
+                  </p>
+                  {kit.titulos?.map((titulo, idx) => (
+                    <div 
+                      key={idx}
+                      className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-red-200 transition-colors"
+                    >
+                      <span className="text-sm text-slate-800">{titulo}</span>
+                      <CopyButton text={titulo} itemId={`titulo-${idx}`} />
+                    </div>
+                  ))}
+                </TabsContent>
 
-              <Tabs defaultValue="titulos" className="flex-1 flex flex-col overflow-hidden">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="titulos" className="gap-1.5">
-                    <Type className="w-3.5 h-3.5" />
-                    Títulos
-                  </TabsTrigger>
-                  <TabsTrigger value="thumbnails" className="gap-1.5">
-                    <Image className="w-3.5 h-3.5" />
-                    Thumbnails
-                  </TabsTrigger>
-                  <TabsTrigger value="descricao" className="gap-1.5">
-                    <FileText className="w-3.5 h-3.5" />
-                    Descrição
-                  </TabsTrigger>
-                  <TabsTrigger value="tags" className="gap-1.5">
-                    <Tags className="w-3.5 h-3.5" />
-                    Tags
-                  </TabsTrigger>
-                </TabsList>
-
-                <div className="flex-1 overflow-y-auto mt-4">
-                  {/* Títulos */}
-                  <TabsContent value="titulos" className="m-0 space-y-2">
-                    <p className="text-sm text-slate-500 mb-3">
-                      5 opções de títulos otimizados para CTR e SEO
-                    </p>
-                    {kit.titulos?.map((titulo, idx) => (
-                      <div 
-                        key={idx} 
-                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors"
-                      >
-                        <span className="text-sm text-slate-800 flex-1">{titulo}</span>
-                        <CopyButton text={titulo} itemId={`titulo-${idx}`} />
-                      </div>
-                    ))}
-                  </TabsContent>
-
-                  {/* Thumbnails */}
-                  <TabsContent value="thumbnails" className="m-0 space-y-3">
-                    <p className="text-sm text-slate-500 mb-3">
-                      Conceitos visuais para thumbnail
-                    </p>
-                    {kit.ideias_thumbnail?.map((ideia, idx) => (
-                      <div 
-                        key={idx} 
-                        className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-3">
-                            <div className="bg-red-100 text-red-600 font-bold text-xs w-6 h-6 rounded-full flex items-center justify-center shrink-0">
-                              {idx + 1}
-                            </div>
-                            <p className="text-sm text-slate-700">{ideia}</p>
+                <TabsContent value="thumbnails" className="mt-0 space-y-3">
+                  <p className="text-sm text-slate-500 mb-3">
+                    Ideias de conceitos visuais para sua thumbnail
+                  </p>
+                  {kit.ideias_thumbnail?.map((ideia, idx) => (
+                    <div 
+                      key={idx}
+                      className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-red-100 text-red-700 font-bold text-sm w-7 h-7 rounded-full flex items-center justify-center shrink-0">
+                            {idx + 1}
                           </div>
-                          <CopyButton text={ideia} itemId={`thumb-${idx}`} />
+                          <p className="text-sm text-slate-700 leading-relaxed">{ideia}</p>
                         </div>
+                        <CopyButton text={ideia} itemId={`thumb-${idx}`} />
                       </div>
-                    ))}
-                  </TabsContent>
-
-                  {/* Descrição */}
-                  <TabsContent value="descricao" className="m-0">
-                    <p className="text-sm text-slate-500 mb-3">
-                      Descrição otimizada com resumo, links e timestamps
-                    </p>
-                    <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-                      <div className="flex justify-end mb-2">
-                        <CopyButton text={kit.descricao_completa} itemId="descricao" />
-                      </div>
-                      <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans">
-                        {kit.descricao_completa}
-                      </pre>
                     </div>
-                  </TabsContent>
+                  ))}
+                </TabsContent>
 
-                  {/* Tags */}
-                  <TabsContent value="tags" className="m-0">
-                    <p className="text-sm text-slate-500 mb-3">
-                      Tags SEO para melhor descobribilidade
+                <TabsContent value="descricao" className="mt-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-slate-500">
+                      Descrição otimizada para SEO
                     </p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {kit.tags_seo?.map((tag, idx) => (
-                        <Badge 
-                          key={idx} 
-                          variant="secondary"
-                          className="text-sm py-1.5 px-3 cursor-pointer hover:bg-slate-200 transition-colors"
-                          onClick={() => copyToClipboard(tag, `tag-${idx}`)}
-                        >
-                          {copiedItem === `tag-${idx}` ? (
-                            <Check className="w-3 h-3 mr-1 text-green-500" />
-                          ) : null}
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
+                    <CopyButton text={kit.descricao_completa} itemId="descricao" />
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
+                      {kit.descricao_completa}
+                    </pre>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="tags" className="mt-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-slate-500">
+                      Tags otimizadas para SEO do YouTube
+                    </p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => copyToClipboard(kit.tags_seo?.join(', '), 'all-tags')}
+                      className="gap-2"
                     >
-                      <Copy className="w-3.5 h-3.5 mr-1.5" />
-                      Copiar todas as tags
+                      {copiedItem === 'all-tags' ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                      Copiar todas
                     </Button>
-                  </TabsContent>
-                </div>
-              </Tabs>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {kit.tags_seo?.map((tag, idx) => (
+                      <Badge 
+                        key={idx}
+                        variant="secondary"
+                        className="px-3 py-1.5 text-sm cursor-pointer hover:bg-red-100 hover:text-red-700 transition-colors"
+                        onClick={() => copyToClipboard(tag, `tag-${idx}`)}
+                      >
+                        {copiedItem === `tag-${idx}` ? (
+                          <Check className="w-3 h-3 mr-1 text-green-500" />
+                        ) : null}
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

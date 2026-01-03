@@ -11,6 +11,7 @@ import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScrip
 import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
 import YoutubeRightPanel from "@/components/youtube/detail/YoutubeRightPanel";
+import YoutubeKitModal from "@/components/youtube/detail/YoutubeKitModal";
 // import { 
 //   parseScript, 
 //   rebuildScript, 
@@ -36,6 +37,9 @@ export default function YoutubeScriptDetail() {
   
   // Title suggestions modal state
   const [showTitleModal, setShowTitleModal] = useState(false);
+  
+  // Kit modal state
+  const [showKitModal, setShowKitModal] = useState(false);
 
   // Right panel state
   const [showRightPanel, setShowRightPanel] = useState(true);
@@ -174,6 +178,7 @@ export default function YoutubeScriptDetail() {
         hasChanges={hasChanges}
         onSuggestTitles={() => setShowTitleModal(true)}
         onChatOpen={() => setShowRightPanel(true)}
+        onGenerateKit={() => setShowKitModal(true)}
       />
 
       <div className="flex-1 flex overflow-hidden h-[calc(100vh-140px)]">
@@ -250,6 +255,14 @@ export default function YoutubeScriptDetail() {
           setTitle(newTitle);
           setInitialData(prev => ({ ...prev, title: newTitle }));
         }}
+      />
+
+      {/* Kit YouTube Modal */}
+      <YoutubeKitModal
+        open={showKitModal}
+        onOpenChange={setShowKitModal}
+        scriptContent={content}
+        scriptTitle={title}
       />
 
     </div>
