@@ -38,6 +38,7 @@ export default function ChatSettingsModal({
   const [enableReasoning, setEnableReasoning] = useState(false);
   const [reasoningEffort, setReasoningEffort] = useState('medium');
   const [enableWebSearch, setEnableWebSearch] = useState(false);
+  const [maxTokens, setMaxTokens] = useState(32000);
   const queryClient = useQueryClient();
 
   // Fetch existing config (global - único para todos os usuários)
@@ -123,6 +124,7 @@ export default function ChatSettingsModal({
       setEnableReasoning(existingConfig.enable_reasoning || false);
       setReasoningEffort(existingConfig.reasoning_effort || 'medium');
       setEnableWebSearch(existingConfig.enable_web_search || false);
+      setMaxTokens(existingConfig.max_tokens || 32000);
     }
   }, [existingConfig]);
 
@@ -152,14 +154,16 @@ export default function ChatSettingsModal({
       default_prompt: prompt,
       enable_reasoning: enableReasoning,
       reasoning_effort: reasoningEffort,
-      enable_web_search: enableWebSearch
+      enable_web_search: enableWebSearch,
+      max_tokens: maxTokens
     } : {
       model: selectedModel?.id || '',
       model_name: selectedModel?.name || '',
       prompt,
       enable_reasoning: enableReasoning,
       reasoning_effort: reasoningEffort,
-      enable_web_search: enableWebSearch
+      enable_web_search: enableWebSearch,
+      max_tokens: maxTokens
     };
     
     saveMutation.mutate(data);
@@ -333,6 +337,25 @@ export default function ChatSettingsModal({
                 <strong>Custo adicional:</strong> Web search tem custo extra mesmo em modelos gratuitos.
               </div>
             )}
+          </div>
+
+          {/* Max Tokens */}
+          <div className="space-y-3 p-4 bg-slate-50/50 rounded-lg border border-slate-200">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium text-slate-900">Max Tokens (Resposta)</Label>
+            </div>
+            <Input
+              type="number"
+              value={maxTokens}
+              onChange={(e) => setMaxTokens(parseInt(e.target.value) || 32000)}
+              min={1000}
+              max={200000}
+              step={1000}
+              className="w-full"
+            />
+            <p className="text-xs text-slate-500">
+              Limite máximo de tokens na resposta da IA. Padrão: 32.000. Valores maiores permitem respostas mais longas.
+            </p>
           </div>
 
           {/* Prompt */}
