@@ -12,10 +12,10 @@ export default function RefinerModelingSection({ enabled, onToggle, modelingCoun
         </div>
         <div>
           <Label htmlFor="use-modelings" className="text-sm font-medium text-slate-900">
-            Usar Modelagens de Referência
+            Usar Dossiês de Referência
           </Label>
           <p className="text-xs text-slate-500">
-            {modelingCount} modelagem{modelingCount > 1 ? 's' : ''} vinculada{modelingCount > 1 ? 's' : ''}
+            {modelingCount} dossiê{modelingCount > 1 ? 's' : ''} vinculado{modelingCount > 1 ? 's' : ''}
           </p>
         </div>
       </div>
