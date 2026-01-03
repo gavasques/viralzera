@@ -41,6 +41,7 @@ export function StepVideoType({ focusId, value, onChange }) {
   });
 
   const formatRecommendation = value.formatRecommendation;
+  const isAnalyzing = value.creativeDirective && !formatRecommendation;
 
   // Auto-select format based on AI recommendation
   useEffect(() => {
