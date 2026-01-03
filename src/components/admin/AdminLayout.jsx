@@ -34,12 +34,7 @@ const ADMIN_MENU = [
     icon: Blocks,
     description: 'Blocos reutilizáveis'
   },
-  { 
-    name: 'Templates de Descrição', 
-    page: 'DescriptionTemplates', 
-    icon: FileText,
-    description: 'Templates para YouTube'
-  },
+
   { 
     name: 'Análise de Consumo', 
     page: 'UsageAnalytics', 
