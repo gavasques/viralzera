@@ -156,6 +156,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
           enableReasoning: config.enable_reasoning || false,
           reasoningEffort: config.reasoning_effort || 'medium',
           enableWebSearch: config.enable_web_search || false,
+          maxTokens: config.max_tokens || 32000,
           feature: 'YoutubeKitGenerator'
         }
       });

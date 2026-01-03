@@ -78,6 +78,7 @@ Retorne APENAS um JSON válido no formato:
           enableReasoning: config.enable_reasoning,
           reasoningEffort: config.reasoning_effort,
           enableWebSearch: config.enable_web_search,
+          maxTokens: config.max_tokens || 32000,
           feature: 'YoutubeTitleGenerator'
         }
       });

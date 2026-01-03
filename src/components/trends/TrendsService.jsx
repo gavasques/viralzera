@@ -40,7 +40,7 @@ async function getUserApiKey() {
  * @param {string} params.prompt - Prompt da pesquisa
  * @returns {Promise<Object>} Resultado da pesquisa
  */
-export async function searchTrends({ model, prompt }) {
+export async function searchTrends({ model, prompt, maxTokens }) {
   const apiKey = await getUserApiKey();
   
   if (!apiKey) {
@@ -55,7 +55,7 @@ export async function searchTrends({ model, prompt }) {
     model,
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: maxTokens || 32000,
     plugins: [{ id: 'web' }], // Habilita Web Search
   };
 

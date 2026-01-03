@@ -116,6 +116,7 @@ Gere 3 sugestões refinadas seguindo as instruções acima.`;
             { role: 'user', content: userPrompt }
           ],
           temperature: 0.7,
+          max_tokens: config?.max_tokens || 32000,
           response_format: { type: "json_object" } 
         })
       });

@@ -143,7 +143,7 @@ export default function CanvasAIPanel({
         model: config?.model || 'openai/gpt-4o-mini',
         messages: apiMessages,
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: config?.max_tokens || 32000,
       };
 
       if (config?.enable_web_search) {

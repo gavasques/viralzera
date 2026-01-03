@@ -106,6 +106,7 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
           enableReasoning: config.enable_reasoning,
           reasoningEffort: config.reasoning_effort,
           enableWebSearch: config.enable_web_search,
+          maxTokens: config.max_tokens || 32000,
           feature: 'YoutubeScriptEditor'
         }
       });

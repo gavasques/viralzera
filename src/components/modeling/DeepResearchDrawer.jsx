@@ -77,7 +77,7 @@ export default function DeepResearchDrawer({ open, onOpenChange, modelingId }) {
         model: config.model,
         messages,
         temperature: 0.7,
-        max_tokens: 8000
+        max_tokens: config.max_tokens || 32000
       };
 
       // Check if model has native web search (Perplexity models)

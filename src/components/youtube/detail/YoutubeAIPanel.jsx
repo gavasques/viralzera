@@ -83,6 +83,7 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
         options: {
           enableReasoning: agentConfig?.enable_reasoning,
           reasoningEffort: agentConfig?.reasoning_effort,
+          maxTokens: agentConfig?.max_tokens || 32000,
           feature: 'YoutubeScriptChat'
         }
       });
