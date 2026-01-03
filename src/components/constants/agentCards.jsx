@@ -112,11 +112,18 @@ export const AGENT_CARDS = [
     color: 'bg-red-500'
   },
   {
-    key: 'youtubeKitGenerator',
-    title: 'YouTube - Gerador de Kit',
-    description: 'Gera títulos, thumbnails, descrição e tags SEO a partir do roteiro',
+    key: 'youtubeScriptGenerator',
+    title: 'YouTube - Geração de Roteiro',
+    description: 'Agente principal que gera o corpo do roteiro com base no tipo e contexto',
     icon: Youtube,
     color: 'bg-red-600'
+  },
+  {
+    key: 'youtubeScriptRefiner',
+    title: 'YouTube - Refinador de Seções',
+    description: 'Refina seções específicas do roteiro (hook, cta, etc)',
+    icon: Sparkles,
+    color: 'bg-red-400'
   },
   {
     key: 'youtubeScriptEditor',
@@ -131,6 +138,13 @@ export const AGENT_CARDS = [
     description: 'Gera títulos magnéticos e chamativos para vídeos',
     icon: Type,
     color: 'bg-amber-500'
+  },
+  {
+    key: 'youtubeKitGenerator',
+    title: 'YouTube - Gerador de Kit',
+    description: 'Gera títulos, thumbnails, descrição e tags SEO a partir do roteiro',
+    icon: Youtube,
+    color: 'bg-red-600'
   },
   {
     key: 'modelingAssistant',
