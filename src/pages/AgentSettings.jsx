@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Settings, Search } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminProtection } from '@/components/admin/AdminProtection';
 import AdminLayout from '@/components/admin/AdminLayout';
 import PageHeader from "@/components/common/PageHeader";
 import ChatSettingsModal from "@/components/chat/ChatSettingsModal";
 import PostTypeSettingsModal from "@/components/instagram/PostTypeSettingsModal";
+import AgentCard from "@/components/settings/AgentCard";
 import { AGENT_CONFIGS } from "@/components/constants/agentConfigs";
 import { AGENT_CARDS } from "@/components/constants/agentCards";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 export default function AgentSettings() {
   const [openModal, setOpenModal] = useState(null);
