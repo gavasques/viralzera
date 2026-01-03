@@ -203,25 +203,30 @@ O estilo deve ser moderno, limpo e profissional.`;
                       <div className="prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 break-words overflow-hidden text-slate-700">
                         <ReactMarkdown
                           components={{
-                            pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-4 bg-slate-900 rounded-lg p-4 text-white shadow-md"><pre {...props} /></div>,
+                            pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-4 bg-slate-900 rounded-xl p-4 text-slate-50 shadow-sm border border-slate-800"><pre {...props} /></div>,
                             code: ({node, inline, ...props}) => inline 
-                              ? <code className="bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs border border-indigo-100" {...props} />
-                              : <code className="bg-transparent text-white font-mono text-xs whitespace-pre-wrap break-words" {...props} />,
+                              ? <code className="bg-indigo-50 px-1.5 py-0.5 rounded-md text-indigo-600 font-mono text-[11px] font-medium border border-indigo-100" {...props} />
+                              : <code className="bg-transparent text-slate-50 font-mono text-xs whitespace-pre-wrap break-words" {...props} />,
                             h1: ({node, ...props}) => <h1 className="text-xl font-bold text-slate-900 mt-6 mb-4 pb-2 border-b border-slate-100" {...props} />,
                             h2: ({node, ...props}) => (
-                              <div className="mt-8 mb-4">
-                                <h2 className="text-base font-bold text-indigo-950 bg-indigo-50/80 border border-indigo-100 px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm" {...props} />
-                              </div>
+                              <h2 className="flex items-center gap-2 text-base font-bold text-slate-800 mt-8 mb-4 px-4 py-2.5 bg-gradient-to-r from-slate-50 to-white rounded-lg border-l-4 border-indigo-500 shadow-sm" {...props}>
+                                {props.children}
+                              </h2>
                             ),
-                            h3: ({node, ...props}) => <h3 className="text-sm font-bold text-slate-800 mt-5 mb-2 pl-3 border-l-2 border-indigo-400" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-3 leading-relaxed text-slate-700" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc pl-5 space-y-1.5 mb-4 text-slate-700" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 space-y-1.5 mb-4 text-slate-700" {...props} />,
+                            h3: ({node, ...props}) => (
+                              <h3 className="text-sm font-bold text-indigo-700 mt-5 mb-2 flex items-center gap-2" {...props}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/60" />
+                                {props.children}
+                              </h3>
+                            ),
+                            p: ({node, ...props}) => <p className="mb-3 leading-7 text-slate-600" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc pl-5 space-y-1.5 mb-4 text-slate-600 marker:text-slate-400" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 space-y-1.5 mb-4 text-slate-600 marker:text-slate-400" {...props} />,
                             blockquote: ({node, ...props}) => (
-                              <blockquote className="border-l-4 border-indigo-300 pl-4 py-2 my-4 bg-slate-50 rounded-r-lg text-slate-600 italic text-sm" {...props} />
+                              <blockquote className="border-l-4 border-amber-300 bg-amber-50/50 p-4 my-4 rounded-r-lg text-slate-700 italic text-sm relative" {...props} />
                             ),
-                            hr: ({node, ...props}) => <hr className="my-6 border-slate-100" {...props} />,
                             strong: ({node, ...props}) => <strong className="font-bold text-slate-900" {...props} />,
+                            hr: ({node, ...props}) => <hr className="my-8 border-slate-100" {...props} />,
                           }}
                         >
                           {msg.content}
