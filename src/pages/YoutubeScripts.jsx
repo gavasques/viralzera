@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Youtube, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -14,9 +15,28 @@ import YoutubeScriptWizardModal from "@/components/youtube/wizard/YoutubeScriptW
 
 export default function YoutubeScripts() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { selectedFocusId } = useSelectedFocus();
   const [showWizard, setShowWizard] = useState(false);
   const [dossierId, setDossierId] = useState(null);
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (scriptId) => {
+      // Delete associated chats first
+      const chats = await base44.entities.YoutubeScriptChat.filter({ script_id: scriptId });
+      await Promise.all(chats.map(c => base44.entities.YoutubeScriptChat.delete(c.id)));
+      // Delete script
+      await base44.entities.YoutubeScript.delete(scriptId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['youtube-scripts'] });
+      toast.success('Roteiro excluído com sucesso!');
+    },
+    onError: (error) => {
+      toast.error('Erro ao excluir roteiro: ' + error.message);
+    }
+  });
 
   // Check URL params for wizard trigger
   React.useEffect(() => {
@@ -79,6 +99,7 @@ export default function YoutubeScripts() {
               key={script.id} 
               script={script} 
               onClick={() => handleCardClick(script)}
+              onDelete={(id) => deleteMutation.mutateAsync(id)}
             />
           ))}
         </div>
