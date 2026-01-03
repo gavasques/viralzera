@@ -184,11 +184,17 @@ Responda em Português do Brasil.`;
                   }`}
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 break-words">
+                      <ReactMarkdown>
+                        {msg.content?.replace(/\n/g, '  \n')}
+                      </ReactMarkdown>
                     </div>
                   ) : (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    <div className="prose prose-sm prose-invert max-w-none prose-p:my-0 break-words text-white">
+                      <ReactMarkdown>
+                        {msg.content?.replace(/\n/g, '  \n')}
+                      </ReactMarkdown>
+                    </div>
                   )}
                 </div>
               </div>
