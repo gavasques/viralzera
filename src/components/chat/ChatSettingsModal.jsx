@@ -89,8 +89,9 @@ export default function ChatSettingsModal({
                        id.includes('gemini-2') ||
                        id.includes('gemini-3');
                        
-    // Check supported parameters from OpenRouter
-    const hasParam = model.supported_parameters?.includes('include_reasoning');
+    // Check supported parameters from OpenRouter (include_reasoning OR reasoning)
+    const hasParam = model.supported_parameters?.includes('include_reasoning') ||
+                     model.supported_parameters?.includes('reasoning');
     
     return hasKeyword || hasParam;
   };
