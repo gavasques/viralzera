@@ -71,45 +71,11 @@ function formatAudience(audience) {
 }
 
 /**
- * Formata materiais de referência para inclusão no prompt
+ * Formata o dossiê de conteúdo para inclusão no prompt
  */
-function formatMaterials(materials) {
-  if (!materials || materials.length === 0) return 'Nenhum material selecionado';
-  
-  return materials.map((m, i) => {
-    return `### Material ${i + 1}: ${m.title}\n${m.content}`;
-  }).join('\n\n');
-}
-
-/**
- * Formata conteúdo das modelagens para inclusão no prompt
- */
-function formatModelings(modelingsContent) {
-  if (!modelingsContent || modelingsContent.length === 0) return 'Nenhuma modelagem selecionada';
-  
-  return modelingsContent.map((m, i) => {
-    const parts = [`### Referência ${i + 1}: ${m.title}`];
-    
-    if (m.creatorIdea) {
-      parts.push(`**Ideia do Criador:** ${m.creatorIdea}`);
-    }
-    
-    if (m.transcripts?.length > 0) {
-      parts.push('\n**Transcrições:**');
-      m.transcripts.forEach(t => {
-        parts.push(`- ${t.title}: ${t.content?.substring(0, 500)}...`);
-      });
-    }
-    
-    if (m.texts?.length > 0) {
-      parts.push('\n**Textos de Referência:**');
-      m.texts.forEach(t => {
-        parts.push(`- ${t.title}: ${t.content?.substring(0, 300)}...`);
-      });
-    }
-    
-    return parts.join('\n');
-  }).join('\n\n---\n\n');
+function formatDossier(dossierContent) {
+  if (!dossierContent) return 'Nenhum dossiê disponível';
+  return dossierContent;
 }
 
 /**
@@ -135,8 +101,7 @@ function formatCTA(cta) {
  * @param {string} params.tema - Tema central do vídeo
  * @param {Object} params.persona - Dados da persona
  * @param {Object} params.audience - Dados do público-alvo
- * @param {Array} params.materials - Lista de materiais selecionados
- * @param {Array} params.modelingsContent - Conteúdo das modelagens
+ * @param {string} params.dossierContent - Conteúdo do dossiê da modelagem
  * @param {Object} params.introduction - Introdução padrão do usuário
  * @param {Object} params.cta - CTA padrão do usuário
  * @param {string} params.userNotes - Notas adicionais do usuário
@@ -148,8 +113,7 @@ export function buildYoutubePrompt({
   tema,
   persona,
   audience,
-  materials,
-  modelingsContent,
+  dossierContent,
   introduction,
   cta,
   userNotes,
@@ -170,8 +134,9 @@ export function buildYoutubePrompt({
     .replace(/\{\{duracao\}\}/gi, duracaoEstimada ? `${duracaoEstimada} minutos (considerando velocidade média de fala de 130 palavras/min, o roteiro deve ter aproximadamente ${parseInt(duracaoEstimada) * 130} palavras)` : 'Não especificada')
     .replace(/\{\{persona\}\}/gi, formatPersona(persona))
     .replace(/\{\{publico\}\}/gi, formatAudience(audience))
-    .replace(/\{\{materiais\}\}/gi, formatMaterials(materials))
-    .replace(/\{\{modelagens\}\}/gi, formatModelings(modelingsContent))
+    .replace(/\{\{dossie\}\}/gi, formatDossier(dossierContent))
+    .replace(/\{\{materiais\}\}/gi, formatDossier(dossierContent))
+    .replace(/\{\{modelagens\}\}/gi, formatDossier(dossierContent))
     .replace(/\{\{intros\}\}/gi, introContent)
     .replace(/\{\{ctas\}\}/gi, ctaContent);
 
@@ -225,15 +190,10 @@ INICIO PÚBLICO-ALVO
 {{publico}}
 FIM PÚBLICO-ALVO
 
-## MATERIAIS DE REFERÊNCIA
-INICIO MATERIAIS DE REFERÊNCIA
-{{materiais}}
-FIM MATERIAIS DE REFERÊNCIA
-
-## MODELAGENS E REFERÊNCIAS DE SUCESSO
-INICIO MODELAGENS E REFERÊNCIAS DE SUCESSO
-{{modelagens}}
-FIM MODELAGENS E REFERÊNCIAS DE SUCESSO
+## DOSSIÊ DE INTELIGÊNCIA
+INICIO DOSSIÊ DE INTELIGÊNCIA
+{{dossie}}
+FIM DOSSIÊ DE INTELIGÊNCIA
 
 ---
 
@@ -245,8 +205,7 @@ O roteiro deve fluir naturalmente, contendo Hook, Apresentação, Conteúdo Prin
 O roteiro deve:
 - Usar o tom de voz da persona
 - Falar diretamente com o público-alvo
-- Incorporar referências dos materiais selecionados
-- Seguir o estilo das modelagens de sucesso
+- Incorporar referências do dossiê de inteligência
 - Ser escrito como um texto único e coeso, pronto para gravação.
 - Traga o retorno tudo junto, sem separar em seções rígidas.`;
 }
