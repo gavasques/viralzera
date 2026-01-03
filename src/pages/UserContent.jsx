@@ -29,7 +29,25 @@ export default function UserContent() {
     enabled: !!selectedFocusId,
   });
 
-  const isLoading = isLoadingIntros || isLoadingCTAs;
+  const { data: descriptionBlocks = [], isLoading: isLoadingBlocks } = useQuery({
+    queryKey: ['description-blocks', selectedFocusId],
+    queryFn: () => base44.entities.DescriptionBlock.filter(
+      selectedFocusId ? { focus_id: selectedFocusId } : {},
+      '-created_date'
+    ),
+    enabled: true
+  });
+
+  const { data: descriptionTemplates = [], isLoading: isLoadingTemplates } = useQuery({
+    queryKey: ['description-templates', selectedFocusId],
+    queryFn: () => base44.entities.DescriptionTemplate.filter(
+      selectedFocusId ? { focus_id: selectedFocusId } : {},
+      '-created_date'
+    ),
+    enabled: true
+  });
+
+  const isLoading = isLoadingIntros || isLoadingCTAs || isLoadingBlocks || isLoadingTemplates;
 
   const handleNew = () => {
     setEditingItem(null);
@@ -46,8 +64,17 @@ export default function UserContent() {
     setEditingItem(null);
   };
 
-  const currentType = activeTab === 'introductions' ? 'introduction' : 'cta';
-  const currentItems = activeTab === 'introductions' ? introductions : ctas;
+  const getContentType = () => {
+    switch (activeTab) {
+      case 'introductions': return 'introduction';
+      case 'ctas': return 'cta';
+      case 'blocks': return 'block';
+      case 'templates': return 'template';
+      default: return 'introduction';
+    }
+  };
+
+  const currentType = getContentType();
 
   if (isLoading) {
     return <PageSkeleton />;
@@ -65,16 +92,27 @@ export default function UserContent() {
         <div className="flex items-center justify-between mb-6">
           <TabsList className="bg-slate-100">
             <TabsTrigger value="introductions" className="data-[state=active]:bg-white">
-              Minhas Introduções
+              Introduções
             </TabsTrigger>
             <TabsTrigger value="ctas" className="data-[state=active]:bg-white">
-              Meus CTAs
+              CTAs
+            </TabsTrigger>
+            <TabsTrigger value="blocks" className="data-[state=active]:bg-white gap-1.5">
+              <Blocks className="w-3.5 h-3.5" />
+              Blocos
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="data-[state=active]:bg-white gap-1.5">
+              <FileText className="w-3.5 h-3.5" />
+              Templates
             </TabsTrigger>
           </TabsList>
 
           <Button onClick={handleNew} className="bg-pink-600 hover:bg-pink-700 text-white">
             <Plus className="w-4 h-4 mr-2" />
-            {activeTab === 'introductions' ? 'Nova Introdução' : 'Novo CTA'}
+            {activeTab === 'introductions' && 'Nova Introdução'}
+            {activeTab === 'ctas' && 'Novo CTA'}
+            {activeTab === 'blocks' && 'Novo Bloco'}
+            {activeTab === 'templates' && 'Novo Template'}
           </Button>
         </div>
 
