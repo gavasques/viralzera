@@ -329,37 +329,45 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
                   <p className="text-sm text-slate-500 mb-3">
                     Clique para copiar o título desejado
                   </p>
-                  {kit.titulos?.map((titulo, idx) => (
-                    <div 
-                      key={idx}
-                      className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-red-200 transition-colors"
-                    >
-                      <span className="text-sm text-slate-800">{titulo}</span>
-                      <CopyButton text={titulo} itemId={`titulo-${idx}`} />
-                    </div>
-                  ))}
+                  {kit.titulos?.length > 0 ? (
+                    kit.titulos.map((titulo, idx) => (
+                      <div 
+                        key={idx}
+                        className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-red-200 transition-colors"
+                      >
+                        <span className="text-sm text-slate-800">{titulo}</span>
+                        <CopyButton text={titulo} itemId={`titulo-${idx}`} />
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400 italic">Nenhum título foi gerado</p>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="thumbnails" className="mt-0 space-y-3">
                   <p className="text-sm text-slate-500 mb-3">
                     Ideias de conceitos visuais para sua thumbnail
                   </p>
-                  {kit.ideias_thumbnail?.map((ideia, idx) => (
-                    <div 
-                      key={idx}
-                      className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-red-100 text-red-700 font-bold text-sm w-7 h-7 rounded-full flex items-center justify-center shrink-0">
-                            {idx + 1}
+                  {kit.ideias_thumbnail?.length > 0 ? (
+                    kit.ideias_thumbnail.map((ideia, idx) => (
+                      <div 
+                        key={idx}
+                        className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-3">
+                            <div className="bg-red-100 text-red-700 font-bold text-sm w-7 h-7 rounded-full flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </div>
+                            <p className="text-sm text-slate-700 leading-relaxed">{ideia}</p>
                           </div>
-                          <p className="text-sm text-slate-700 leading-relaxed">{ideia}</p>
+                          <CopyButton text={ideia} itemId={`thumb-${idx}`} />
                         </div>
-                        <CopyButton text={ideia} itemId={`thumb-${idx}`} />
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400 italic">Nenhuma ideia de thumbnail foi gerada</p>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="descricao" className="mt-0">
@@ -367,13 +375,19 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
                     <p className="text-sm text-slate-500">
                       Descrição otimizada para SEO
                     </p>
-                    <CopyButton text={kit.descricao_completa} itemId="descricao" />
+                    {kit.descricao_completa && (
+                      <CopyButton text={kit.descricao_completa} itemId="descricao" />
+                    )}
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                    <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
-                      {kit.descricao_completa}
-                    </pre>
-                  </div>
+                  {kit.descricao_completa ? (
+                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                      <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
+                        {kit.descricao_completa}
+                      </pre>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400 italic">Nenhuma descrição foi gerada</p>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="tags" className="mt-0">
@@ -381,35 +395,41 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
                     <p className="text-sm text-slate-500">
                       Tags otimizadas para SEO do YouTube
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(kit.tags_seo?.join(', '), 'all-tags')}
-                      className="gap-2"
-                    >
-                      {copiedItem === 'all-tags' ? (
-                        <Check className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                      Copiar todas
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {kit.tags_seo?.map((tag, idx) => (
-                      <Badge 
-                        key={idx}
-                        variant="secondary"
-                        className="px-3 py-1.5 text-sm cursor-pointer hover:bg-red-100 hover:text-red-700 transition-colors"
-                        onClick={() => copyToClipboard(tag, `tag-${idx}`)}
+                    {kit.tags_seo?.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(kit.tags_seo.join(', '), 'all-tags')}
+                        className="gap-2"
                       >
-                        {copiedItem === `tag-${idx}` ? (
-                          <Check className="w-3 h-3 mr-1 text-green-500" />
-                        ) : null}
-                        {tag}
-                      </Badge>
-                    ))}
+                        {copiedItem === 'all-tags' ? (
+                          <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                        Copiar todas
+                      </Button>
+                    )}
                   </div>
+                  {kit.tags_seo?.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {kit.tags_seo.map((tag, idx) => (
+                        <Badge 
+                          key={idx}
+                          variant="secondary"
+                          className="px-3 py-1.5 text-sm cursor-pointer hover:bg-red-100 hover:text-red-700 transition-colors"
+                          onClick={() => copyToClipboard(tag, `tag-${idx}`)}
+                        >
+                          {copiedItem === `tag-${idx}` ? (
+                            <Check className="w-3 h-3 mr-1 text-green-500" />
+                          ) : null}
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400 italic">Nenhuma tag foi gerada</p>
+                  )}
                 </TabsContent>
               </div>
             </Tabs>
