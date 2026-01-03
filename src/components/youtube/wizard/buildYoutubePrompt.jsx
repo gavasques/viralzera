@@ -159,9 +159,9 @@ export function buildYoutubePrompt({
   // Se não há template customizado, usa um padrão
   const baseTemplate = promptTemplate || getDefaultPromptTemplate();
   
-  // Formata introdução e CTA para substituição de placeholders
-  const introContent = introduction ? introduction.content : 'Não especificada';
-  const ctaContent = cta ? cta.content : 'Não especificado';
+  // Formata intro e CTA para substituição nos placeholders
+  const introContent = introduction?.content || 'Não especificada';
+  const ctaContent = cta?.content || 'Não especificado';
 
   // Substitui placeholders
   let finalPrompt = baseTemplate
@@ -175,9 +175,9 @@ export function buildYoutubePrompt({
     .replace(/\{\{intros\}\}/gi, introContent)
     .replace(/\{\{ctas\}\}/gi, ctaContent);
 
-  // Adiciona introdução e CTA ao final se não foram usados via placeholder
-  const hasIntroPlaceholder = baseTemplate.includes('{{intros}}');
-  const hasCtaPlaceholder = baseTemplate.includes('{{ctas}}');
+  // Adiciona introdução e CTA ao final se existirem e se não foram substituídos via placeholders
+  const hasIntroPlaceholder = /\{\{intros\}\}/gi.test(baseTemplate);
+  const hasCtaPlaceholder = /\{\{ctas\}\}/gi.test(baseTemplate);
   
   if (!hasIntroPlaceholder) {
     finalPrompt += formatIntroduction(introduction);
