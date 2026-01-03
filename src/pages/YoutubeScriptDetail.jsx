@@ -20,14 +20,8 @@ import YoutubeScriptHeader from "@/components/youtube/detail/YoutubeScriptHeader
 import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScriptSectionEditor";
 import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
-import YoutubeRightPanel from "@/components/youtube/detail/YoutubeRightPanel";
+import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptChatDrawer";
 import YoutubeKitModal from "@/components/youtube/detail/YoutubeKitModal";
-// import { 
-//   parseScript, 
-//   rebuildScript, 
-//   getEmptySections,
-//   SCRIPT_SECTIONS 
-// } from "@/components/youtube/utils/parseYoutubeScript";
 
 export default function YoutubeScriptDetail() {
   const navigate = useNavigate();
@@ -42,44 +36,14 @@ export default function YoutubeScriptDetail() {
   const [content, setContent] = useState('');
   const [initialData, setInitialData] = useState(null);
   
-  // Refiner drawer state
+  // Drawers & Modals state
   const [refinerOpen, setRefinerOpen] = useState(false);
-  
-  // Title suggestions modal state
+  const [chatOpen, setChatOpen] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
-  
-  // Kit modal state
   const [showKitModal, setShowKitModal] = useState(false);
-
-  // Unsaved changes dialog state
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  
   const pendingNavigation = useRef(null);
-
-  // Right panel state
-  const [showRightPanel, setShowRightPanel] = useState(true);
-  const [rightPanelWidth, setRightPanelWidth] = useState(350);
-  const [isResizing, setIsResizing] = useState(false);
-
-  // Resizing logic
-  const startResizing = React.useCallback(() => setIsResizing(true), []);
-  const stopResizing = React.useCallback(() => setIsResizing(false), []);
-  const resize = React.useCallback((e) => {
-    if (isResizing) {
-      const newWidth = window.innerWidth - e.clientX;
-      if (newWidth > 250 && newWidth < 800) {
-        setRightPanelWidth(newWidth);
-      }
-    }
-  }, [isResizing]);
-
-  useEffect(() => {
-    window.addEventListener("mousemove", resize);
-    window.addEventListener("mouseup", stopResizing);
-    return () => {
-      window.removeEventListener("mousemove", resize);
-      window.removeEventListener("mouseup", stopResizing);
-    };
-  }, [resize, stopResizing]);
 
   // Fetch script data
   const { data: script, isLoading, error } = useQuery({
@@ -198,7 +162,7 @@ export default function YoutubeScriptDetail() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-screen bg-slate-50">
         <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
       </div>
     );
@@ -207,7 +171,7 @@ export default function YoutubeScriptDetail() {
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
+      <div className="flex flex-col items-center justify-center h-screen gap-4 bg-slate-50">
         <p className="text-slate-500">Roteiro não encontrado</p>
         <button 
           onClick={() => navigate(createPageUrl('YoutubeScripts'))}
@@ -220,71 +184,61 @@ export default function YoutubeScriptDetail() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto w-full">
-      <YoutubeScriptHeader
-        title={title}
-        videoType={script?.video_type}
-        status={script?.status}
-        onTitleChange={setTitle}
-        onSave={handleSave}
-        isSaving={saveMutation.isPending}
-        hasChanges={hasChanges}
-        onSuggestTitles={() => setShowTitleModal(true)}
-        onChatOpen={() => setShowRightPanel(true)}
-        onGenerateKit={() => setShowKitModal(true)}
-        onNavigateBack={handleNavigateBack}
-      />
-
-      <div className="flex-1 flex overflow-hidden h-[calc(100vh-140px)]">
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
-          <div className="max-w-4xl mx-auto h-full flex flex-col">
-            <YoutubeScriptSectionEditor
-              sectionKey="corpo"
-              title="Roteiro Completo"
-              description="Edite o conteúdo completo do roteiro"
-              content={content}
-              onChange={(_, val) => setContent(val)}
-              onOpenRefiner={handleOpenRefiner}
-              scriptTitle={title}
-              // Toolbar props
-              videoType={script?.video_type}
-              status={script?.status}
-              onSave={handleSave}
-              isSaving={saveMutation.isPending}
-              hasChanges={hasChanges}
-              onChatToggle={() => setShowRightPanel(prev => !prev)}
-            />
-          </div>
+    <div className="flex flex-col h-screen bg-slate-50/50">
+      {/* Header */}
+      <div className="flex-none bg-white border-b border-slate-200 z-10 sticky top-0">
+        <div className="max-w-7xl mx-auto">
+          <YoutubeScriptHeader
+            title={title}
+            videoType={script?.video_type}
+            status={script?.status}
+            onTitleChange={setTitle}
+            onSave={handleSave}
+            isSaving={saveMutation.isPending}
+            hasChanges={hasChanges}
+            onSuggestTitles={() => setShowTitleModal(true)}
+            onChatOpen={() => setChatOpen(true)}
+            onGenerateKit={() => setShowKitModal(true)}
+            onNavigateBack={handleNavigateBack}
+          />
         </div>
-
-        {/* Right Panel */}
-        {showRightPanel && (
-          <div 
-            className="flex-shrink-0 z-10 relative flex flex-col h-full"
-            style={{ width: rightPanelWidth }}
-          >
-            {/* Resize Handle */}
-            <div
-              className="absolute left-0 top-0 bottom-0 w-1 bg-transparent hover:bg-red-400 cursor-ew-resize z-50 transition-colors"
-              onMouseDown={startResizing}
-            />
-            
-            <YoutubeRightPanel 
-              scriptId={scriptId}
-              scriptContext={{
-                title: title,
-                content: content,
-                videoType: script?.video_type,
-                status: script?.status
-              }}
-              onClose={() => setShowRightPanel(false)}
-            />
-          </div>
-        )}
       </div>
 
-      {/* Refiner Drawer */}
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto p-6 md:p-8 pb-32 min-h-full">
+          <YoutubeScriptSectionEditor
+            sectionKey="corpo"
+            title="Roteiro Completo"
+            description="Edite o conteúdo completo do roteiro"
+            content={content}
+            onChange={(_, val) => setContent(val)}
+            onOpenRefiner={handleOpenRefiner}
+            scriptTitle={title}
+            // Toolbar props
+            videoType={script?.video_type}
+            status={script?.status}
+            onSave={handleSave}
+            isSaving={saveMutation.isPending}
+            hasChanges={hasChanges}
+            onChatToggle={() => setChatOpen(true)}
+          />
+        </div>
+      </div>
+
+      {/* Drawers */}
+      <YoutubeScriptChatDrawer
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        scriptId={scriptId}
+        scriptContext={{
+          title: title,
+          content: content,
+          videoType: script?.video_type,
+          status: script?.status
+        }}
+      />
+
       <RefinerDrawer
         open={refinerOpen}
         onOpenChange={setRefinerOpen}
@@ -299,7 +253,7 @@ export default function YoutubeScriptDetail() {
         onInsertBelow={handleRefinerInsertBelow}
       />
 
-      {/* Title Suggestions Modal */}
+      {/* Modals */}
       <TitleSuggestionsModal
         open={showTitleModal}
         onOpenChange={setShowTitleModal}
@@ -311,7 +265,6 @@ export default function YoutubeScriptDetail() {
         }}
       />
 
-      {/* Kit YouTube Modal */}
       <YoutubeKitModal
         open={showKitModal}
         onOpenChange={setShowKitModal}
