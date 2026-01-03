@@ -109,5 +109,12 @@ export const AGENT_CARDS = [
     description: 'Transforma o prompt bruto em um briefing completo e estruturado',
     icon: Wand2,
     color: 'bg-red-500'
+  },
+  {
+    key: 'youtubeKitGenerator',
+    title: 'YouTube - Gerador de Kit',
+    description: 'Gera títulos, thumbnails, descrição e tags SEO a partir do roteiro',
+    icon: Youtube,
+    color: 'bg-red-600'
   }
 ];

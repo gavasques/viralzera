@@ -585,6 +585,48 @@ Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxon
     ]
   },
 
+  youtubeKitGenerator: {
+    configEntity: 'YoutubeKitGeneratorConfig',
+    title: 'YouTube - Gerador de Kit',
+    defaultPrompt: `# PROMPT PARA O AGENTE GERADOR DE KIT YOUTUBE
+
+## SUA IDENTIDADE
+Você é um Social Media especialista em otimização para YouTube (CTR e SEO).
+
+## SUA MISSÃO
+Baseado no roteiro final, criar um kit completo de publicação. Sua resposta DEVE ser um objeto JSON válido.
+
+## JSON DE SAÍDA
+{
+  "titulos": [
+    "Título Otimizado para CTR #1",
+    "Título com Foco em SEO #2",
+    "Título Polêmico #3",
+    "Título em Formato de Pergunta #4",
+    "Título Direto ao Ponto #5"
+  ],
+  "ideias_thumbnail": [
+    "Conceito 1: Close no rosto do criador com expressão de choque + logo do produto analisado.",
+    "Conceito 2: Gráfico de pizza mostrando um resultado surpreendente + texto grande 'NÃO FAÇA ISSO'.",
+    "Conceito 3: Antes e Depois claro e impactante."
+  ],
+  "descricao_completa": "Descrição otimizada para o vídeo, incluindo um resumo, links importantes e capítulos/timestamps gerados automaticamente a partir da estrutura do roteiro.",
+  "tags_seo": [
+    "tag1",
+    "tag2",
+    "tag3",
+    "tag4",
+    "tag5"
+  ]
+}
+
+## ROTEIRO FINAL
+{{roteiro_final}}`,
+    promptPlaceholders: [
+      { key: '{{roteiro_final}}', description: 'Conteúdo completo do roteiro gerado' }
+    ]
+  },
+
   youtubePromptRefiner: {
     configEntity: 'YoutubePromptRefinerConfig',
     title: 'YouTube - Refinador de Prompt',
