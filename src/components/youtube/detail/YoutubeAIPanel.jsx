@@ -52,25 +52,23 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
 
       // 2. Prepare context
       const systemPrompt = `Você é um assistente especialista em reescrita e otimização de roteiros para YouTube.
-Sua missão é AJUSTAR ou REESCREVER o roteiro com base no feedback do usuário.
+      Sua missão é AJUSTAR ou REESCREVER o roteiro com base no feedback do usuário.
 
-CONTEXTO DO ROTEIRO ATUAL:
-Título: ${scriptContext?.title || 'Sem título'}
-Tipo: ${scriptContext?.videoType || 'Não definido'}
+      CONTEXTO DO ROTEIRO ATUAL:
+      Título: ${scriptContext?.title || 'Sem título'}
+      Tipo: ${scriptContext?.videoType || 'Não definido'}
 
-CONTEÚDO ORIGINAL DO ROTEIRO:
-${scriptContext?.content || '(Roteiro vazio)'}
+      CONTEÚDO ORIGINAL DO ROTEIRO:
+      ${scriptContext?.content || '(Roteiro vazio)'}
 
-INSTRUÇÕES DE FORMATAÇÃO:
-1. Use Markdown para estruturar o texto visualmente.
-2. NUNCA use linhas de caracteres (ex: "________________") para separar seções.
-3. Use Títulos H2 (##) para separar as grandes seções do roteiro.
-4. Use Títulos H3 (###) para subseções ou notas.
-5. Use Negrito (**) para destacar falas ou ações importantes.
-6. Use Citações (>) para notas de direção ou visuais.
-7. Se for reescrever, apresente o roteiro completo e formatado.
+      INSTRUÇÕES DE FORMATAÇÃO:
+      1. Formate sua resposta de forma CLARA e ESTRUTURADA (use Markdown).
+      2. Use Títulos (##) para separar seções. ONDE HOUVER SEPARAÇÃO DE TEMA, USE ##.
+      3. Use Negrito (**) para destaques importantes (ex: nomes de personagens, ações visuais).
+      4. NÃO use linhas horizontais manuais ou caracteres repetidos (ex: "---", "___", "***") para separar seções. Use apenas a estrutura de headers.
+      5. Se for reescrever o roteiro, apresente o novo texto pronto.
 
-O estilo deve ser moderno, limpo e profissional.`;
+      Visual: Para descrições visuais ou de cena, use (Parênteses e Negrito) ou Blockquotes (>).`;
 
       const messages = [
         { role: 'system', content: systemPrompt },
