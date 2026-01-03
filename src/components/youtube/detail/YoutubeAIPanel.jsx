@@ -283,10 +283,8 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
                             size="sm"
                             className="h-7 text-xs gap-1.5 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                             onClick={() => {
-                                if(confirm("Tem certeza que deseja substituir TODO o roteiro atual por este conteúdo?")) {
-                                    onReplaceContent(msg.content);
-                                    toast.success("Roteiro substituído com sucesso");
-                                }
+                                setPendingReplaceContent(msg.content);
+                                setReplaceDialogOpen(true);
                             }}
                           >
                             <RefreshCw className="w-3 h-3" />
