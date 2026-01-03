@@ -275,26 +275,22 @@ export default function YoutubeScriptDetail() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50/50">
+    <div className="flex flex-col h-screen bg-[#F9FAFB]">
       {/* Header */}
-      <div className="flex-none bg-white border-b border-slate-200 z-10 sticky top-0">
-        <div className="max-w-7xl mx-auto">
-          <YoutubeScriptHeader
-            title={title}
-            videoType={script?.video_type}
-            status={script?.status}
-            onTitleChange={setTitle}
-            onSave={handleSave}
-            isSaving={saveMutation.isPending}
-            hasChanges={hasChanges}
-            onSuggestTitles={() => setShowTitleModal(true)}
-            onChatOpen={() => setChatOpen(true)}
-            onGenerateKit={() => setShowKitModal(true)}
-            onNavigateBack={handleNavigateBack}
-            onHistoryOpen={() => setHistoryOpen(true)}
-          />
-        </div>
-      </div>
+      <YoutubeScriptHeader
+        title={title}
+        videoType={script?.video_type}
+        status={script?.status}
+        onTitleChange={setTitle}
+        onSave={handleSave}
+        isSaving={saveMutation.isPending}
+        hasChanges={hasChanges}
+        onSuggestTitles={() => setShowTitleModal(true)}
+        onChatOpen={() => setChatOpen(true)}
+        onGenerateKit={() => setShowKitModal(true)}
+        onNavigateBack={handleNavigateBack}
+        onHistoryOpen={() => setHistoryOpen(true)}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden flex">
