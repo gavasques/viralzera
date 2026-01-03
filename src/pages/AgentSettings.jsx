@@ -28,7 +28,7 @@ export default function AgentSettings() {
         'YoutubeScriptEditorConfig', 'YoutubeTitleConfig', 'YoutubeKitGeneratorConfig',
         'YoutubeCreativeDirectiveConfig', 'YoutubeFormatSelectorConfig', 'YoutubePromptRefinerConfig',
         'ModelingAssistantConfig', 'ModelingScraperConfig', 'DossierGeneratorConfig',
-        'ModelingAnalyzerConfig', 'DeepResearchConfig'
+        'ModelingAnalyzerConfig', 'DeepResearchConfig', 'PostTypeConfig'
       ];
       
       const results = await Promise.all(
@@ -52,7 +52,15 @@ export default function AgentSettings() {
 
   // Map agent key to config entity
   const getConfigForAgent = (agentKey) => {
+    // Agentes com customModal (ex: postType/OCR) não têm configEntity no AGENT_CONFIGS
+    // Verifica diretamente nos allConfigs usando o nome da entidade correspondente
     const agentConfig = AGENT_CONFIGS[agentKey];
+    
+    // PostType/OCR usa PostTypeConfig
+    if (agentKey === 'postType') {
+      return allConfigs['PostTypeConfig'] || null;
+    }
+    
     if (!agentConfig?.configEntity) return null;
     return allConfigs[agentConfig.configEntity] || null;
   };
