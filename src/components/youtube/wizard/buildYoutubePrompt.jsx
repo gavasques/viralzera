@@ -71,11 +71,26 @@ function formatAudience(audience) {
 }
 
 /**
- * Formata o dossiê de conteúdo para inclusão no prompt
+ * Formata a diretriz criativa para inclusão no prompt
  */
-function formatDossier(dossierContent) {
-  if (!dossierContent) return 'Nenhum dossiê disponível';
-  return dossierContent;
+function formatCreativeDirective(directive) {
+  if (!directive) return 'Não especificada';
+  
+  const parts = [];
+  if (directive.tese_principal) {
+    parts.push(`**Tese Principal:** ${directive.tese_principal}`);
+  }
+  if (directive.grande_porque) {
+    parts.push(`**Grande Porquê:** ${directive.grande_porque}`);
+  }
+  if (directive.angulo_unico) {
+    parts.push(`**Ângulo Único:** ${directive.angulo_unico}`);
+  }
+  if (directive.conflito_central) {
+    parts.push(`**Conflito Central:** ${directive.conflito_central}`);
+  }
+  
+  return parts.length > 0 ? parts.join('\n') : 'Não especificada';
 }
 
 /**
@@ -107,6 +122,7 @@ function formatCTA(cta) {
  * @param {string} params.userNotes - Notas adicionais do usuário
  * @param {number} params.duracaoEstimada - Duração estimada em minutos
  * @param {string} params.videoType - Nome do tipo de vídeo
+ * @param {Object} params.creativeDirective - Diretriz criativa gerada pela IA
  */
 export function buildYoutubePrompt({
   promptTemplate,
@@ -118,7 +134,8 @@ export function buildYoutubePrompt({
   cta,
   userNotes,
   duracaoEstimada,
-  videoType
+  videoType,
+  creativeDirective
 }) {
   // Se não há template customizado, usa um padrão
   const baseTemplate = promptTemplate || getDefaultPromptTemplate();
@@ -134,9 +151,10 @@ export function buildYoutubePrompt({
     .replace(/\{\{duracao\}\}/gi, duracaoEstimada ? `${duracaoEstimada} minutos (considerando velocidade média de fala de 130 palavras/min, o roteiro deve ter aproximadamente ${parseInt(duracaoEstimada) * 130} palavras)` : 'Não especificada')
     .replace(/\{\{persona\}\}/gi, formatPersona(persona))
     .replace(/\{\{publico\}\}/gi, formatAudience(audience))
-    .replace(/\{\{dossie\}\}/gi, formatDossier(dossierContent))
-    .replace(/\{\{materiais\}\}/gi, formatDossier(dossierContent))
-    .replace(/\{\{modelagens\}\}/gi, formatDossier(dossierContent))
+    .replace(/\{\{dossie\}\}/gi, dossierContent || 'Nenhum dossiê disponível')
+    .replace(/\{\{materiais\}\}/gi, dossierContent || 'Nenhum material disponível')
+    .replace(/\{\{modelagens\}\}/gi, dossierContent || 'Nenhuma modelagem disponível')
+    .replace(/\{\{diretriz_criativa\}\}/gi, formatCreativeDirective(creativeDirective))
     .replace(/\{\{intros\}\}/gi, introContent)
     .replace(/\{\{ctas\}\}/gi, ctaContent);
 
@@ -190,10 +208,15 @@ INICIO PÚBLICO-ALVO
 {{publico}}
 FIM PÚBLICO-ALVO
 
-## DOSSIÊ DE INTELIGÊNCIA
-INICIO DOSSIÊ DE INTELIGÊNCIA
+## DIRETRIZ CRIATIVA
+INICIO DIRETRIZ CRIATIVA
+{{diretriz_criativa}}
+FIM DIRETRIZ CRIATIVA
+
+## DOSSIÊ DE CONTEÚDO (MATERIAIS E REFERÊNCIAS)
+INICIO DOSSIÊ DE CONTEÚDO
 {{dossie}}
-FIM DOSSIÊ DE INTELIGÊNCIA
+FIM DOSSIÊ DE CONTEÚDO
 
 ---
 
@@ -205,7 +228,8 @@ O roteiro deve fluir naturalmente, contendo Hook, Apresentação, Conteúdo Prin
 O roteiro deve:
 - Usar o tom de voz da persona
 - Falar diretamente com o público-alvo
-- Incorporar referências do dossiê de inteligência
+- Incorporar referências dos materiais selecionados
+- Seguir o estilo das modelagens de sucesso
 - Ser escrito como um texto único e coeso, pronto para gravação.
 - Traga o retorno tudo junto, sem separar em seções rígidas.`;
 }
