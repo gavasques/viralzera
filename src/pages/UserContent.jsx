@@ -161,6 +161,52 @@ export default function UserContent() {
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="blocks" className="mt-0">
+          {descriptionBlocks.length === 0 ? (
+            <EmptyState
+              icon={Blocks}
+              title="Nenhum bloco cadastrado"
+              description="Crie blocos reutilizáveis como links de redes sociais, ferramentas, patrocinadores"
+              actionLabel="Criar Bloco"
+              onAction={handleNew}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {descriptionBlocks.map((item) => (
+                <UserContentCard
+                  key={item.id}
+                  item={item}
+                  type="block"
+                  onEdit={() => handleEdit(item)}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-0">
+          {descriptionTemplates.length === 0 ? (
+            <EmptyState
+              icon={FileText}
+              title="Nenhum template cadastrado"
+              description="Crie templates de descrição para YouTube com placeholders personalizados"
+              actionLabel="Criar Template"
+              onAction={handleNew}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {descriptionTemplates.map((item) => (
+                <UserContentCard
+                  key={item.id}
+                  item={item}
+                  type="template"
+                  onEdit={() => handleEdit(item)}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       <UserContentFormModal
