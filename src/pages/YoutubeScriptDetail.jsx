@@ -36,6 +36,7 @@ export default function YoutubeScriptDetail() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [initialData, setInitialData] = useState(null);
+  const [notesVisible, setNotesVisible] = useState(false);
   
   // Drawers & Modals state
   const [refinerOpen, setRefinerOpen] = useState(false);
