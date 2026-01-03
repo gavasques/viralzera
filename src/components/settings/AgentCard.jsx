@@ -1,9 +1,23 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Globe, Brain, Bot } from "lucide-react";
 
-export default function AgentCard({ agent, onClick }) {
+export default function AgentCard({ agent, config, onClick }) {
   const IconComponent = agent.icon;
+
+  // Extrai nome do modelo (simplificado)
+  const getModelShortName = (modelId) => {
+    if (!modelId) return null;
+    // Pega só a parte após a barra (ex: "openai/gpt-4o" -> "gpt-4o")
+    const parts = modelId.split('/');
+    return parts[parts.length - 1];
+  };
+
+  const modelName = config?.model_name || getModelShortName(config?.model);
+  const hasWebSearch = config?.enable_web_search;
+  const hasReasoning = config?.enable_reasoning;
 
   return (
     <Card 
@@ -24,6 +38,35 @@ export default function AgentCard({ agent, onClick }) {
             </p>
           </div>
         </div>
+        
+        {/* Status do Agente */}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {modelName ? (
+            <Badge variant="secondary" className="text-xs font-normal gap-1 bg-slate-100 text-slate-600">
+              <Bot className="w-3 h-3" />
+              {modelName}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-xs font-normal text-amber-600 border-amber-200 bg-amber-50">
+              Não configurado
+            </Badge>
+          )}
+          
+          {hasWebSearch && (
+            <Badge className="text-xs font-normal gap-1 bg-blue-100 text-blue-700 hover:bg-blue-100">
+              <Globe className="w-3 h-3" />
+              Web
+            </Badge>
+          )}
+          
+          {hasReasoning && (
+            <Badge className="text-xs font-normal gap-1 bg-purple-100 text-purple-700 hover:bg-purple-100">
+              <Brain className="w-3 h-3" />
+              Reasoning
+            </Badge>
+          )}
+        </div>
+        
         <div className="mt-4 pt-3 border-t flex justify-end">
           <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-700">
             Configurar
