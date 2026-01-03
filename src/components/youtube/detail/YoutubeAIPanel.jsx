@@ -2,6 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Send, Trash2, Bot, User, MessageSquareText, Sparkles } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -9,7 +19,7 @@ import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
 
-import { Copy, RefreshCw, ArrowDown, FileText } from "lucide-react";
+import { Copy, RefreshCw, ArrowDown, FileText, AlertTriangle } from "lucide-react";
 
 export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceContent, onInsertContent }) {
   const queryClient = useQueryClient();
