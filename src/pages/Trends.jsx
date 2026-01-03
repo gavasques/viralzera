@@ -77,6 +77,7 @@ export default function Trends() {
       const result = await searchTrends({
         model: trendConfig.search_model,
         prompt,
+        maxTokens: trendConfig.max_tokens || 32000,
       });
 
       setSearchResults({
