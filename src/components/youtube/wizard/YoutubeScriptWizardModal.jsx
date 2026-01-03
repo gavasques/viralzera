@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, Lightbulb, Video, Users, Database, Library } from "lucide-react";
+import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, Lightbulb, Video, Users, Library } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
@@ -98,17 +98,16 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         formData.ctaId ? base44.entities.UserCTA.get(formData.ctaId) : null
       ]);
 
-      // 4. Buscar o dossiê da modelagem selecionada
+      // 4. Buscar dossiê da modelagem selecionada
       let dossierContent = '';
       if (formData.selectedModelings?.length > 0) {
         const modelingId = formData.selectedModelings[0];
-        const dossiers = await base44.entities.ContentDossier.filter({ modeling_id: modelingId });
-        const dossier = dossiers[0];
+        const dossiers = await base44.entities.ContentDossier.filter({ modeling_id: modelingId }, '-created_date', 1);
         
-        if (!dossier?.full_content) {
+        if (!dossiers || dossiers.length === 0 || !dossiers[0].full_content) {
           throw new Error('A modelagem selecionada não possui um Dossiê gerado. Por favor, gere o dossiê antes de criar o roteiro.');
         }
-        dossierContent = dossier.full_content;
+        dossierContent = dossiers[0].full_content;
       }
 
       // 5. Montar o prompt final usando o template do tipo de roteiro
@@ -122,7 +121,8 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         cta,
         userNotes: formData.userNotes,
         duracaoEstimada: formData.duracaoEstimada,
-        videoType: scriptType.title
+        videoType: scriptType.title,
+        creativeDirective: formData.creativeDirective
       });
 
       // 6. Chamar OpenRouter diretamente
