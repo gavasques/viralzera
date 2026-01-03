@@ -3,7 +3,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, MessageSquareText } from "lucide-react";
+import { Loader2, Save, MessageSquareText, Sparkles } from "lucide-react";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
 
@@ -190,8 +190,8 @@ export default function YoutubeScriptSectionEditor({
                 onClick={onChatToggle}
                 className="h-9 px-3 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all rounded-full"
             >
-                <MessageSquareText className="w-4 h-4 mr-2" />
-                Chat IA
+                <Sparkles className="w-4 h-4 mr-2" />
+                Recriar com IA
             </Button>
 
             <div className="w-px h-6 bg-slate-100 mx-2" />

@@ -282,6 +282,8 @@ export default function YoutubeScriptDetail() {
           videoType: script?.video_type,
           status: script?.status
         }}
+        onReplaceContent={(newContent) => setContent(newContent)}
+        onInsertContent={(newContent) => setContent(prev => prev + '\n\n' + newContent)}
       />
 
       <RefinerDrawer

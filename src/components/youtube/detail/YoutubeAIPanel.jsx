@@ -9,10 +9,20 @@ import { toast } from "sonner";
 import ReactMarkdown from 'react-markdown';
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
 
-export default function YoutubeAIPanel({ scriptId, scriptContext }) {
+import { Copy, RefreshCw, ArrowDown, FileText } from "lucide-react";
+
+export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceContent, onInsertContent }) {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
   const scrollRef = useRef(null);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const handleCopy = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success("Copiado!");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   // Fetch chat history
   const { data: chatHistory = [], isLoading } = useQuery({
@@ -41,21 +51,24 @@ export default function YoutubeAIPanel({ scriptId, scriptContext }) {
       });
 
       // 2. Prepare context
-      const systemPrompt = `Você é um assistente especialista em roteiros do YouTube. 
-Você está ajudando o usuário a editar um roteiro específico.
+      const systemPrompt = `Você é um assistente especialista em reescrita e otimização de roteiros para YouTube.
+Sua missão é AJUSTAR ou REESCREVER o roteiro com base no feedback do usuário.
 
 CONTEXTO DO ROTEIRO ATUAL:
 Título: ${scriptContext?.title || 'Sem título'}
 Tipo: ${scriptContext?.videoType || 'Não definido'}
-Status: ${scriptContext?.status || 'Rascunho'}
 
-CONTEÚDO DO ROTEIRO:
+CONTEÚDO ORIGINAL DO ROTEIRO:
 ${scriptContext?.content || '(Roteiro vazio)'}
 
-MISSÃO:
-Ajude o usuário a melhorar, expandir, reescrever ou ter novas ideias para este roteiro.
-Seja direto e útil.
-Responda em Português do Brasil.`;
+INSTRUÇÕES DE FORMATAÇÃO:
+1. Formate sua resposta de forma CLARA e ESTRUTURADA (use Markdown).
+2. Use Títulos (##) para separar seções.
+3. Use Negrito (**) para destaques importantes.
+4. Se for reescrever o roteiro ou parte dele, apresente o novo texto de forma clara.
+5. Seja direto, não fique de conversinha. Entregue o que foi pedido.
+
+Se o usuário pedir para reescrever, entregue o novo texto pronto para uso.`;
 
       const messages = [
         { role: 'system', content: systemPrompt },
@@ -131,8 +144,8 @@ Responda em Português do Brasil.`;
     <div className="flex flex-col h-full w-full bg-white">
       <div className="flex items-center justify-between p-4 pr-12 border-b border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-2">
-            <Bot className="w-4 h-4 text-red-600" />
-            <h3 className="text-sm font-semibold text-slate-700">Assistente IA</h3>
+            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <h3 className="text-sm font-semibold text-slate-700">Recriar com IA</h3>
         </div>
         {chatHistory.length > 0 && (
           <Button
@@ -141,7 +154,7 @@ Responda em Português do Brasil.`;
             className="h-6 w-6 text-slate-400 hover:text-red-500"
             onClick={() => clearMutation.mutate()}
             disabled={clearMutation.isPending}
-            title="Limpar chat"
+            title="Limpar histórico"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
@@ -155,13 +168,13 @@ Responda em Português do Brasil.`;
             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
           </div>
         ) : chatHistory.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
-                <Sparkles className="w-6 h-6 text-red-400" />
+          <div className="flex flex-col items-center justify-center py-12 text-center px-6">
+            <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mb-3">
+                <RefreshCw className="w-6 h-6 text-indigo-500" />
             </div>
-            <p className="text-slate-600 font-medium text-sm mb-1">Como posso ajudar?</p>
-            <p className="text-slate-400 text-xs max-w-[200px]">
-              Peça ideias, melhorias ou edições para seu roteiro.
+            <p className="text-slate-700 font-medium text-sm mb-2">Recriar ou Ajustar Roteiro</p>
+            <p className="text-slate-500 text-xs max-w-[280px] leading-relaxed">
+              Diga o que você quer mudar no roteiro atual. Ex: "Reescreva com tom mais agressivo", "Adicione uma piada na introdução", "Simplifique a explicação técnica".
             </p>
           </div>
         ) : (
@@ -184,17 +197,75 @@ Responda em Português do Brasil.`;
                   }`}
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 break-words overflow-hidden">
-                      <ReactMarkdown
-                        components={{
-                          pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-2 bg-slate-800 rounded-md p-2 text-white"><pre {...props} /></div>,
-                          code: ({node, inline, ...props}) => inline 
-                            ? <code className="bg-slate-200 px-1 py-0.5 rounded text-red-600 font-mono text-xs" {...props} />
-                            : <code className="bg-transparent text-white font-mono text-xs whitespace-pre-wrap break-words" {...props} />
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
+                    <div className="flex flex-col gap-3">
+                      <div className="prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 break-words overflow-hidden text-slate-700">
+                        <ReactMarkdown
+                          components={{
+                            pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-3 bg-slate-800 rounded-lg p-3 text-white shadow-sm"><pre {...props} /></div>,
+                            code: ({node, inline, ...props}) => inline 
+                              ? <code className="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono text-xs border border-slate-200" {...props} />
+                              : <code className="bg-transparent text-white font-mono text-xs whitespace-pre-wrap break-words" {...props} />,
+                            h1: ({node, ...props}) => <h1 className="text-lg font-bold text-slate-900 mt-4 mb-2 border-b pb-1" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-base font-bold text-slate-800 mt-3 mb-2" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-2 leading-relaxed" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc pl-4 space-y-1 mb-2" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal pl-4 space-y-1 mb-2" {...props} />,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                      
+                      {/* Action Buttons for Assistant Response */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 mt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1.5 bg-white"
+                          onClick={() => handleCopy(msg.content, msg.id)}
+                        >
+                          {copiedId === msg.id ? (
+                            <span className="text-green-600 font-medium">Copiado!</span>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3 text-slate-400" />
+                              Copiar
+                            </>
+                          )}
+                        </Button>
+                        
+                        {onInsertContent && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5 bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                            onClick={() => {
+                                onInsertContent(msg.content);
+                                toast.success("Conteúdo inserido abaixo do roteiro atual");
+                            }}
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                            Incluir Abaixo
+                          </Button>
+                        )}
+
+                        {onReplaceContent && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                            onClick={() => {
+                                if(confirm("Tem certeza que deseja substituir TODO o roteiro atual por este conteúdo?")) {
+                                    onReplaceContent(msg.content);
+                                    toast.success("Roteiro substituído com sucesso");
+                                }
+                            }}
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            Substituir Tudo
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-sm text-white whitespace-pre-wrap break-words overflow-hidden leading-relaxed">
