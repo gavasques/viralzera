@@ -173,10 +173,13 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         // Normalizar nomes de propriedades (IA pode usar variações)
         const normalizedKit = {
           titulos: parsedKit.titulos || parsedKit.titles || parsedKit.titulo || [],
-          ideias_thumbnail: parsedKit.ideias_thumbnail || parsedKit.thumbnails || parsedKit.thumbnail_ideas || parsedKit.ideias_thumbnails || [],
-          descricao_completa: parsedKit.descricao_completa || parsedKit.descricao || parsedKit.description || parsedKit.desc || '',
-          tags_seo: parsedKit.tags_seo || parsedKit.tags || parsedKit.keywords || []
+          ideias_thumbnail: parsedKit.ideias_thumbnail || parsedKit.thumbnails || parsedKit.thumbnail_ideas || parsedKit.ideias_thumbnails || parsedKit.ideas_thumbnail || [],
+          descricao_completa: parsedKit.descricao_completa || parsedKit.descricao || parsedKit.description || parsedKit.desc || parsedKit.full_description || parsedKit.descricao_final || '',
+          tags_seo: parsedKit.tags_seo || parsedKit.tags || parsedKit.keywords || parsedKit.seo_tags || []
         };
+        
+        console.log('Original keys from AI:', Object.keys(parsedKit));
+        console.log('descricao_completa value:', normalizedKit.descricao_completa);
         
         // Garantir que arrays são arrays
         if (!Array.isArray(normalizedKit.titulos)) {
