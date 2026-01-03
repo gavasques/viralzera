@@ -594,7 +594,19 @@ Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxon
 Você é um Social Media especialista em otimização para YouTube (CTR e SEO).
 
 ## SUA MISSÃO
-Baseado no roteiro final, criar um kit completo de publicação. Sua resposta DEVE ser um objeto JSON válido.
+Baseado no roteiro final e no template de descrição fornecido, criar um kit completo de publicação. Sua resposta DEVE ser um objeto JSON válido.
+
+## INSTRUÇÕES PARA A DESCRIÇÃO
+Se um template de descrição for fornecido na mensagem do usuário:
+1. Use o template como BASE para a descrição final
+2. Substitua os placeholders pelos valores gerados:
+   - {{resumo_video}} → Gere um resumo atraente do vídeo (2-3 parágrafos)
+   - {{timestamps}} → Gere timestamps/capítulos baseados na estrutura do roteiro
+   - {{tags}} → Liste as tags SEO geradas
+3. MANTENHA todos os blocos de conteúdo fixo (links, redes sociais, etc.) que já estão no template
+4. O resultado em "descricao_completa" deve ser a descrição final pronta para copiar e colar
+
+Se NÃO houver template, gere uma descrição completa otimizada para SEO.
 
 ## JSON DE SAÍDA
 {
@@ -610,7 +622,7 @@ Baseado no roteiro final, criar um kit completo de publicação. Sua resposta DE
     "Conceito 2: Gráfico de pizza mostrando um resultado surpreendente + texto grande 'NÃO FAÇA ISSO'.",
     "Conceito 3: Antes e Depois claro e impactante."
   ],
-  "descricao_completa": "Descrição otimizada para o vídeo, incluindo um resumo, links importantes e capítulos/timestamps gerados automaticamente a partir da estrutura do roteiro.",
+  "descricao_completa": "Descrição completa e formatada, usando o template como base se fornecido, com todos os placeholders substituídos.",
   "tags_seo": [
     "tag1",
     "tag2",
@@ -621,9 +633,13 @@ Baseado no roteiro final, criar um kit completo de publicação. Sua resposta DE
 }
 
 ## ROTEIRO FINAL
-{{roteiro_final}}`,
+{{roteiro_final}}
+
+## TEMPLATE DE DESCRIÇÃO (se fornecido)
+{{template_descricao}}`,
     promptPlaceholders: [
-      { key: '{{roteiro_final}}', description: 'Conteúdo completo do roteiro gerado' }
+      { key: '{{roteiro_final}}', description: 'Conteúdo completo do roteiro gerado' },
+      { key: '{{template_descricao}}', description: 'Template de descrição com placeholders processados' }
     ]
   },
 

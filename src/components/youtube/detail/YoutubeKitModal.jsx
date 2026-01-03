@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
+import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { toast } from "sonner";
 import { 
   Loader2, 
@@ -15,13 +25,76 @@ import {
   Tags, 
   Copy, 
   Check,
-  RefreshCw
+  RefreshCw,
+  FileCode
 } from "lucide-react";
 
 export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scriptTitle }) {
+  const { selectedFocusId } = useSelectedFocus();
   const [isGenerating, setIsGenerating] = useState(false);
   const [kit, setKit] = useState(null);
   const [copiedItem, setCopiedItem] = useState(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+
+  // Buscar templates de descrição
+  const { data: templates = [] } = useQuery({
+    queryKey: ['description-templates', selectedFocusId],
+    queryFn: () => base44.entities.DescriptionTemplate.filter(
+      selectedFocusId ? { focus_id: selectedFocusId } : {},
+      '-created_date'
+    ),
+    enabled: open
+  });
+
+  // Buscar blocos de descrição
+  const { data: blocks = [] } = useQuery({
+    queryKey: ['description-blocks', selectedFocusId],
+    queryFn: () => base44.entities.DescriptionBlock.filter(
+      selectedFocusId ? { focus_id: selectedFocusId } : {},
+      'title'
+    ),
+    enabled: open
+  });
+
+  // Auto-selecionar template padrão
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplateId) {
+      const defaultTemplate = templates.find(t => t.is_default);
+      if (defaultTemplate) {
+        setSelectedTemplateId(defaultTemplate.id);
+      } else {
+        setSelectedTemplateId(templates[0].id);
+      }
+    }
+  }, [templates, selectedTemplateId]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setKit(null);
+      setSelectedTemplateId('');
+    }
+  }, [open]);
+
+  /**
+   * Processa o template substituindo placeholders de blocos
+   */
+  const processBlockPlaceholders = (templateContent) => {
+    let processed = templateContent;
+    
+    // Regex para encontrar {{bloco:slug}}
+    const blockRegex = /\{\{bloco:([a-z0-9_]+)\}\}/gi;
+    
+    processed = processed.replace(blockRegex, (match, slug) => {
+      const block = blocks.find(b => b.slug.toLowerCase() === slug.toLowerCase());
+      if (block) {
+        return block.content;
+      }
+      return `[Bloco não encontrado: ${slug}]`;
+    });
+    
+    return processed;
+  };
 
   const generateKit = async () => {
     if (!scriptContent) {
@@ -39,15 +112,37 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         throw new Error('Configure o agente "YouTube - Gerador de Kit" em Configurações de Agentes');
       }
 
+      // Buscar template selecionado
+      let templateContent = '';
+      if (selectedTemplateId) {
+        const template = await base44.entities.DescriptionTemplate.get(selectedTemplateId);
+        if (template) {
+          // Processa os blocos dentro do template
+          templateContent = processBlockPlaceholders(template.content);
+        }
+      }
+
       // Preparar prompt com substituição do placeholder
       let systemPrompt = config.prompt || '';
       systemPrompt = systemPrompt.replace('{{roteiro_final}}', scriptContent);
+      
+      // Adicionar template ao prompt se existir
+      if (templateContent) {
+        systemPrompt = systemPrompt.replace('{{template_descricao}}', templateContent);
+      }
+
+      // Construir mensagem do usuário
+      let userMessage = `Gere o kit completo de publicação para o seguinte roteiro:\n\n${scriptContent}`;
+      
+      if (templateContent) {
+        userMessage += `\n\n---\n\n## TEMPLATE DE DESCRIÇÃO (use este formato base e substitua os placeholders)\n\n${templateContent}`;
+      }
 
       const response = await sendMessage({
         model: config.model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Gere o kit completo de publicação para o seguinte roteiro:\n\n${scriptContent}` }
+          { role: 'user', content: userMessage }
         ],
         options: {
           enableReasoning: config.enable_reasoning || false,
@@ -109,10 +204,11 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         </DialogHeader>
 
         {!kit && !isGenerating && (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
+          <div className="flex flex-col items-center justify-center py-8 gap-6">
             <div className="bg-red-50 p-4 rounded-full">
               <Sparkles className="w-10 h-10 text-red-500" />
             </div>
+            
             <div className="text-center">
               <h3 className="font-semibold text-lg text-slate-900 mb-1">Gerar Kit de Publicação</h3>
               <p className="text-sm text-slate-500 max-w-md">
@@ -120,9 +216,39 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
                 descrição completa e tags SEO.
               </p>
             </div>
+
+            {/* Template Selection */}
+            <div className="w-full max-w-md space-y-2">
+              <Label className="flex items-center gap-2">
+                <FileCode className="w-4 h-4" />
+                Template de Descrição
+              </Label>
+              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um template (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum (IA gera livremente)</SelectItem>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.title}
+                      {template.is_default && ' ⭐'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-400">
+                {templates.length === 0 
+                  ? 'Nenhum template cadastrado. Crie em Admin Zone > Templates de Descrição.'
+                  : 'O template define a estrutura da descrição com seus blocos personalizados.'
+                }
+              </p>
+            </div>
+
             <Button 
               onClick={generateKit} 
               className="bg-red-600 hover:bg-red-700 mt-2"
+              disabled={!scriptContent}
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Gerar Kit Agora
@@ -144,7 +270,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={generateKit}
+                onClick={() => setKit(null)}
                 className="gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
