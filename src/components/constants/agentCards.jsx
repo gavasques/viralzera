@@ -1,6 +1,6 @@
 import { 
   Users, User, Package, Library, Dna, 
-  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, BrainCircuit, Youtube, Wand2 
+  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, BrainCircuit, Youtube, Wand2, PenLine 
 } from 'lucide-react';
 
 export const AGENT_CARDS = [
@@ -116,5 +116,12 @@ export const AGENT_CARDS = [
     description: 'Gera títulos, thumbnails, descrição e tags SEO a partir do roteiro',
     icon: Youtube,
     color: 'bg-red-600'
+  },
+  {
+    key: 'youtubeScriptEditor',
+    title: 'Roteiros - Edição Notion',
+    description: 'Agente para edição de trechos selecionados (Melhorar, Expandir, Resumir)',
+    icon: PenLine,
+    color: 'bg-indigo-600'
   }
 ];
