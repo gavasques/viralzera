@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, Lightbulb, Video, Users, Library } from "lucide-react";
+import { Youtube, ArrowRight, ArrowLeft, Sparkles, Check, Lightbulb, Video, Users, Library, Loader2 } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import { StepUserContent } from "./steps/StepUserContent";
 import { buildYoutubePrompt } from "./buildYoutubePrompt";
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
 import { Target } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const STEPS = [
   { id: 'tema', title: 'Tema Central', description: 'Assunto do vídeo', icon: Lightbulb },
@@ -46,6 +47,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
   const { selectedFocusId } = useSelectedFocus();
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState('');
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
   useEffect(() => {
@@ -134,6 +136,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       let finalPrompt = initialPrompt;
       
       if (refinerConfig?.model && refinerConfig?.prompt) {
+        setGenerationStep('Refinando o briefing criativo...');
         console.log('Refinando prompt com agente YoutubePromptRefiner...');
         
         const refinerResponse = await sendMessage({
@@ -155,6 +158,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       }
 
       // 7. Chamar OpenRouter para gerar o roteiro final
+      setGenerationStep('Gerando o roteiro completo...');
       const aiResponse = await sendMessage({
         model: agentConfig.model,
         messages: [
@@ -170,6 +174,8 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       });
 
       const generatedContent = aiResponse.content;
+
+      setGenerationStep('Salvando roteiro...');
 
       // 8. Criar registro do YoutubeScript
       const newScript = await base44.entities.YoutubeScript.create({
@@ -294,6 +300,58 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
             </p>
           </div>
         </div>
+
+        {/* Loading Overlay */}
+        <AnimatePresence>
+          {isGenerating && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center"
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="flex flex-col items-center text-center px-8"
+              >
+                <div className="relative mb-6">
+                  <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
+                    <Youtube className="w-10 h-10 text-red-600" />
+                  </div>
+                  <motion.div 
+                    className="absolute inset-0 rounded-full border-4 border-red-500 border-t-transparent"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
+                  Criando seu roteiro...
+                </h3>
+                
+                <motion.p 
+                  key={generationStep}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-slate-600 mb-6"
+                >
+                  {generationStep || 'Preparando dados...'}
+                </motion.p>
+
+                <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-100 px-4 py-2 rounded-full">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Aguarde, isso pode levar alguns segundos</span>
+                </div>
+
+                <p className="text-xs text-slate-400 mt-6 max-w-xs">
+                  💡 Não feche esta janela. A IA está trabalhando no seu roteiro personalizado.
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
