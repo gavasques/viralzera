@@ -73,9 +73,14 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // 1. Buscar configurações do agente (modelo e prompt do sistema)
-      const agentConfigs = await base44.entities.YoutubeGeneratorConfig.filter({});
-      const agentConfig = agentConfigs[0];
+      // 1. Buscar configurações dos agentes (refinador e gerador) em paralelo
+      const [refinerConfigs, generatorConfigs] = await Promise.all([
+        base44.entities.YoutubePromptRefinerConfig.filter({}),
+        base44.entities.YoutubeGeneratorConfig.filter({})
+      ]);
+      
+      const refinerConfig = refinerConfigs[0];
+      const agentConfig = generatorConfigs[0];
 
       if (!agentConfig?.model) {
         throw new Error('Modelo de IA não configurado. Peça ao administrador para configurar em Configurações de Agentes.');
@@ -110,8 +115,8 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         dossierContent = dossiers[0].full_content;
       }
 
-      // 5. Montar o prompt final usando o template do tipo de roteiro
-      const finalPrompt = buildYoutubePrompt({
+      // 5. Montar o prompt inicial usando o template do tipo de roteiro
+      const initialPrompt = buildYoutubePrompt({
         promptTemplate: scriptType.prompt_template,
         tema: formData.tema,
         persona,
@@ -125,7 +130,31 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         creativeDirective: formData.creativeDirective
       });
 
-      // 6. Chamar OpenRouter diretamente
+      // 6. ETAPA DE REFINAMENTO: Se o refinador estiver configurado, refinar o prompt antes de gerar
+      let finalPrompt = initialPrompt;
+      
+      if (refinerConfig?.model && refinerConfig?.prompt) {
+        console.log('Refinando prompt com agente YoutubePromptRefiner...');
+        
+        const refinerResponse = await sendMessage({
+          model: refinerConfig.model,
+          messages: [
+            { role: 'system', content: refinerConfig.prompt },
+            { role: 'user', content: initialPrompt }
+          ],
+          options: {
+            enableReasoning: refinerConfig.enable_reasoning || false,
+            reasoningEffort: refinerConfig.reasoning_effort || 'medium',
+            enableWebSearch: refinerConfig.enable_web_search || false,
+            feature: 'YoutubePromptRefiner'
+          }
+        });
+        
+        finalPrompt = refinerResponse.content;
+        console.log('Prompt refinado com sucesso!');
+      }
+
+      // 7. Chamar OpenRouter para gerar o roteiro final
       const aiResponse = await sendMessage({
         model: agentConfig.model,
         messages: [
@@ -142,7 +171,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
 
       const generatedContent = aiResponse.content;
 
-      // 7. Criar registro do YoutubeScript
+      // 8. Criar registro do YoutubeScript
       const newScript = await base44.entities.YoutubeScript.create({
         title: formData.tema.substring(0, 100),
         video_type: scriptType.title,
@@ -153,7 +182,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         modeling_ids: formData.selectedModelings || []
       });
 
-      // 8. Salvar histórico inicial no chat para continuação
+      // 9. Salvar histórico inicial no chat para continuação
       try {
         await Promise.all([
           base44.entities.YoutubeScriptChat.create({
