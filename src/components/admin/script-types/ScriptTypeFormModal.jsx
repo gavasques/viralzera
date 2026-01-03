@@ -137,7 +137,7 @@ export default function ScriptTypeFormModal({ open, onOpenChange, scriptType }) 
               className="min-h-[300px] font-mono text-sm"
             />
             <p className="text-xs text-slate-400">
-              Use placeholders como: {"{{tema}}"}, {"{{persona}}"}, {"{{publico}}"}, {"{{materiais}}"}, {"{{modelagens}}"}
+              Use placeholders como: {"{{tema}}"}, {"{{persona}}"}, {"{{publico}}"}, {"{{materiais}}"}, {"{{modelagens}}"}, {"{{intros}}"}, {"{{ctas}}"}
             </p>
           </div>
 
