@@ -393,16 +393,16 @@ export default function YoutubeScriptSectionEditor({
             .ql-editor {
                 font-family: 'Inter', sans-serif;
                 font-size: 1.125rem;
-                line-height: 1.8;
-                padding: 40px 60px !important;
+                line-height: 1.6;
+                padding: 30px 40px !important;
                 height: 100%;
                 overflow-y: auto;
                 color: #1e293b;
             }
-            .ql-editor h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; color: #0f172a; }
-            .ql-editor h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; }
-            .ql-editor h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #334155; }
-            .ql-editor p { margin-bottom: 1.2rem; }
+            .ql-editor h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; color: #0f172a; }
+            .ql-editor h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1e293b; }
+            .ql-editor h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #334155; }
+            .ql-editor p { margin-bottom: 0.75rem; }
             .ql-editor blockquote { border-left: 4px solid #e2e8f0; padding-left: 1rem; color: #64748b; font-style: italic; }
             `}</style>
             
