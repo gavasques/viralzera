@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { FileText, Video, BookOpen, List, Lightbulb, Target, Layers, MessageSquare, Zap, Sparkles } from "lucide-react";
+import { FileText, Video, BookOpen, List, Lightbulb, Target, Layers, MessageSquare, Zap, Sparkles, Loader2, BrainCircuit } from "lucide-react";
 
 const ICON_MAP = {
   FileText,
