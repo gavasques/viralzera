@@ -156,7 +156,7 @@ export function StepVideoType({ focusId, value, onChange }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[320px] overflow-y-auto pr-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {scriptTypes.map((type, index) => {
           const isSelected = value.videoTypeId === type.id;
           const colorKey = COLORS[index % COLORS.length];

@@ -227,7 +227,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden bg-white h-[600px] flex flex-row" aria-describedby={undefined}>
+      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden bg-white h-[85vh] max-h-[750px] flex flex-row" aria-describedby={undefined}>
         <DialogTitle className="sr-only">Criar Roteiro para YouTube</DialogTitle>
         
         {/* Sidebar Steps */}
