@@ -119,7 +119,7 @@ export async function sendMessage({
     model,
     messages: formattedMessages.map(m => ({ role: m.role, content: m.content })),
     temperature: options.temperature || 0.7,
-    max_tokens: options.maxTokens || 4000,
+    max_tokens: options.maxTokens || 32000,
   };
 
   // Adiciona web search se habilitado
