@@ -220,51 +220,82 @@ export default function YoutubeScriptSectionEditor({
     ? `~${estimatedSeconds}s`
     : `~${Math.round(estimatedSeconds / 60)}min`;
 
+  const handleCopy = async () => {
+    const text = htmlToMarkdown(content);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Roteiro copiado (Markdown)');
+    } catch (err) {
+      toast.error('Erro ao copiar');
+    }
+  };
+
+  const handleDownloadTxt = () => {
+    const text = htmlToMarkdown(content);
+    const fileName = `${scriptTitle || 'roteiro'}.txt`.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
+    
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Roteiro baixado como TXT');
+  };
+
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Modern Editor Header */}
         <div className="flex flex-col gap-4 px-6 pt-5 pb-2 bg-white">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             {/* Left: Info & Metadata */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                  {title}
-                </h3>
-                <div className="flex items-center gap-2">
-                  {status && (
-                    <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-md ${STATUS_COLORS[status] || "bg-slate-100 text-slate-600"}`}>
-                      {status}
-                    </Badge>
-                  )}
-                  {videoType && (
-                    <Badge variant="outline" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-md border-0 ${VIDEO_TYPE_COLORS[videoType] || "bg-slate-100 text-slate-600"}`}>
-                      {videoType.replace(/_/g, ' ')}
-                    </Badge>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                {title}
+              </h3>
               
-              <div className="flex items-center gap-6 text-xs text-slate-500">
-                <span className="max-w-[200px] truncate" title={description}>{description}</span>
-                
-                <div className="flex items-center gap-4 pl-4 border-l border-slate-100">
-                  <div className="flex flex-col">
-                     <span className="font-bold text-slate-700 tabular-nums text-sm leading-none">{charCount.toLocaleString()}</span>
-                     <span className="text-[10px] text-slate-400">caracteres</span>
-                  </div>
-                  <div className="flex flex-col">
-                     <span className="font-bold text-slate-700 tabular-nums text-sm leading-none">{estimatedTime}</span>
-                     <span className="text-[10px] text-slate-400">leitura</span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                {status && (
+                  <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-md ${STATUS_COLORS[status] || "bg-slate-100 text-slate-600"}`}>
+                    {status}
+                  </Badge>
+                )}
+                {videoType && (
+                  <Badge variant="outline" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-md border-0 ${VIDEO_TYPE_COLORS[videoType] || "bg-slate-100 text-slate-600"}`}>
+                    {videoType.replace(/_/g, ' ')}
+                  </Badge>
+                )}
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-indigo-600 rounded-full ml-1">
+                      <Info className="w-4 h-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-4" align="start">
+                    <div className="flex gap-6">
+                      <div className="flex flex-col">
+                          <span className="font-bold text-slate-900 tabular-nums text-lg leading-none">{charCount.toLocaleString()}</span>
+                          <span className="text-xs text-slate-500 mt-1">caracteres</span>
+                      </div>
+                      <div className="w-px bg-slate-100 h-auto" />
+                      <div className="flex flex-col">
+                          <span className="font-bold text-slate-900 tabular-nums text-lg leading-none">{estimatedTime}</span>
+                          <span className="text-xs text-slate-500 mt-1">tempo de leitura</span>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
             {/* Right: Actions */}
             <div className="flex items-center gap-1">
-              <ScriptSectionNavigator content={content} editorRef={quillRef} />
-              
               <Button
                   variant="ghost"
                   size="sm"
@@ -276,9 +307,39 @@ export default function YoutubeScriptSectionEditor({
               </Button>
 
               <div className="w-px h-5 bg-slate-200 mx-2" />
-
+              
               <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
               
+              <Button 
+                  onClick={handleCopy}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-md"
+                  title="Copiar Roteiro"
+              >
+                  <Copy className="w-4 h-4" />
+              </Button>
+
+              <Button 
+                  onClick={handleDownloadTxt}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-md"
+                  title="Baixar TXT"
+              >
+                  <Download className="w-4 h-4" />
+              </Button>
+
+              <Button 
+                  onClick={onToggleNotes}
+                  variant="ghost"
+                  size="icon"
+                  className={`h-8 w-8 rounded-md transition-colors ${notesVisible ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                  title={notesVisible ? "Ocultar Notas" : "Exibir Notas"}
+              >
+                  {notesVisible ? <EyeOff className="w-4 h-4" /> : <StickyNote className="w-4 h-4" />}
+              </Button>
+
               <Button 
                   onClick={onSave}
                   disabled={isSaving || !hasChanges}
@@ -298,13 +359,6 @@ export default function YoutubeScriptSectionEditor({
                   )}
                   {isSaving ? 'Salvando...' : hasChanges ? 'Salvar' : 'Salvo'}
               </Button>
-              
-              <ScriptActionsDropdown 
-                content={content}
-                title={scriptTitle}
-                notesVisible={notesVisible}
-                onToggleNotes={onToggleNotes}
-              />
             </div>
           </div>
         </div>
