@@ -1,6 +1,7 @@
 import { 
   Users, User, Package, Library, Dna, 
-  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, BrainCircuit, Youtube, Wand2, PenLine 
+  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, BrainCircuit, Youtube, Wand2, PenLine,
+  Type, MessageSquare, Link, FileText, Search, Microscope
 } from 'lucide-react';
 
 export const AGENT_CARDS = [
@@ -123,5 +124,47 @@ export const AGENT_CARDS = [
     description: 'Agente para edição de trechos selecionados (Melhorar, Expandir, Resumir)',
     icon: PenLine,
     color: 'bg-indigo-600'
+  },
+  {
+    key: 'youtubeTitleGenerator',
+    title: 'YouTube - Gerador de Títulos',
+    description: 'Gera títulos magnéticos e chamativos para vídeos',
+    icon: Type,
+    color: 'bg-amber-500'
+  },
+  {
+    key: 'modelingAssistant',
+    title: 'Modelagem - Assistente',
+    description: 'Assistente de brainstorming para o Laboratório de Ideias',
+    icon: MessageSquare,
+    color: 'bg-emerald-500'
+  },
+  {
+    key: 'modelingScraper',
+    title: 'Modelagem - Leitor de Links',
+    description: 'Extrai e resume conteúdo de artigos e links',
+    icon: Link,
+    color: 'bg-sky-500'
+  },
+  {
+    key: 'dossierGenerator',
+    title: 'Modelagem - Gerador de Dossiê',
+    description: 'Organiza materiais brutos em um dossiê estruturado',
+    icon: FileText,
+    color: 'bg-violet-500'
+  },
+  {
+    key: 'modelingAnalyzer',
+    title: 'Modelagem - Analisador Individual',
+    description: 'Analisa materiais individuais e extrai insights',
+    icon: Microscope,
+    color: 'bg-fuchsia-500'
+  },
+  {
+    key: 'deepResearch',
+    title: 'Deep Research',
+    description: 'Pesquisa avançada com Web Search e raciocínio profundo',
+    icon: Search,
+    color: 'bg-blue-600'
   }
 ];
