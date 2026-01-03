@@ -13,7 +13,6 @@ import { StepTema } from "./steps/StepTema";
 import { StepCreativeDirective } from "./steps/StepCreativeDirective";
 import { StepVideoType } from "./steps/StepVideoType";
 import { StepContext } from "./steps/StepContext";
-import { StepModelings } from "./steps/StepModelings";
 import { StepUserContent } from "./steps/StepUserContent";
 import { buildYoutubePrompt } from "./buildYoutubePrompt";
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
@@ -24,7 +23,6 @@ const STEPS = [
   { id: 'directive', title: 'Diretriz Criativa', description: 'Estratégia do vídeo', icon: Target },
   { id: 'type', title: 'Tipo de Vídeo', description: 'Formato do conteúdo', icon: Video },
   { id: 'context', title: 'Contexto', description: 'Persona e Público', icon: Users },
-  { id: 'modelings', title: 'Modelagens', description: 'Referências de sucesso', icon: Database },
   { id: 'userContent', title: 'Conteúdo Padrão', description: 'Intro e CTA', icon: Library },
 ];
 
@@ -100,30 +98,17 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         formData.ctaId ? base44.entities.UserCTA.get(formData.ctaId) : null
       ]);
 
-      // 4. Buscar conteúdo das modelagens se selecionadas
-      let modelingsContent = [];
+      // 4. Buscar o dossiê da modelagem selecionada
+      let dossierContent = '';
       if (formData.selectedModelings?.length > 0) {
-        const [modelingsData, videos, texts] = await Promise.all([
-          base44.entities.Modeling.filter({ id: { $in: formData.selectedModelings } }),
-          base44.entities.ModelingVideo.filter({ 
-            modeling_id: { $in: formData.selectedModelings },
-            status: 'transcribed'
-          }),
-          base44.entities.ModelingText.filter({ 
-            modeling_id: { $in: formData.selectedModelings }
-          })
-        ]);
-
-        modelingsContent = modelingsData.map(m => ({
-          title: m.title,
-          creatorIdea: m.creator_idea,
-          transcripts: videos
-            .filter(v => v.modeling_id === m.id)
-            .map(v => ({ title: v.title, content: v.transcript })),
-          texts: texts
-            .filter(t => t.modeling_id === m.id)
-            .map(t => ({ title: t.title, content: t.content }))
-        }));
+        const modelingId = formData.selectedModelings[0];
+        const dossiers = await base44.entities.ContentDossier.filter({ modeling_id: modelingId });
+        const dossier = dossiers[0];
+        
+        if (!dossier?.full_content) {
+          throw new Error('A modelagem selecionada não possui um Dossiê gerado. Por favor, gere o dossiê antes de criar o roteiro.');
+        }
+        dossierContent = dossier.full_content;
       }
 
       // 5. Montar o prompt final usando o template do tipo de roteiro
@@ -132,8 +117,7 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         tema: formData.tema,
         persona,
         audience,
-        materials: Array.isArray(materials) ? materials : [],
-        modelingsContent,
+        dossierContent,
         introduction,
         cta,
         userNotes: formData.userNotes,
@@ -211,8 +195,6 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       case 3:
         return <StepContext focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       case 4:
-        return <StepModelings focusId={selectedFocusId} value={formData} onChange={setFormData} />;
-      case 5:
         return <StepUserContent focusId={selectedFocusId} value={formData} onChange={setFormData} />;
       default:
         return null;
