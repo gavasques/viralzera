@@ -74,7 +74,7 @@ export default function YoutubeScriptDetail() {
     return title !== initialData.title || content !== initialData.corpo;
   }, [title, content, initialData]);
 
-  // Warn before leaving page with unsaved changes
+  // Warn before leaving page with unsaved changes (browser close/refresh)
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (hasChanges) {
@@ -84,6 +84,30 @@ export default function YoutubeScriptDetail() {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasChanges]);
+
+  // Block browser back/forward navigation
+  useEffect(() => {
+    if (!hasChanges) return;
+    
+    // Push a dummy state to prevent immediate back navigation
+    window.history.pushState(null, '', window.location.href);
+    
+    const handlePopState = (e) => {
+      if (hasChanges) {
+        // Push state again to prevent navigation
+        window.history.pushState(null, '', window.location.href);
+        // Show dialog
+        pendingNavigation.current = () => {
+          // Allow navigation by going back twice (once for our dummy, once for actual)
+          window.history.go(-2);
+        };
+        setShowUnsavedDialog(true);
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [hasChanges]);
 
   // Handle navigation with unsaved changes
