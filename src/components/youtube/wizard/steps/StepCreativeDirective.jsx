@@ -39,7 +39,12 @@ export function StepCreativeDirective({ focusId, value, onChange }) {
     if (!directive) return;
 
     try {
-      const agentConfigs = await base44.entities.YoutubeFormatSelectorConfig.filter({});
+      // Buscar config do agente e script types em paralelo
+      const [agentConfigs, scriptTypes] = await Promise.all([
+        base44.entities.YoutubeFormatSelectorConfig.filter({}),
+        base44.entities.YoutubeScriptType.filter({ focus_id: focusId }, 'title', 100)
+      ]);
+      
       const config = agentConfigs[0];
       
       if (!config?.model) {
@@ -47,7 +52,13 @@ export function StepCreativeDirective({ focusId, value, onChange }) {
         return;
       }
 
-      const systemPrompt = config.prompt || `# PROMPT PARA O AGENTE SELETOR DE FORMATO
+      // Montar taxonomia dinâmica a partir dos Script Types cadastrados
+      const taxonomiaFormatos = scriptTypes.length > 0
+        ? scriptTypes.map(t => `- ${t.title}`).join('\n')
+        : '- Nenhum tipo cadastrado';
+
+      // Preparar prompt com substituições
+      let systemPrompt = config.prompt || `# PROMPT PARA O AGENTE SELETOR DE FORMATO
 
 ## SUA IDENTIDADE
 Você é um Seletor Inteligente de Formato de Vídeo.
@@ -56,28 +67,29 @@ Você é um Seletor Inteligente de Formato de Vídeo.
 Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxonomia. Sua resposta DEVE ser um objeto JSON válido.
 
 ## TAXONOMIA DE FORMATOS
-- Tutorial Passo a Passo
-- Explainer / Deep Dive
-- Mitos vs. Verdades
-- Análise Crítica / Review
-- Comparativo
-- Estudo de Caso
-- React / Comentário
-- Lista / Top X
+{{taxonomia_formatos}}
 
 ## JSON DE SAÍDA
 {
   "formato_recomendado": "Nome exato do formato da taxonomia",
   "justificativa_estrategica": "Explicação de 2-3 frases de por que esse formato é ideal"
-}`;
+}
+
+## DIRETRIZ CRIATIVA PARA ANÁLISE
+{{creative_directive_json}}`;
 
       const directiveJson = JSON.stringify(directive, null, 2);
+
+      // Substituir placeholders
+      systemPrompt = systemPrompt
+        .replace(/\{\{taxonomia_formatos\}\}/g, taxonomiaFormatos)
+        .replace(/\{\{creative_directive_json\}\}/g, directiveJson);
 
       const response = await sendMessage({
         model: config.model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Analise a diretriz criativa abaixo e recomende o melhor formato:\n\n${directiveJson}` }
+          { role: 'user', content: `Analise a diretriz criativa e recomende o melhor formato da taxonomia acima.` }
         ],
         options: {
           enableReasoning: config.enable_reasoning || false,

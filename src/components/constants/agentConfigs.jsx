@@ -569,14 +569,7 @@ Você é um Seletor Inteligente de Formato de Vídeo.
 Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxonomia. Sua resposta DEVE ser um objeto JSON válido.
 
 ## TAXONOMIA DE FORMATOS
-- Tutorial Passo a Passo
-- Explainer / Deep Dive
-- Mitos vs. Verdades
-- Análise Crítica / Review
-- Comparativo
-- Estudo de Caso
-- React / Comentário
-- Lista / Top X
+{{taxonomia_formatos}}
 
 ## JSON DE SAÍDA
 {
@@ -587,6 +580,7 @@ Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxon
 ## DIRETRIZ CRIATIVA PARA ANÁLISE
 {{creative_directive_json}}`,
     promptPlaceholders: [
+      { key: '{{taxonomia_formatos}}', description: 'Lista de tipos de vídeo cadastrados no sistema' },
       { key: '{{creative_directive_json}}', description: 'JSON da diretriz criativa gerada' }
     ]
   }
