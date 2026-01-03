@@ -17,6 +17,46 @@ export default function AgentSettings() {
   const [showPostTypeModal, setShowPostTypeModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Fetch all agent configs in parallel
+  const { data: allConfigs = {} } = useQuery({
+    queryKey: ['allAgentConfigs'],
+    queryFn: async () => {
+      const configEntities = [
+        'AudienceConfig', 'PersonaConfig', 'ProductConfig', 'MaterialBankConfig',
+        'DNAContentConfig', 'DNAConfig', 'TrendConfig', 'ScriptConfig', 'RefinerConfig',
+        'CanvasConfig', 'ModelingConfig', 'YoutubeGeneratorConfig', 'YoutubeRefinerConfig',
+        'YoutubeScriptEditorConfig', 'YoutubeTitleConfig', 'YoutubeKitGeneratorConfig',
+        'YoutubeCreativeDirectiveConfig', 'YoutubeFormatSelectorConfig', 'YoutubePromptRefinerConfig',
+        'ModelingAssistantConfig', 'ModelingScraperConfig', 'DossierGeneratorConfig',
+        'ModelingAnalyzerConfig', 'DeepResearchConfig'
+      ];
+      
+      const results = await Promise.all(
+        configEntities.map(async (entity) => {
+          try {
+            const list = await base44.entities[entity].list('-created_date', 1);
+            return { entity, config: list[0] || null };
+          } catch {
+            return { entity, config: null };
+          }
+        })
+      );
+      
+      return results.reduce((acc, { entity, config }) => {
+        acc[entity] = config;
+        return acc;
+      }, {});
+    },
+    staleTime: 1000 * 60 * 2, // 2 min cache
+  });
+
+  // Map agent key to config entity
+  const getConfigForAgent = (agentKey) => {
+    const agentConfig = AGENT_CONFIGS[agentKey];
+    if (!agentConfig?.configEntity) return null;
+    return allConfigs[agentConfig.configEntity] || null;
+  };
+
   const filteredAgents = AGENT_CARDS.filter(agent => 
     agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase())
