@@ -1,15 +1,15 @@
 import React from 'react';
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import YoutubeAIPanel from "./YoutubeAIPanel";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export default function YoutubeScriptChatDrawer({ open, onOpenChange, scriptId, scriptContext }) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[500px] p-0 flex flex-col gap-0 border-l border-slate-200 shadow-2xl">
-         <VisuallyHidden><SheetTitle>Assistente IA</SheetTitle></VisuallyHidden>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl h-[85vh] p-0 flex flex-col gap-0 overflow-hidden bg-white border-slate-100 shadow-2xl rounded-xl">
+         <VisuallyHidden><DialogTitle>Assistente IA</DialogTitle></VisuallyHidden>
          <YoutubeAIPanel scriptId={scriptId} scriptContext={scriptContext} />
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
