@@ -137,9 +137,9 @@ export default function YoutubeScriptDetail() {
     }
   };
 
-  // Save mutation
+  // Save mutation (supports manual and auto save)
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ isAutoSave = false } = {}) => {
       // 1. Update Script
       await base44.entities.YoutubeScript.update(scriptId, {
         title,
@@ -152,10 +152,13 @@ export default function YoutubeScriptDetail() {
         title,
         corpo: content,
         video_type: script?.video_type,
-        change_description: "Versão salva"
+        change_type: isAutoSave ? 'auto' : 'manual',
+        change_description: isAutoSave ? "Auto Save" : "Salvo pelo usuário"
       });
+      
+      return { isAutoSave };
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['script-versions', scriptId] });
       queryClient.invalidateQueries({ queryKey: ['youtube-script', scriptId] });
       queryClient.invalidateQueries({ queryKey: ['youtube-scripts'] });
@@ -163,16 +166,33 @@ export default function YoutubeScriptDetail() {
         title,
         corpo: content
       });
-      toast.success('Roteiro salvo com sucesso!');
+      if (!variables?.isAutoSave) {
+        toast.success('Roteiro salvo com sucesso!');
+      } else {
+        toast.success('Auto-save realizado', { duration: 2000 });
+      }
     },
     onError: (error) => {
       toast.error('Erro ao salvar: ' + (error.message || 'Tente novamente'));
     }
   });
 
-  // Handle save
+  // Auto-save every 2 minutes when there are changes
+  useEffect(() => {
+    if (!hasChanges || !scriptId) return;
+    
+    const autoSaveInterval = setInterval(() => {
+      if (hasChanges && !saveMutation.isPending) {
+        saveMutation.mutate({ isAutoSave: true });
+      }
+    }, 2 * 60 * 1000); // 2 minutes
+    
+    return () => clearInterval(autoSaveInterval);
+  }, [hasChanges, scriptId, saveMutation.isPending]);
+
+  // Handle save (manual)
   const handleSave = () => {
-    saveMutation.mutate();
+    saveMutation.mutate({ isAutoSave: false });
   };
 
   // Handle refiner drawer

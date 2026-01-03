@@ -9,7 +9,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { History, Clock, RotateCcw, ChevronRight } from "lucide-react";
+import { History, Clock, RotateCcw, ChevronRight, User, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -82,10 +82,19 @@ export default function ScriptHistoryDrawer({
             </div>
           ) : (
             <div className="space-y-4">
-              {versions.map((version, index) => (
+              {versions.map((version, index) => {
+                const isManual = version.change_type === 'manual' || !version.change_type;
+                const isAuto = version.change_type === 'auto';
+                const isRestore = version.change_type === 'restore';
+                
+                return (
                 <div 
                   key={version.id} 
-                  className="group flex flex-col gap-3 p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all bg-white"
+                  className={`group flex flex-col gap-3 p-4 rounded-xl border transition-all bg-white ${
+                    isManual 
+                      ? 'border-green-200 hover:border-green-300 hover:shadow-sm' 
+                      : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
@@ -96,6 +105,24 @@ export default function ScriptHistoryDrawer({
                         <span className="text-sm font-medium text-slate-900">
                           {format(new Date(version.created_date), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                         </span>
+                        {isManual && (
+                          <Badge className="text-xs bg-green-100 text-green-700 border-green-200 gap-1">
+                            <User className="w-3 h-3" />
+                            USUÁRIO
+                          </Badge>
+                        )}
+                        {isAuto && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200 gap-1">
+                            <Zap className="w-3 h-3" />
+                            Auto Save
+                          </Badge>
+                        )}
+                        {isRestore && (
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200 gap-1">
+                            <RotateCcw className="w-3 h-3" />
+                            Backup
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-slate-500 pl-8">
                         {version.change_description || "Alteração salva"}
@@ -143,7 +170,7 @@ export default function ScriptHistoryDrawer({
                     </AlertDialog>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </ScrollArea>
