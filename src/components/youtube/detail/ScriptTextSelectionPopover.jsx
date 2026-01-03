@@ -66,20 +66,27 @@ export default function ScriptTextSelectionPopover({
 
     try {
       if (!config?.model) {
-        throw new Error('Agente de Edição não configurado. Vá em Admin -> Agentes e configure o "Edição - Roteiros Youtube".');
+        throw new Error('Agente de Edição não configurado. Vá em Admin -> Agentes e configure "Roteiros - Edição Notion".');
       }
 
-      const defaultSystemPrompt = `Você é um editor sênior de roteiros para YouTube.
-Sua missão é ajudar a melhorar, expandir ou reescrever trechos selecionados do roteiro.
+      // Build system prompt with placeholders replaced
+      let systemPrompt = config.prompt || '';
+      
+      // Replace placeholders with actual values (context will be fetched if available)
+      systemPrompt = systemPrompt
+        .replace(/\{\{persona\}\}/g, '(Persona não disponível neste contexto)')
+        .replace(/\{\{tese_principal\}\}/g, '(Tese não disponível neste contexto)')
+        .replace(/\{\{publico_alvo\}\}/g, '(Público-alvo não disponível neste contexto)')
+        .replace(/\{\{roteiro_completo\}\}/g, fullContent || '(Roteiro vazio)');
 
-Regras:
-1. Responda APENAS com o texto editado, sem introduções ou explicações.
-2. Mantenha o tom de voz e estilo do roteiro original.
-3. Se for uma correção específica, aplique apenas o que foi pedido.
+      const userMessage = `AÇÃO SOLICITADA: ${actionPrompt}
 
-Retorne o texto pronto para ser substituído no lugar da seleção.`;
+TRECHO SELECIONADO PARA EDIÇÃO:
+"""
+${selectedText}
+"""
 
-      const systemPrompt = config.prompt || defaultSystemPrompt;
+Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
 
       const messages = [
         { 
@@ -88,13 +95,7 @@ Retorne o texto pronto para ser substituído no lugar da seleção.`;
         },
         {
           role: 'user',
-          content: `AÇÃO: ${actionPrompt}
-          
-TRECHO SELECIONADO:
-"${selectedText}"
-
-CONTEXTO DO ROTEIRO (Título: ${scriptTitle}):
-...`
+          content: userMessage
         }
       ];
 
