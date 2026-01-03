@@ -55,27 +55,29 @@ export default function RefinerDrawer({
       const refinerConfigs = await base44.entities.YoutubeRefinerConfig.list();
       const config = refinerConfigs?.[0];
 
-      // 3. Get Modelings if enabled
+      // 3. Get Dossiers if enabled
       let modelingsContext = "";
       if (useModelings && modelingIds?.length > 0) {
-        const [videos, texts, mainModelings] = await Promise.all([
-          base44.entities.ModelingVideo.filter({ modeling_id: { $in: modelingIds } }),
-          base44.entities.ModelingText.filter({ modeling_id: { $in: modelingIds } }),
-          base44.entities.Modeling.filter({ id: { $in: modelingIds } })
-        ]);
+        // Fetch dossiers linked to the modelings
+        const dossiers = await base44.entities.ContentDossier.filter({ modeling_id: { $in: modelingIds } });
         
-        // Format modelings for context
-        modelingsContext = "\n\nMODELAGENS DE REFERÊNCIA:\n";
-        mainModelings.forEach(m => {
-          modelingsContext += `\n# Título: ${m.title}`;
-          if (m.creator_idea) modelingsContext += `\nIdeia: ${m.creator_idea}`;
-          
-          const video = videos.find(v => v.modeling_id === m.id);
-          if (video?.transcript) modelingsContext += `\nTranscrição (trecho): ${video.transcript.substring(0, 1000)}...`;
-          
-          const text = texts.find(t => t.modeling_id === m.id);
-          if (text?.content) modelingsContext += `\nTexto (trecho): ${text.content.substring(0, 1000)}...`;
-        });
+        if (dossiers.length > 0) {
+          modelingsContext = "\n\nDOSSIÊS DE REFERÊNCIA (USE ESTE CONTEÚDO PARA GUIAR O ESTILO E TEMA):\n";
+          dossiers.forEach((d, idx) => {
+             // Using full_content from ContentDossier
+             // Limit context to avoid hitting token limits too hard, but give enough info
+             const contentSnippet = d.full_content.length > 15000 
+               ? d.full_content.substring(0, 15000) + "...(troncado)" 
+               : d.full_content;
+               
+             modelingsContext += `\n--- DOSSIÊ ${idx + 1} ---\n${contentSnippet}\n`;
+          });
+        } else {
+           // Fallback to modelings if no dossier found? 
+           // User explicitly asked for Dossier. If no dossier, maybe just warn or do nothing.
+           // For now, let's keep it empty if no dossier found to respect "use Dossier".
+           console.log("Nenhum dossiê encontrado para as modelagens vinculadas.");
+        }
       }
 
       // 4. Build System Prompt
