@@ -334,7 +334,11 @@ export default function YoutubeScriptSectionEditor({
                   onClick={onToggleNotes}
                   variant="ghost"
                   size="icon"
-                  className={`h-8 w-8 rounded-md transition-colors ${notesVisible ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                  className={`h-8 w-8 rounded-md transition-colors ${
+                    notesVisible 
+                      ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200 border border-yellow-200' 
+                      : 'text-slate-400 hover:text-yellow-700 hover:bg-yellow-50'
+                  }`}
                   title={notesVisible ? "Ocultar Notas" : "Exibir Notas"}
               >
                   {notesVisible ? <EyeOff className="w-4 h-4" /> : <StickyNote className="w-4 h-4" />}
