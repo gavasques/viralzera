@@ -23,6 +23,7 @@ import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsM
 import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptChatDrawer";
 import YoutubeKitModal from "@/components/youtube/detail/YoutubeKitModal";
 import ScriptHistoryDrawer from "@/components/youtube/history/ScriptHistoryDrawer";
+import ScriptNotesPanel from "@/components/youtube/detail/ScriptNotesPanel";
 
 export default function YoutubeScriptDetail() {
   const navigate = useNavigate();
