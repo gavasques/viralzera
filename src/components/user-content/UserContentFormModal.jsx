@@ -243,7 +243,7 @@ export default function UserContentFormModal({ open, onOpenChange, item, type })
               </div>
 
               {/* Right - Placeholders */}
-              <div className="w-80 border-l border-slate-200 pl-4 flex-shrink-0">
+              <div className="w-96 border-l border-slate-200 pl-4 flex-shrink-0">
                 <h4 className="font-medium text-sm mb-3">Placeholders Disponíveis</h4>
                 
                 <ScrollArea className="h-[400px]">
