@@ -63,7 +63,9 @@ export default function YoutubeScriptSectionEditor({
   onSave,
   isSaving,
   hasChanges,
-  onChatToggle
+  onChatToggle,
+  notesVisible,
+  onToggleNotes
 }) {
   const quillRef = useRef(null);
   const [selection, setSelection] = useState(null);
