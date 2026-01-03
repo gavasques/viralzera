@@ -122,21 +122,29 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         }
       }
 
-      // Preparar prompt com substituição do placeholder
+      // Preparar prompt - NÃO substituir placeholders no system prompt
+      // Os placeholders serão enviados na mensagem do usuário com os valores reais
       let systemPrompt = config.prompt || '';
-      systemPrompt = systemPrompt.replace('{{roteiro_final}}', scriptContent);
       
-      // Adicionar template ao prompt se existir
-      if (templateContent) {
-        systemPrompt = systemPrompt.replace('{{template_descricao}}', templateContent);
-      }
+      // Remover placeholders do system prompt (serão enviados na mensagem do usuário)
+      systemPrompt = systemPrompt
+        .replace(/## ROTEIRO PARA ANÁLISE[\s\S]*?(?=##|$)/gi, '')
+        .replace(/## TEMPLATE DE DESCRIÇÃO[\s\S]*?(?=##|$)/gi, '')
+        .replace(/\{\{roteiro_final\}\}/gi, '')
+        .replace(/\{\{template_descricao\}\}/gi, '');
 
-      // Construir mensagem do usuário
-      let userMessage = `Gere o kit completo de publicação para o seguinte roteiro:\n\n${scriptContent}`;
+      // Construir mensagem do usuário com os dados reais
+      let userMessage = `## ROTEIRO PARA ANÁLISE\n\n${scriptContent}`;
       
-      if (templateContent) {
-        userMessage += `\n\n---\n\n## TEMPLATE DE DESCRIÇÃO (use este formato base e substitua os placeholders)\n\n${templateContent}`;
+      if (templateContent && selectedTemplateId && selectedTemplateId !== 'none') {
+        userMessage += `\n\n---\n\n## TEMPLATE DE DESCRIÇÃO (use este template como base, substitua os placeholders {{resumo_video}}, {{timestamps}} e {{tags}} pelos valores gerados)\n\n${templateContent}`;
+      } else {
+        userMessage += `\n\n---\n\nNenhum template selecionado. Gere a descrição livremente, otimizada para SEO do YouTube.`;
       }
+      
+      console.log('System prompt:', systemPrompt);
+      console.log('User message:', userMessage);
+      console.log('Template content:', templateContent);
 
       const response = await sendMessage({
         model: config.model,
