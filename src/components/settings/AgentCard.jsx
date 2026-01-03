@@ -15,7 +15,8 @@ export default function AgentCard({ agent, config, onClick }) {
     return parts[parts.length - 1];
   };
 
-  const modelName = config?.model_name || getModelShortName(config?.model);
+  // Alguns agentes usam campos diferentes (ex: TrendConfig usa search_model)
+  const modelName = config?.model_name || config?.search_model_name || getModelShortName(config?.model || config?.search_model);
   const hasWebSearch = config?.enable_web_search;
   const hasReasoning = config?.enable_reasoning;
 
