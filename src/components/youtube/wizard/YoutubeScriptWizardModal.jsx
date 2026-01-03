@@ -188,21 +188,19 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         modeling_ids: formData.selectedModelings || []
       });
 
-      // 9. Salvar histórico inicial no chat para continuação
+      // 9. Salvar histórico inicial no chat para continuação (em sequência para garantir ordem)
       try {
-        await Promise.all([
-          base44.entities.YoutubeScriptChat.create({
-            script_id: newScript.id,
-            role: 'user',
-            content: finalPrompt
-          }),
-          base44.entities.YoutubeScriptChat.create({
-            script_id: newScript.id,
-            role: 'assistant',
-            content: generatedContent,
-            usage: aiResponse.usage
-          })
-        ]);
+        await base44.entities.YoutubeScriptChat.create({
+          script_id: newScript.id,
+          role: 'user',
+          content: finalPrompt
+        });
+        await base44.entities.YoutubeScriptChat.create({
+          script_id: newScript.id,
+          role: 'assistant',
+          content: generatedContent,
+          usage: aiResponse.usage
+        });
       } catch (chatError) {
         console.error("Erro ao salvar histórico do chat:", chatError);
         // Não impede o fluxo principal, apenas loga o erro
