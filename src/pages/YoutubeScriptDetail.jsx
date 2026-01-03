@@ -129,7 +129,7 @@ export default function YoutubeScriptDetail() {
   };
 
   const handleSaveAndLeave = async () => {
-    await saveMutation.mutateAsync();
+    await saveMutation.mutateAsync({ isAutoSave: false });
     setShowUnsavedDialog(false);
     if (pendingNavigation.current) {
       pendingNavigation.current();
@@ -220,6 +220,7 @@ export default function YoutubeScriptDetail() {
       title: title,
       corpo: content,
       video_type: script?.video_type,
+      change_type: 'restore',
       change_description: "Backup automático antes de restaurar versão"
     });
 
