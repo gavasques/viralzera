@@ -10,9 +10,7 @@ import {
   MessageSquare, 
   Cpu,
   ArrowLeft,
-  Shield,
-  Blocks,
-  FileText
+  Shield
 } from 'lucide-react';
 
 const ADMIN_MENU = [
@@ -28,12 +26,7 @@ const ADMIN_MENU = [
     icon: Settings,
     description: 'Prompts e configurações'
   },
-  { 
-    name: 'Blocos de Descrição', 
-    page: 'DescriptionBlocks', 
-    icon: Blocks,
-    description: 'Blocos reutilizáveis'
-  },
+
 
   { 
     name: 'Análise de Consumo', 

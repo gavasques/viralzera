@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Library, Plus } from "lucide-react";
+import { Library, Plus, FileText, Blocks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
