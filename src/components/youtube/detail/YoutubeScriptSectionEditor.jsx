@@ -148,66 +148,78 @@ export default function YoutubeScriptSectionEditor({
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Editor Toolbar Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white">
-          <div className="flex items-center gap-2">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+          {/* Left: Info & Metadata */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
+              <h3 className="text-base font-semibold text-slate-900 tracking-tight">
                 {title}
               </h3>
-              {description && (
-                <p className="text-xs text-slate-500">{description}</p>
-              )}
+              <div className="flex items-center gap-2">
+                {status && (
+                  <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-full ${STATUS_COLORS[status] || "bg-slate-100 text-slate-600"}`}>
+                    {status}
+                  </Badge>
+                )}
+                {videoType && (
+                  <Badge variant="outline" className={`text-[10px] font-medium px-2 py-0.5 h-5 rounded-full border-0 ${VIDEO_TYPE_COLORS[videoType] || "bg-slate-100 text-slate-600"}`}>
+                    {videoType.replace(/_/g, ' ')}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              {description && <span>{description}</span>}
+              <span className="w-1 h-1 rounded-full bg-slate-300" />
+              <span className="font-medium text-slate-600 tabular-nums">
+                {charCount.toLocaleString()} chars
+              </span>
+              <span className="text-slate-300">|</span>
+              <span className="font-medium text-slate-600 tabular-nums">
+                {estimatedTime} leitura
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-             <Button
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
+            <Button
                 variant="ghost"
                 size="sm"
                 onClick={onChatToggle}
-                className="h-8 px-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-              >
-                <MessageSquareText className="w-4 h-4 mr-1.5" />
-                Chat IA
-              </Button>
-
-            {videoType && (
-              <Badge className={VIDEO_TYPE_COLORS[videoType] || "bg-slate-100 text-slate-700"}>
-                {videoType.replace(/_/g, ' ')}
-              </Badge>
-            )}
-            
-            {status && (
-              <Badge className={STATUS_COLORS[status] || "bg-slate-100 text-slate-700"}>
-                {status}
-              </Badge>
-            )}
-
-            <Button 
-              onClick={onSave}
-              disabled={isSaving || !hasChanges}
-              size="sm"
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white gap-2 h-8"
+                className="h-9 px-3 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all rounded-full"
             >
-              {isSaving ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Save className="w-3.5 h-3.5" />
-              )}
-              {hasChanges ? 'Salvar' : 'Salvo'}
+                <MessageSquareText className="w-4 h-4 mr-2" />
+                Chat IA
             </Button>
 
-            <div className="w-px h-6 bg-slate-200 mx-1" />
+            <div className="w-px h-6 bg-slate-100 mx-2" />
 
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
-                <span className="text-[10px] font-medium text-slate-500">
-                {charCount.toLocaleString()} chars
-                </span>
-                <span className="text-[10px] text-slate-300">|</span>
-                <span className="text-[10px] font-medium text-slate-500">
-                {estimatedTime}
-                </span>
+            <div className="flex items-center gap-2">
+                <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
+                
+                <Button 
+                    onClick={onSave}
+                    disabled={isSaving || !hasChanges}
+                    size="sm"
+                    variant={hasChanges ? "default" : "ghost"}
+                    className={`h-9 min-w-[100px] transition-all duration-300 rounded-full ${
+                        hasChanges 
+                        ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-100' 
+                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                    }`}
+                >
+                    {isSaving ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
+                    ) : hasChanges ? (
+                        <Save className="w-3.5 h-3.5 mr-2" />
+                    ) : (
+                        <span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                    )}
+                    {isSaving ? 'Salvando...' : hasChanges ? 'Salvar' : 'Salvo'}
+                </Button>
             </div>
-            <RefinerButton onClick={() => onOpenRefiner(sectionKey)} />
           </div>
         </div>
       
