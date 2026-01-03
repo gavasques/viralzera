@@ -54,11 +54,17 @@ export default function YoutubeScriptDetail() {
     queryKey: ['youtube-script', scriptId],
     queryFn: () => base44.entities.YoutubeScript.get(scriptId),
     enabled: !!scriptId,
+    refetchOnWindowFocus: false, // Prevent auto-refresh on window focus
   });
 
-  // Load script when data loads
+  // Reset initial data when scriptId changes
   useEffect(() => {
-    if (script) {
+    setInitialData(null);
+  }, [scriptId]);
+
+  // Load script when data loads (only if not initialized)
+  useEffect(() => {
+    if (script && !initialData) {
       setTitle(script.title || '');
       setContent(script.corpo || '');
       setInitialData({
@@ -66,7 +72,7 @@ export default function YoutubeScriptDetail() {
         corpo: script.corpo || ''
       });
     }
-  }, [script]);
+  }, [script, initialData]);
 
   // Check if there are unsaved changes
   const hasChanges = useMemo(() => {
