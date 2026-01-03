@@ -177,21 +177,21 @@ Responda em Português do Brasil.`;
                   </div>
                 )}
                 <div
-                  className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
+                  className={`rounded-lg px-3 py-2 max-w-[85%] text-sm break-words ${
                     msg.role === 'user'
                       ? 'bg-red-600 text-white'
                       : 'bg-slate-100 text-slate-800'
                   }`}
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2">
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 break-words">
                       <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                   ) : (
-                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 text-white [&_p]:text-white [&_li]:text-white [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white">
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 text-white [&_p]:text-white [&_li]:text-white [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white break-words">
                       <ReactMarkdown 
                         components={{
-                          p: ({node, ...props}) => <p className="mb-1 last:mb-0" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-1 last:mb-0 break-words whitespace-pre-wrap" {...props} />,
                         }}
                       >
                         {msg.content.replace(/\n/g, '  \n')}
