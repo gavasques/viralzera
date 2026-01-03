@@ -239,7 +239,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
               </Select>
               <p className="text-xs text-slate-400">
                 {templates.length === 0 
-                  ? 'Nenhum template cadastrado. Crie em Admin Zone > Templates de Descrição.'
+                  ? 'Nenhum template cadastrado. Crie em Conteúdo Padrão > Templates.'
                   : 'O template define a estrutura da descrição com seus blocos personalizados.'
                 }
               </p>
