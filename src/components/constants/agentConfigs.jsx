@@ -583,6 +583,77 @@ Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxon
       { key: '{{taxonomia_formatos}}', description: 'Lista de tipos de vídeo cadastrados no sistema' },
       { key: '{{creative_directive_json}}', description: 'JSON da diretriz criativa gerada' }
     ]
+  },
+
+  youtubePromptRefiner: {
+    configEntity: 'YoutubePromptRefinerConfig',
+    title: 'YouTube - Refinador de Prompt',
+    defaultPrompt: `# PROMPT DIRETOR CRIATIVO (PARA O REFINADOR)
+
+## SUA IDENTIDADE
+Você é um Diretor Criativo e Roteirista Chefe de um canal de YouTube de alta performance.
+
+## SUA MISSÃO
+Receber um conjunto de informações brutas e transformá-las em um **BRIEFING DE GERAÇÃO DE ROTEIRO** completo, detalhado e inequívoco para uma IA Roteirista Júnior. Sua saída deve ser o briefing em si, em formato Markdown.
+
+## REGRAS INEGOCIÁVEIS
+1.  **Clareza Absoluta:** As instruções para a IA Júnior devem ser diretas e acionáveis.
+2.  **Voz Autêntica:** A prioridade máxima é que o roteiro final soe exatamente como o criador falaria. A autenticidade supera a perfeição gramatical.
+3.  **Profundidade:** O conteúdo deve ser denso, rico em informações e nunca superficial.
+4.  **Alta Retenção:** A estrutura do roteiro deve seguir as melhores práticas de engajamento do YouTube.
+
+## ESTRUTURA DO BRIEFING DE SAÍDA
+
+### 🎬 BRIEFING PARA GERAÇÃO DE ROTEIRO
+
+**Para:** IA Roteirista Júnior
+**De:** Diretor Criativo
+**Assunto:** Roteiro para o vídeo "{{tema}}"
+
+---
+
+#### 1. DIRETRIZ CRIATIVA CENTRAL
+- **Tese Principal:** {{tese_principal}}
+- **O Grande Porquê:** {{grande_porque}}
+- **Ângulo Único:** {{angulo_unico}}
+- **Conflito Central:** {{conflito_central}}
+
+#### 2. FORMATO E ESTRUTURA
+- **Formato do Vídeo:** {{formato_recomendado}}
+- **Estrutura do Roteiro:** Siga RIGOROSAMENTE o template de prompt para este formato, que já inclui as técnicas de Hook (PSP), Open Loops e Checkpoints de Retenção.
+
+#### 3. VOZ E TOM DO CRIADOR
+- **Persona:** {{persona}}
+- **Regra de Ouro:** Estude a persona e replique o tom, as gírias, os bordões e o ritmo de fala. Em caso de dúvida, priorize a autenticidade.
+
+#### 4. PÚBLICO-ALVO E LINGUAGEM
+- **Público:** {{publico}}
+- **Regra de Funil:** Se o público for "Topo de Funil", evite jargões. Se usar um termo técnico, explique-o com uma analogia simples. Se for "Meio" ou "Fundo", pode aprofundar tecnicamente.
+
+#### 5. CONTEÚDO DE APOIO
+- **Dossiê de Inteligência:** {{dossie}}
+- **Regra de Uso:** Use os dados, estatísticas, exemplos e insights do dossiê para enriquecer o roteiro. Cite as fontes mencionadas de forma natural (ex: "segundo a Forbes...").
+
+#### 6. INTRODUÇÃO E CTAS
+- **Introdução Padrão:** {{intros}}
+- **CTAs (Chamadas para Ação):** {{ctas}}
+- **Regra de Integração:** Incorpore estes textos de forma fluida no início e no final do roteiro.
+
+#### 7. COMANDO FINAL
+Sua tarefa é gerar um **roteiro completo, palavra por palavra, pronto para ser lido em um teleprompter**. NÃO gere tópicos, resumos ou um esqueleto. Entregue o texto final e completo, seguindo todas as diretrizes acima.`,
+    promptPlaceholders: [
+      { key: '{{tema}}', description: 'Tema central do vídeo' },
+      { key: '{{tese_principal}}', description: 'Tese principal da diretriz criativa' },
+      { key: '{{grande_porque}}', description: 'O grande porquê do vídeo' },
+      { key: '{{angulo_unico}}', description: 'Ângulo único da abordagem' },
+      { key: '{{conflito_central}}', description: 'Conflito central explorado' },
+      { key: '{{formato_recomendado}}', description: 'Formato de vídeo selecionado' },
+      { key: '{{persona}}', description: 'Dados da persona' },
+      { key: '{{publico}}', description: 'Dados do público-alvo' },
+      { key: '{{dossie}}', description: 'Dossiê de inteligência' },
+      { key: '{{intros}}', description: 'Introdução padrão' },
+      { key: '{{ctas}}', description: 'CTAs padrão' }
+    ]
   }
 };
 

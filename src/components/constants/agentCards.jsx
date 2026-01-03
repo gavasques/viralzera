@@ -1,6 +1,6 @@
 import { 
   Users, User, Package, Library, Dna, 
-  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, BrainCircuit, Youtube 
+  TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, BrainCircuit, Youtube, Wand2 
 } from 'lucide-react';
 
 export const AGENT_CARDS = [
@@ -102,5 +102,12 @@ export const AGENT_CARDS = [
     description: 'Recomenda o melhor formato de vídeo baseado na Diretriz Criativa',
     icon: Youtube,
     color: 'bg-red-400'
+  },
+  {
+    key: 'youtubePromptRefiner',
+    title: 'YouTube - Refinador de Prompt',
+    description: 'Transforma o prompt bruto em um briefing completo e estruturado',
+    icon: Wand2,
+    color: 'bg-red-500'
   }
 ];
