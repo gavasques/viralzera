@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -386,28 +386,33 @@ export default function YoutubeScriptDetail() {
 
       {/* Unsaved Changes Dialog */}
       <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você tem alterações não salvas neste roteiro. O que deseja fazer?
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <AlertDialogTitle className="text-lg">Alterações não salvas</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-600">
+              Você tem alterações não salvas neste roteiro. Se sair agora, suas alterações serão perdidas.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
-              Cancelar
+          <AlertDialogFooter className="gap-2 sm:gap-0 mt-4">
+            <AlertDialogCancel className="mt-0">
+              Continuar editando
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDiscardChanges}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
-              Descartar
+              Descartar alterações
             </AlertDialogAction>
             <AlertDialogAction
               onClick={handleSaveAndLeave}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
-              Salvar e Sair
+              Salvar e sair
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
