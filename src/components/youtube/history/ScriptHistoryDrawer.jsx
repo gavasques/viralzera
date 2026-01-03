@@ -96,29 +96,29 @@ export default function ScriptHistoryDrawer({
                       : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2">
                         <Badge variant="outline" className="text-xs font-normal bg-slate-50 text-slate-600 border-slate-200 shrink-0">
                           {versions.length - index}
                         </Badge>
-                        <span className="text-sm font-medium text-slate-900">
+                        <span className="text-sm font-medium text-slate-900 whitespace-nowrap">
                           {format(new Date(version.created_date), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                         </span>
                         {isManual && (
-                          <Badge className="text-xs bg-green-100 text-green-700 border-green-200 gap-1">
+                          <Badge className="text-xs bg-green-100 text-green-700 border-green-200 gap-1 shrink-0">
                             <User className="w-3 h-3" />
                             USUÁRIO
                           </Badge>
                         )}
                         {isAuto && (
-                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200 gap-1">
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-200 gap-1 shrink-0">
                             <Zap className="w-3 h-3" />
                             Auto Save
                           </Badge>
                         )}
                         {isRestore && (
-                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200 gap-1">
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-600 border-amber-200 gap-1 shrink-0">
                             <RotateCcw className="w-3 h-3" />
                             Backup
                           </Badge>
@@ -128,21 +128,13 @@ export default function ScriptHistoryDrawer({
                         {version.change_description || "Alteração salva"}
                       </p>
                     </div>
-                  </div>
 
-                  <div className="pl-8 flex items-center justify-between gap-4">
-                     <div className="flex-1 min-w-0">
-                        <p className="text-xs text-slate-400 truncate">
-                           {version.title}
-                        </p>
-                     </div>
-                     
-                     <AlertDialog>
+                    <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="h-8 gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors ml-auto shrink-0"
+                          className="h-8 gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors shrink-0"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           Restaurar
@@ -168,6 +160,12 @@ export default function ScriptHistoryDrawer({
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                  </div>
+
+                  <div className="pl-8 mt-1">
+                     <p className="text-xs text-slate-400 break-words leading-relaxed">
+                        {version.title}
+                     </p>
                   </div>
                 </div>
               )})}
