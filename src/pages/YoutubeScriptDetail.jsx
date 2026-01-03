@@ -232,6 +232,7 @@ export default function YoutubeScriptDetail() {
         onSuggestTitles={() => setShowTitleModal(true)}
         onChatOpen={() => setShowRightPanel(true)}
         onGenerateKit={() => setShowKitModal(true)}
+        onNavigateBack={handleNavigateBack}
       />
 
       <div className="flex-1 flex overflow-hidden h-[calc(100vh-140px)]">
