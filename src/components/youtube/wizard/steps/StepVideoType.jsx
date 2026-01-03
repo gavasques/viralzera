@@ -79,6 +79,41 @@ export function StepVideoType({ focusId, value, onChange }) {
     );
   }
 
+  // Show analyzing state while AI is processing recommendation
+  if (isAnalyzing) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="space-y-2">
+          <Label className="text-base font-semibold text-slate-900">
+            Tipo de Vídeo
+          </Label>
+          <p className="text-sm text-slate-500">
+            Analisando a melhor opção para seu conteúdo...
+          </p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 p-8 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                <BrainCircuit className="w-8 h-8 text-emerald-600" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border-2 border-emerald-500 flex items-center justify-center">
+                <Loader2 className="w-3 h-3 text-emerald-600 animate-spin" />
+              </div>
+            </div>
+            <div>
+              <p className="text-slate-700 font-medium">Analisando Diretriz Criativa</p>
+              <p className="text-sm text-slate-500 mt-1">
+                A IA está identificando o melhor formato de vídeo...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (scriptTypes.length === 0) {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
