@@ -2,7 +2,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, FileText, Video, BookOpen, List, Lightbulb, Target, Layers, MessageSquare, Zap } from "lucide-react";
+import { Pencil, Trash2, FileText, Video, BookOpen, List, Lightbulb, Target, Layers, MessageSquare, Zap } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 const ICON_MAP = {
   FileText,
@@ -16,7 +23,7 @@ const ICON_MAP = {
   Zap,
 };
 
-export default function ScriptTypeCard({ scriptType, onEdit }) {
+export default function ScriptTypeCard({ scriptType, onEdit, onDelete }) {
   // Get icon from map or default to FileText
   const IconComponent = ICON_MAP[scriptType.icon] || FileText;
   
@@ -38,14 +45,23 @@ export default function ScriptTypeCard({ scriptType, onEdit }) {
               </CardTitle>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onEdit}
-            className="text-slate-400 hover:text-slate-600"
-          >
-            <Pencil className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
