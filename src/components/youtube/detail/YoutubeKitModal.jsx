@@ -357,22 +357,26 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
                     Ideias de conceitos visuais para sua thumbnail
                   </p>
                   {kit.ideias_thumbnail?.length > 0 ? (
-                    kit.ideias_thumbnail.map((ideia, idx) => (
-                      <div 
-                        key={idx}
-                        className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-3">
-                            <div className="bg-red-100 text-red-700 font-bold text-sm w-7 h-7 rounded-full flex items-center justify-center shrink-0">
-                              {idx + 1}
+                    kit.ideias_thumbnail.map((ideia, idx) => {
+                      // Garantir que ideia é string
+                      const ideiaText = typeof ideia === 'string' ? ideia : (ideia?.texto || ideia?.text || JSON.stringify(ideia));
+                      return (
+                        <div 
+                          key={idx}
+                          className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-3">
+                              <div className="bg-red-100 text-red-700 font-bold text-sm w-7 h-7 rounded-full flex items-center justify-center shrink-0">
+                                {idx + 1}
+                              </div>
+                              <p className="text-sm text-slate-700 leading-relaxed">{ideiaText}</p>
                             </div>
-                            <p className="text-sm text-slate-700 leading-relaxed">{ideia}</p>
+                            <CopyButton text={ideiaText} itemId={`thumb-${idx}`} />
                           </div>
-                          <CopyButton text={ideia} itemId={`thumb-${idx}`} />
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="text-sm text-slate-400 italic">Nenhuma ideia de thumbnail foi gerada</p>
                   )}
