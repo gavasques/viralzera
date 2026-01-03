@@ -154,11 +154,37 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
 
       // Parse JSON da resposta
       const content = response.content;
+      console.log('Raw AI response:', content);
+      
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       
       if (jsonMatch) {
         const parsedKit = JSON.parse(jsonMatch[0]);
-        setKit(parsedKit);
+        console.log('Parsed kit:', parsedKit);
+        
+        // Normalizar nomes de propriedades (IA pode usar variações)
+        const normalizedKit = {
+          titulos: parsedKit.titulos || parsedKit.titles || parsedKit.titulo || [],
+          ideias_thumbnail: parsedKit.ideias_thumbnail || parsedKit.thumbnails || parsedKit.thumbnail_ideas || parsedKit.ideias_thumbnails || [],
+          descricao_completa: parsedKit.descricao_completa || parsedKit.descricao || parsedKit.description || parsedKit.desc || '',
+          tags_seo: parsedKit.tags_seo || parsedKit.tags || parsedKit.keywords || []
+        };
+        
+        // Garantir que arrays são arrays
+        if (!Array.isArray(normalizedKit.titulos)) {
+          normalizedKit.titulos = normalizedKit.titulos ? [normalizedKit.titulos] : [];
+        }
+        if (!Array.isArray(normalizedKit.ideias_thumbnail)) {
+          normalizedKit.ideias_thumbnail = normalizedKit.ideias_thumbnail ? [normalizedKit.ideias_thumbnail] : [];
+        }
+        if (!Array.isArray(normalizedKit.tags_seo)) {
+          normalizedKit.tags_seo = typeof normalizedKit.tags_seo === 'string' 
+            ? normalizedKit.tags_seo.split(',').map(t => t.trim()) 
+            : [];
+        }
+        
+        console.log('Normalized kit:', normalizedKit);
+        setKit(normalizedKit);
         toast.success('Kit gerado com sucesso!');
       } else {
         throw new Error('Resposta não contém JSON válido');
