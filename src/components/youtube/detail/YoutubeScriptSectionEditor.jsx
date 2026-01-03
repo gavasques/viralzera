@@ -3,11 +3,21 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, MessageSquareText, Sparkles } from "lucide-react";
+import { 
+  Loader2, 
+  Save, 
+  MessageSquareText, 
+  Sparkles, 
+  Info, 
+  Copy, 
+  Download, 
+  StickyNote, 
+  EyeOff 
+} from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
-import ScriptActionsDropdown from "./ScriptActionsDropdown";
-import ScriptSectionNavigator from "./ScriptSectionNavigator";
 
 const VIDEO_TYPE_COLORS = {
   tutorial: "bg-blue-100 text-blue-700",
