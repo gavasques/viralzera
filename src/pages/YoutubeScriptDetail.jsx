@@ -1,10 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import YoutubeScriptHeader from "@/components/youtube/detail/YoutubeScriptHeader";
 import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScriptSectionEditor";
@@ -40,6 +50,10 @@ export default function YoutubeScriptDetail() {
   
   // Kit modal state
   const [showKitModal, setShowKitModal] = useState(false);
+
+  // Unsaved changes dialog state
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const pendingNavigation = useRef(null);
 
   // Right panel state
   const [showRightPanel, setShowRightPanel] = useState(true);
@@ -91,6 +105,45 @@ export default function YoutubeScriptDetail() {
     if (!initialData) return false;
     return title !== initialData.title || content !== initialData.corpo;
   }, [title, content, initialData]);
+
+  // Warn before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasChanges]);
+
+  // Handle navigation with unsaved changes
+  const handleNavigateBack = useCallback(() => {
+    if (hasChanges) {
+      pendingNavigation.current = () => navigate(createPageUrl('YoutubeScripts'));
+      setShowUnsavedDialog(true);
+    } else {
+      navigate(createPageUrl('YoutubeScripts'));
+    }
+  }, [hasChanges, navigate]);
+
+  const handleDiscardChanges = () => {
+    setShowUnsavedDialog(false);
+    if (pendingNavigation.current) {
+      pendingNavigation.current();
+      pendingNavigation.current = null;
+    }
+  };
+
+  const handleSaveAndLeave = async () => {
+    await saveMutation.mutateAsync();
+    setShowUnsavedDialog(false);
+    if (pendingNavigation.current) {
+      pendingNavigation.current();
+      pendingNavigation.current = null;
+    }
+  };
 
   // Save mutation
   const saveMutation = useMutation({
@@ -264,6 +317,35 @@ export default function YoutubeScriptDetail() {
         scriptContent={content}
         scriptTitle={title}
       />
+
+      {/* Unsaved Changes Dialog */}
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem alterações não salvas neste roteiro. O que deseja fazer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDiscardChanges}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Descartar
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleSaveAndLeave}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Salvar e Sair
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
