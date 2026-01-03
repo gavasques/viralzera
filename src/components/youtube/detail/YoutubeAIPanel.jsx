@@ -184,18 +184,21 @@ Responda em Português do Brasil.`;
                   }`}
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 break-words">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 text-white [&_p]:text-white [&_li]:text-white [&_strong]:text-white [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white break-words">
-                      <ReactMarkdown 
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 break-words overflow-hidden">
+                      <ReactMarkdown
                         components={{
-                          p: ({node, ...props}) => <p className="mb-1 last:mb-0 break-words whitespace-pre-wrap" {...props} />,
+                          pre: ({node, ...props}) => <div className="overflow-x-auto w-full my-2 bg-slate-800 rounded-md p-2 text-white"><pre {...props} /></div>,
+                          code: ({node, inline, ...props}) => inline 
+                            ? <code className="bg-slate-200 px-1 py-0.5 rounded text-red-600 font-mono text-xs" {...props} />
+                            : <code className="bg-transparent text-white font-mono text-xs whitespace-pre-wrap break-words" {...props} />
                         }}
                       >
-                        {msg.content.replace(/\n/g, '  \n')}
+                        {msg.content}
                       </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-white whitespace-pre-wrap break-words overflow-hidden leading-relaxed">
+                      {msg.content}
                     </div>
                   )}
                 </div>
