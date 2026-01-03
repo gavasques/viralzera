@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube, BrainCircuit, Globe, FileArchive, FileScan, Search } from 'lucide-react';
+import { Settings, Users, User, Package, Library, Dna, TrendingUp, Sparkles, ScrollText, Layers, ImageIcon, Youtube, BrainCircuit, Globe, FileArchive, FileScan, Search, Wand2 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,6 +172,20 @@ const AGENT_CARDS = [
     description: 'Recomenda o melhor formato de vídeo baseado na Diretriz Criativa.',
     icon: Youtube,
     color: 'bg-red-400'
+  },
+  {
+    key: 'youtubePromptRefiner',
+    title: 'YouTube - Refinador de Prompt',
+    description: 'Transforma o prompt bruto em um briefing completo e estruturado.',
+    icon: Wand2,
+    color: 'bg-red-500'
+  },
+  {
+    key: 'youtubeKitGenerator',
+    title: 'YouTube - Gerador de Kit',
+    description: 'Gera títulos, thumbnails, descrição e tags SEO a partir do roteiro.',
+    icon: Youtube,
+    color: 'bg-red-600'
   }
 ];
 
