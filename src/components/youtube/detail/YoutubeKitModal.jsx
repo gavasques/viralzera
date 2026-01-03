@@ -164,11 +164,22 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
       const content = response.content;
       console.log('Raw AI response:', content);
       
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      // Tenta encontrar JSON na resposta - pega o JSON mais externo
+      let jsonMatch = content.match(/```json\s*([\s\S]*?)```/);
+      let jsonStr = jsonMatch ? jsonMatch[1] : null;
       
-      if (jsonMatch) {
-        const parsedKit = JSON.parse(jsonMatch[0]);
-        console.log('Parsed kit:', parsedKit);
+      if (!jsonStr) {
+        // Tenta encontrar JSON sem code block
+        jsonMatch = content.match(/\{[\s\S]*\}/);
+        jsonStr = jsonMatch ? jsonMatch[0] : null;
+      }
+      
+      if (jsonStr) {
+        console.log('JSON string found:', jsonStr.substring(0, 500) + '...');
+        
+        const parsedKit = JSON.parse(jsonStr);
+        console.log('Parsed kit keys:', Object.keys(parsedKit));
+        console.log('Full parsed kit:', parsedKit);
         
         // Normalizar nomes de propriedades (IA pode usar variações)
         const normalizedKit = {
@@ -178,8 +189,9 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
           tags_seo: parsedKit.tags_seo || parsedKit.tags || parsedKit.keywords || parsedKit.seo_tags || []
         };
         
-        console.log('Original keys from AI:', Object.keys(parsedKit));
-        console.log('descricao_completa value:', normalizedKit.descricao_completa);
+        console.log('descricao_completa raw:', parsedKit.descricao_completa);
+        console.log('descricao raw:', parsedKit.descricao);
+        console.log('Normalized descricao_completa:', normalizedKit.descricao_completa);
         
         // Garantir que arrays são arrays
         if (!Array.isArray(normalizedKit.titulos)) {
@@ -194,10 +206,11 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
             : [];
         }
         
-        console.log('Normalized kit:', normalizedKit);
+        console.log('Final normalized kit:', normalizedKit);
         setKit(normalizedKit);
         toast.success('Kit gerado com sucesso!');
       } else {
+        console.error('No JSON found in response');
         throw new Error('Resposta não contém JSON válido');
       }
     } catch (err) {
