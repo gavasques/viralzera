@@ -252,25 +252,36 @@ export default function YoutubeScriptDetail() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto p-6 md:p-8 pb-32 min-h-full">
-          <YoutubeScriptSectionEditor
-            sectionKey="corpo"
-            title="Roteiro Completo"
-            description="Edite o conteúdo completo do roteiro"
-            content={content}
-            onChange={(_, val) => setContent(val)}
-            onOpenRefiner={handleOpenRefiner}
-            scriptTitle={title}
-            // Toolbar props
-            videoType={script?.video_type}
-            status={script?.status}
-            onSave={handleSave}
-            isSaving={saveMutation.isPending}
-            hasChanges={hasChanges}
-            onChatToggle={() => setChatOpen(true)}
-          />
+      <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-y-auto">
+          <div className={`mx-auto p-6 md:p-8 pb-32 min-h-full transition-all ${notesVisible ? 'max-w-4xl' : 'max-w-5xl'}`}>
+            <YoutubeScriptSectionEditor
+              sectionKey="corpo"
+              title="Roteiro Completo"
+              description="Edite o conteúdo completo do roteiro"
+              content={content}
+              onChange={(_, val) => setContent(val)}
+              onOpenRefiner={handleOpenRefiner}
+              scriptTitle={title}
+              // Toolbar props
+              videoType={script?.video_type}
+              status={script?.status}
+              onSave={handleSave}
+              isSaving={saveMutation.isPending}
+              hasChanges={hasChanges}
+              onChatToggle={() => setChatOpen(true)}
+              // Notes & Actions props
+              notesVisible={notesVisible}
+              onToggleNotes={() => setNotesVisible(!notesVisible)}
+            />
+          </div>
         </div>
+        
+        {/* Notes Panel */}
+        <ScriptNotesPanel 
+          scriptId={scriptId} 
+          isOpen={notesVisible}
+        />
       </div>
 
       {/* Drawers */}
