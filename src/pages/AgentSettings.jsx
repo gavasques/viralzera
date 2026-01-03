@@ -101,32 +101,12 @@ export default function AgentSettings() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredAgents.map((agent) => (
-          <Card 
+          <AgentCard 
             key={agent.key}
-            className="hover:shadow-md transition-shadow cursor-pointer group"
+            agent={agent}
+            config={getConfigForAgent(agent.key)}
             onClick={() => handleOpenSettings(agent.key)}
-          >
-            <CardContent className="p-5">
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-xl ${agent.color} text-white shrink-0`}>
-                  <agent.icon className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    {agent.title}
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-1 line-clamp-2">
-                    {agent.description}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t flex justify-end">
-                <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-700">
-                  Configurar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          />
         ))}
       </div>
 
