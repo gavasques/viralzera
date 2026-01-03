@@ -26,6 +26,8 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
   const [message, setMessage] = useState('');
   const scrollRef = useRef(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [replaceDialogOpen, setReplaceDialogOpen] = useState(false);
+  const [pendingReplaceContent, setPendingReplaceContent] = useState(null);
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
