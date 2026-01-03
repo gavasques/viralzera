@@ -188,6 +188,8 @@ export default function YoutubeScriptSectionEditor({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2">
+            <ScriptSectionNavigator content={content} editorRef={quillRef} />
+            
             <Button
                 variant="ghost"
                 size="sm"
@@ -223,6 +225,13 @@ export default function YoutubeScriptSectionEditor({
                     )}
                     {isSaving ? 'Salvando...' : hasChanges ? 'Salvar' : 'Salvo'}
                 </Button>
+                
+                <ScriptActionsDropdown 
+                  content={content}
+                  title={scriptTitle}
+                  notesVisible={notesVisible}
+                  onToggleNotes={onToggleNotes}
+                />
             </div>
           </div>
         </div>
