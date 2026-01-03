@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Youtube, Clock, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Youtube, Clock, FileText, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -21,15 +32,43 @@ const VIDEO_TYPE_COLORS = {
   "Outro": "bg-slate-100 text-slate-700"
 };
 
-export default function YoutubeScriptCard({ script, onClick }) {
+export default function YoutubeScriptCard({ script, onClick, onDelete }) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    setIsDeleting(true);
+    try {
+      await onDelete?.(script.id);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
+    <>
     <Card 
-      className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-slate-200 hover:border-red-200 bg-white overflow-hidden"
+      className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-slate-200 hover:border-red-200 bg-white overflow-hidden relative"
       onClick={onClick}
     >
       <CardContent className="p-5">
+        {/* Delete Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-600 hover:bg-red-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDeleteDialog(true);
+          }}
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start justify-between gap-3 mb-3 pr-8">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
               <Youtube className="w-5 h-5 text-red-600" />
@@ -77,5 +116,41 @@ export default function YoutubeScriptCard({ script, onClick }) {
         </div>
       </CardContent>
     </Card>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader>
+          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-2">
+            <Trash2 className="w-6 h-6 text-red-600" />
+          </div>
+          <AlertDialogTitle className="text-center">Excluir Roteiro</AlertDialogTitle>
+          <AlertDialogDescription className="text-center">
+            Tem certeza que deseja excluir <strong>"{script.title || 'Sem título'}"</strong>? 
+            Esta ação não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="sm:justify-center gap-2">
+          <AlertDialogCancel disabled={isDeleting}>
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Excluindo...
+              </>
+            ) : (
+              'Excluir'
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
