@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Plus, Pencil, Trash2, Sparkles, ChevronDown, ChevronRight, FolderOpen, Loader2, Eye, Settings, Brain, Keyboard } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Sparkles, ChevronDown, ChevronRight, FolderOpen, Loader2, Eye, Settings, Brain, Keyboard, Power, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -58,6 +58,7 @@ export default function Audiences() {
   const [isCreatingQuickGroup, setIsCreatingQuickGroup] = useState(false);
   const [quickGroupPopoverOpen, setQuickGroupPopoverOpen] = useState(false);
   const [viewingAudience, setViewingAudience] = useState(null);
+  const [showInactive, setShowInactive] = useState(false);
   
   
   // New States
@@ -180,10 +181,20 @@ export default function Audiences() {
   };
 
   const getAudiencesByGroup = (groupId) => {
-    return audiences.filter(a => a.group_id === groupId);
+    return audiences.filter(a => a.group_id === groupId && (showInactive || a.is_active !== false));
   };
 
-  const ungroupedAudiences = audiences.filter(a => !a.group_id);
+  const ungroupedAudiences = audiences.filter(a => !a.group_id && (showInactive || a.is_active !== false));
+
+  const toggleAudienceActive = async (audience) => {
+    try {
+      const newStatus = audience.is_active === false ? true : false;
+      await save(audience.id, { ...audience, is_active: newStatus });
+      toast.success(newStatus ? "Público ativado!" : "Público inativado!");
+    } catch (error) {
+      toast.error("Erro ao alterar status");
+    }
+  };
 
   const handleQuickGroupCreate = async () => {
     if (!quickGroupName.trim()) {
@@ -232,6 +243,15 @@ export default function Audiences() {
           )}
         </div>
         <div className="flex gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`h-8 w-8 ${audience.is_active === false ? 'text-slate-400 hover:text-green-600' : 'text-green-600 hover:text-slate-400'}`}
+            onClick={() => toggleAudienceActive(audience)}
+            title={audience.is_active === false ? "Ativar" : "Inativar"}
+          >
+            <Power className="w-3.5 h-3.5" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewingAudience(audience)}>
             <Eye className="w-3.5 h-3.5" />
           </Button>
@@ -248,6 +268,11 @@ export default function Audiences() {
           </Button>
         </div>
       </div>
+      {audience.is_active === false && (
+         <div className="bg-slate-100 px-4 py-1 text-xs text-slate-500 font-medium flex items-center justify-center border-t border-slate-200">
+            <EyeOff className="w-3 h-3 mr-1.5" /> Inativo
+         </div>
+      )}
     </div>
   );
 
@@ -259,6 +284,14 @@ export default function Audiences() {
         icon={Users}
         actions={
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowInactive(!showInactive)}
+              className={showInactive ? "bg-slate-100 border-slate-300" : ""}
+            >
+              {showInactive ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+              {showInactive ? "Ocultar Inativos" : "Mostrar Inativos"}
+            </Button>
 
             <Button onClick={() => setShowCreationType(true)} className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-200">
               <Plus className="w-4 h-4 mr-2" /> Novo Público
