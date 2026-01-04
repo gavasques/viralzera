@@ -23,6 +23,7 @@ import LinkCard from "@/components/modeling/LinkCard";
 import LinkViewerModal from "@/components/modeling/LinkViewerModal";
 import CreatorIdeaEditor from "@/components/modeling/CreatorIdeaEditor";
 import TranscriptViewerModal from "@/components/modeling/TranscriptViewerModal";
+import TextViewerModal from "@/components/modeling/TextViewerModal";
 import ModelingFormModal from "@/components/modeling/ModelingFormModal";
 import AssistantDrawer from "@/components/modeling/AssistantDrawer";
 import { useDeepResearch } from "@/components/providers/DeepResearchProvider";
@@ -40,6 +41,8 @@ export default function ModelagemDetalhe() {
   const [showEditModeling, setShowEditModeling] = useState(false);
   const [viewingVideo, setViewingVideo] = useState(null);
   const [viewingLink, setViewingLink] = useState(null);
+  const [viewingText, setViewingText] = useState(null);
+  const [editingText, setEditingText] = useState(null);
   const [transcribingId, setTranscribingId] = useState(null);
   const [processingLinkId, setProcessingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -984,8 +987,11 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                 <TextCard
                   key={text.id}
                   text={text}
-                  onView={() => {/* TODO: View text modal */}}
-                  onEdit={() => {/* TODO: Edit text */}}
+                  onView={() => setViewingText(text)}
+                  onEdit={() => {
+                    setEditingText(text);
+                    setShowAddText(true);
+                  }}
                   onDelete={() => {
                     if (confirm('Excluir este texto?')) {
                       deleteTextMutation.mutate(text.id);
@@ -1095,8 +1101,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
       <AddTextModal
         open={showAddText}
-        onOpenChange={setShowAddText}
+        onOpenChange={(val) => {
+          setShowAddText(val);
+          if (!val) setEditingText(null);
+        }}
         modelingId={modelingId}
+        textToEdit={editingText}
       />
 
       <AddLinkModal
@@ -1109,6 +1119,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         open={!!viewingVideo}
         onOpenChange={() => setViewingVideo(null)}
         video={viewingVideo}
+      />
+
+      <TextViewerModal
+        open={!!viewingText}
+        onOpenChange={() => setViewingText(null)}
+        text={viewingText}
       />
 
       <LinkViewerModal

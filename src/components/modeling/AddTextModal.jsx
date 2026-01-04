@@ -19,7 +19,7 @@ const TEXT_TYPES = [
   { value: 'other', label: 'Outro' }
 ];
 
-export default function AddTextModal({ open, onOpenChange, modelingId }) {
+export default function AddTextModal({ open, onOpenChange, modelingId, textToEdit }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: '',
@@ -28,14 +28,40 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
     text_type: 'reference'
   });
 
+  // Load textToEdit into formData when it changes
+  React.useEffect(() => {
+    if (textToEdit) {
+      setFormData({
+        title: textToEdit.title || '',
+        description: textToEdit.description || '',
+        content: textToEdit.content || '',
+        text_type: textToEdit.text_type || 'reference'
+      });
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        content: '',
+        text_type: 'reference'
+      });
+    }
+  }, [textToEdit, open]);
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const newText = await base44.entities.ModelingText.create({
+      const payload = {
         ...data,
         modeling_id: modelingId,
         character_count: data.content.length,
         token_estimate: Math.ceil(data.content.length / 4)
-      });
+      };
+
+      if (textToEdit) {
+        return await base44.entities.ModelingText.update(textToEdit.id, payload);
+      } else {
+        return await base44.entities.ModelingText.create(payload);
+      }
+    },
 
       // Update modeling totals
       const allTexts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
@@ -57,14 +83,16 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       
-      toast.success('Texto adicionado!');
+      toast.success(textToEdit ? 'Texto atualizado!' : 'Texto adicionado!');
 
-      // Chamar análise individual
+      // Chamar análise individual apenas se for criação ou se o conteúdo mudou significativamente
+      // Para simplificar, chamamos sempre na criação, e opcionalmente na edição (mas aqui vou manter para ambos por enquanto, ou remover na edição se for spam)
+      // Vamos manter a re-análise
       base44.functions.invoke('runModelingAnalysis', {
         modeling_id: modelingId,
-        materialId: newText.id,
+        materialId: newText.id || textToEdit.id,
         materialType: 'text',
-        content: newText.content
+        content: newText.content || payload.content
       }).catch(err => {
         console.error('Erro ao analisar texto:', err);
       });
@@ -73,8 +101,8 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
       onOpenChange(false);
     },
     onError: (err) => {
-      console.error('Erro ao adicionar texto:', err);
-      toast.error('Erro ao adicionar: ' + err.message);
+      console.error('Erro ao salvar texto:', err);
+      toast.error('Erro ao salvar: ' + err.message);
     }
   });
 
@@ -103,7 +131,7 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
-            Adicionar Texto
+            {textToEdit ? 'Editar Texto' : 'Adicionar Texto'}
           </DialogTitle>
         </DialogHeader>
 
@@ -171,7 +199,7 @@ export default function AddTextModal({ open, onOpenChange, modelingId }) {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Salvando...
                 </>
-              ) : 'Adicionar Texto'}
+              ) : (textToEdit ? 'Salvar Alterações' : 'Adicionar Texto')}
             </Button>
           </DialogFooter>
         </form>
