@@ -21,16 +21,38 @@ export default function DeepResearchWebhookModal({ open, onOpenChange }) {
 
     setIsLoading(true);
     try {
-      const { data, status } = await base44.functions.invoke('sendToDeepResearchWebhook', { 
-        query: query.trim() 
+      // Fetch the config to get the webhook URL
+      const configs = await base44.entities.DeepResearchConfig.list();
+      const config = configs?.[0];
+      const webhookUrl = config?.webhook_url;
+
+      if (!webhookUrl) {
+        throw new Error('URL do Webhook não configurada. Por favor, adicione a URL nas configurações do agente Deep Research.');
+      }
+
+      // Send directly from frontend as requested
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          query: query.trim(),
+          timestamp: new Date().toISOString()
+        })
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Erro no webhook: ${response.status} - ${text}`);
+      }
       
       onOpenChange(false);
       setQuery('');
       toast.success('Pesquisa enviada com sucesso!');
     } catch (error) {
       console.error('Erro ao enviar pesquisa:', error);
-      toast.error('Erro ao enviar pesquisa: ' + (error.response?.data?.error || error.message));
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }

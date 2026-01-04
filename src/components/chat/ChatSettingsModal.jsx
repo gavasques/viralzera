@@ -39,6 +39,7 @@ export default function ChatSettingsModal({
   const [reasoningEffort, setReasoningEffort] = useState('medium');
   const [enableWebSearch, setEnableWebSearch] = useState(false);
   const [maxTokens, setMaxTokens] = useState(32000);
+  const [webhookUrl, setWebhookUrl] = useState('');
   const queryClient = useQueryClient();
 
   // Fetch existing config (global - único para todos os usuários)
@@ -126,6 +127,7 @@ export default function ChatSettingsModal({
       setReasoningEffort(existingConfig.reasoning_effort || 'medium');
       setEnableWebSearch(existingConfig.enable_web_search || false);
       setMaxTokens(existingConfig.max_tokens || 32000);
+      setWebhookUrl(existingConfig.webhook_url || '');
     }
   }, [existingConfig]);
 
@@ -164,7 +166,8 @@ export default function ChatSettingsModal({
       enable_reasoning: enableReasoning,
       reasoning_effort: reasoningEffort,
       enable_web_search: enableWebSearch,
-      max_tokens: maxTokens
+      max_tokens: maxTokens,
+      webhook_url: webhookUrl
     };
     
     saveMutation.mutate(data);
@@ -358,6 +361,25 @@ export default function ChatSettingsModal({
               Limite máximo de tokens na resposta da IA. Padrão: 32.000. Valores maiores permitem respostas mais longas.
             </p>
           </div>
+
+          {/* Webhook URL (Deep Research Only) */}
+          {configEntity === 'DeepResearchConfig' && (
+            <div className="space-y-3 p-4 bg-green-50/50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium text-slate-900">Webhook URL</Label>
+              </div>
+              <Input
+                type="url"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                placeholder="https://seu-webhook.com/..."
+                className="w-full"
+              />
+              <p className="text-xs text-slate-500">
+                URL para enviar as pesquisas diretamente do frontend.
+              </p>
+            </div>
+          )}
 
           {/* Prompt */}
           <div>
