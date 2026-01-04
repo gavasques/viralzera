@@ -18,8 +18,10 @@ import {
 import { Loader2, Search, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function DeepResearchWebhookModal({ open, onOpenChange, modelingId }) {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [searchDepth, setSearchDepth] = useState('basic');
   const [timeRange, setTimeRange] = useState('null');
@@ -66,6 +68,35 @@ export default function DeepResearchWebhookModal({ open, onOpenChange, modelingI
         const text = await response.text();
         throw new Error(`Erro no webhook: ${response.status} - ${text}`);
       }
+
+      // Tenta processar o retorno se houver
+      try {
+        const data = await response.json();
+        
+        // Pode vir como objeto ou array
+        const result = Array.isArray(data) ? data[0] : data;
+
+        if (result && result.output) {
+          await base44.entities.ModelingResearch.create({
+            modeling_id: modelingId,
+            query: query.trim(),
+            output: result.output,
+            search_depth: searchDepth,
+            topic: topic,
+            time_range: timeRange !== 'null' ? timeRange : null,
+            status: 'completed'
+          });
+          
+          queryClient.invalidateQueries({ queryKey: ['modelingResearches', modelingId] });
+          toast.success('Pesquisa salva com sucesso!');
+        } else {
+          toast.success('Pesquisa enviada! Aguardando retorno via webhook...');
+        }
+      } catch (e) {
+        // Se falhar o parse do JSON mas o status for OK, assume que foi sucesso e o webhook pode retornar depois
+        console.log("Resposta sem JSON ou erro ao processar:", e);
+        toast.success('Pesquisa enviada com sucesso!');
+      }
       
       onOpenChange(false);
       setQuery('');
@@ -73,8 +104,6 @@ export default function DeepResearchWebhookModal({ open, onOpenChange, modelingI
       setSearchDepth('basic');
       setTimeRange('null');
       setTopic('general');
-      
-      toast.success('Pesquisa enviada com sucesso!');
     } catch (error) {
       console.error('Erro ao enviar pesquisa:', error);
       toast.error(error.message);
