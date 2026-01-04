@@ -41,15 +41,17 @@ export function StepContext({ focusId, value, onChange }) {
     original: p
   })) || [];
 
-  const audienceOptions = audiences?.map(a => {
-    const group = audienceGroups?.find(g => g.id === a.group_id);
-    return {
-      value: a.id,
-      label: a.name,
-      searchLabel: `${a.name} ${a.funnel_stage || ''} ${group?.name || ''}`,
-      original: { ...a, groupName: group?.name }
-    };
-  }) || [];
+  const audienceOptions = audiences
+    ?.filter(a => a.is_active !== false)
+    .map(a => {
+      const group = audienceGroups?.find(g => g.id === a.group_id);
+      return {
+        value: a.id,
+        label: a.name,
+        searchLabel: `${a.name} ${a.funnel_stage || ''} ${group?.name || ''}`,
+        original: { ...a, groupName: group?.name }
+      };
+    }) || [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
