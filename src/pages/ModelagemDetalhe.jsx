@@ -758,14 +758,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         </div>
 
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline"
-            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-            onClick={() => setShowDeepResearchWebhook(true)}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Pesquisa Profunda
-          </Button>
+          {/* Pesquisa Profunda button removed */}
 
           <div className="text-right hidden sm:block">
             <p className="text-2xl font-bold text-slate-900">{formatNumber(modeling.total_tokens_estimate || 0)}</p>
@@ -793,22 +786,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
               </>
             )}
           </Button>
-          <Button 
-            variant="outline" 
-            className="bg-amber-50 hover:bg-amber-100 text-amber-600"
-            onClick={() => setShowAssistant(true)}
-          >
-            <BrainCircuit className="w-4 h-4 mr-2" />
-            Assistente
-          </Button>
-          <Button 
-            variant="outline" 
-            className="bg-blue-50 hover:bg-blue-100 text-blue-600"
-            onClick={() => openDeepResearch(modelingId)}
-          >
-            <Globe className="w-4 h-4 mr-2" />
-            Deep Research
-          </Button>
+          {/* Assistant and Deep Research buttons removed from header */}
           <Button variant="outline" size="icon" onClick={() => setShowEditModeling(true)}>
             <Settings className="w-4 h-4" />
           </Button>
@@ -956,6 +934,14 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         {/* Texts Tab */}
         <TabsContent value="texts" className="space-y-4">
           <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
+              onClick={() => openDeepResearch(modelingId)}
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              Deep Research
+            </Button>
             <Button onClick={() => setShowDeepResearchWebhook(true)} className="bg-violet-600 hover:bg-violet-700 text-white border-none">
                 <Search className="w-4 h-4 mr-2" />
                 Nova Pesquisa
