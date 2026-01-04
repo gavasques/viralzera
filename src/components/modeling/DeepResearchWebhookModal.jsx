@@ -121,8 +121,10 @@ export default function DeepResearchWebhookModal({ open, onOpenChange }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="ultra-fast">Ultra-Fast (Instantâneo)</SelectItem>
+                    <SelectItem value="fast">Fast (Rápido)</SelectItem>
                     <SelectItem value="basic">Basic (Padrão)</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="advanced">Advanced (Detalhado - 2 créditos)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
