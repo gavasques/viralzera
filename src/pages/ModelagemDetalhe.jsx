@@ -27,6 +27,7 @@ import ModelingFormModal from "@/components/modeling/ModelingFormModal";
 import AssistantDrawer from "@/components/modeling/AssistantDrawer";
 import { useDeepResearch } from "@/components/providers/DeepResearchProvider";
 import DeepResearchWebhookModal from "@/components/modeling/DeepResearchWebhookModal";
+import ResearchCard from "@/components/modeling/ResearchCard";
 
 export default function ModelagemDetalhe() {
   const queryClient = useQueryClient();
@@ -85,6 +86,13 @@ export default function ModelagemDetalhe() {
     enabled: !!modelingId
   });
 
+  // Fetch researches
+  const { data: researches = [], isLoading: loadingResearches } = useQuery({
+    queryKey: ['modelingResearches', modelingId],
+    queryFn: () => base44.entities.ModelingResearch.filter({ modeling_id: modelingId }, '-created_date', 100),
+    enabled: !!modelingId
+  });
+
   // Fetch dossier
   const { data: dossier } = useQuery({
     queryKey: ['modelingDossier', modelingId],
@@ -123,6 +131,15 @@ export default function ModelagemDetalhe() {
       queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Link excluído!');
+    }
+  });
+
+  // Delete research mutation
+  const deleteResearchMutation = useMutation({
+    mutationFn: (id) => base44.entities.ModelingResearch.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['modelingResearches', modelingId] });
+      toast.success('Pesquisa excluída!');
     }
   });
 
@@ -874,6 +891,10 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
               <Link2 className="w-4 h-4 mr-2" />
               Links ({links.length})
             </TabsTrigger>
+            <TabsTrigger value="pesquisas" className="data-[state=active]:bg-violet-50 data-[state=active]:text-violet-600">
+              <Search className="w-4 h-4 mr-2" />
+              Pesquisas ({researches.length})
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex gap-2">
@@ -976,6 +997,42 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
           )}
         </TabsContent>
 
+        {/* Researches Tab */}
+        <TabsContent value="pesquisas" className="space-y-4">
+           <div className="flex justify-end">
+             <Button onClick={() => setShowDeepResearchWebhook(true)} className="bg-violet-600 hover:bg-violet-700">
+               <Plus className="w-4 h-4 mr-2" />
+               Nova Pesquisa
+             </Button>
+           </div>
+
+           {loadingResearches ? (
+             <CardGridSkeleton count={3} columns={3} />
+           ) : researches.length === 0 ? (
+             <EmptyState
+               icon={Search}
+               title="Nenhuma pesquisa realizada"
+               description="Use o Deep Research para encontrar informações detalhadas sobre o tema"
+               actionLabel="Nova Pesquisa"
+               onAction={() => setShowDeepResearchWebhook(true)}
+             />
+           ) : (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+               {researches.map(research => (
+                 <ResearchCard
+                   key={research.id}
+                   research={research}
+                   onDelete={() => {
+                     if (confirm('Excluir esta pesquisa?')) {
+                       deleteResearchMutation.mutate(research.id);
+                     }
+                   }}
+                 />
+               ))}
+             </div>
+           )}
+        </TabsContent>
+
         {/* Links Tab */}
         <TabsContent value="links" className="space-y-4">
           <div className="flex justify-between items-center">
@@ -1076,6 +1133,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       <DeepResearchWebhookModal
         open={showDeepResearchWebhook}
         onOpenChange={setShowDeepResearchWebhook}
+        modelingId={modelingId}
       />
       </div>
       );

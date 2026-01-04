@@ -19,7 +19,7 @@ import { Loader2, Search, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
-export default function DeepResearchWebhookModal({ open, onOpenChange }) {
+export default function DeepResearchWebhookModal({ open, onOpenChange, modelingId }) {
   const [query, setQuery] = useState('');
   const [searchDepth, setSearchDepth] = useState('basic');
   const [timeRange, setTimeRange] = useState('null');
@@ -46,6 +46,7 @@ export default function DeepResearchWebhookModal({ open, onOpenChange }) {
         timestamp: new Date().toISOString(),
         search_depth: searchDepth,
         topic: topic,
+        modeling_id: modelingId,
       };
 
       // Only add time_range if it's not 'null'
