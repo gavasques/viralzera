@@ -35,11 +35,13 @@ export function StepContext({ focusId, value, onChange }) {
   });
 
   // Prepare Options (without "none" options)
-  const personaOptions = personas?.map(p => ({
-    value: p.id,
-    label: p.name,
-    original: p
-  })) || [];
+  const personaOptions = personas
+    ?.filter(p => p.is_active !== false)
+    .map(p => ({
+      value: p.id,
+      label: p.name,
+      original: p
+    })) || [];
 
   const audienceOptions = audiences
     ?.filter(a => a.is_active !== false)

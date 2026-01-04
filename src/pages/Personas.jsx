@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { User, Plus, Pencil, Trash2, Sparkles, Eye, Mic, Settings, Brain, Keyboard, ChevronRight } from "lucide-react";
+import { User, Plus, Pencil, Trash2, Sparkles, Eye, Mic, Settings, Brain, Keyboard, ChevronRight, Power, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -43,6 +43,7 @@ export default function Personas() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [viewingPersona, setViewingPersona] = useState(null);
+  const [showInactive, setShowInactive] = useState(false);
   
   const [showCreationType, setShowCreationType] = useState(false);
   
@@ -340,6 +341,16 @@ export default function Personas() {
     save(editingId, data);
   }, [form, editingId, selectedFocusId, save]);
 
+  const togglePersonaActive = async (persona) => {
+    try {
+      const newStatus = persona.is_active === false ? true : false;
+      await save(persona.id, { ...persona, is_active: newStatus });
+      toast.success(newStatus ? "Persona ativada!" : "Persona inativada!");
+    } catch (error) {
+      toast.error("Erro ao alterar status");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -357,6 +368,14 @@ export default function Personas() {
         icon={User}
         actions={
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowInactive(!showInactive)}
+              className={showInactive ? "bg-slate-100 border-slate-300" : ""}
+            >
+              {showInactive ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+              {showInactive ? "Ocultar Inativas" : "Mostrar Inativas"}
+            </Button>
             <Button onClick={() => setShowCreationType(true)} className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-200">
               <Plus className="w-4 h-4 mr-2" /> Nova Persona
             </Button>
@@ -380,13 +399,13 @@ export default function Personas() {
             onAction={() => handleOpen()}
           />
         ) : (
-          personas.map((persona) => {
+          personas.filter(p => showInactive || p.is_active !== false).map((persona) => {
             const isStructured = persona.story && typeof persona.story === 'object';
             const toneDescription = persona.tone_of_voice?.descricao || (typeof persona.tone_of_voice === 'string' ? persona.tone_of_voice : null);
             const bordoes = persona.thoughts_phrases?.bordoes || [];
             
             return (
-              <Card key={persona.id} className="hover:shadow-md transition-shadow">
+              <Card key={persona.id} className="hover:shadow-md transition-shadow overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -401,6 +420,15 @@ export default function Personas() {
                       )}
                     </div>
                     <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`h-8 w-8 ${persona.is_active === false ? 'text-slate-400 hover:text-green-600' : 'text-green-600 hover:text-slate-400'}`}
+                        onClick={() => togglePersonaActive(persona)}
+                        title={persona.is_active === false ? "Ativar" : "Inativar"}
+                      >
+                        <Power className="w-4 h-4" />
+                      </Button>
                       {isStructured && (
                         <Button variant="ghost" size="icon" onClick={() => setViewingPersona(persona)} title="Ver detalhes">
                           <Eye className="w-4 h-4 text-indigo-600" />
@@ -459,6 +487,11 @@ export default function Personas() {
                     )}
                   </div>
                 </CardContent>
+                {persona.is_active === false && (
+                  <div className="bg-slate-100 px-4 py-1 text-xs text-slate-500 font-medium flex items-center justify-center border-t border-slate-200">
+                      <EyeOff className="w-3 h-3 mr-1.5" /> Inativo
+                  </div>
+                )}
               </Card>
             );
           })

@@ -196,6 +196,16 @@ export default function Audiences() {
     }
   };
 
+  const toggleGroupActive = async (group) => {
+    try {
+      const newStatus = group.is_active === false ? true : false;
+      await saveGroup(group.id, { ...group, is_active: newStatus });
+      toast.success(newStatus ? "Grupo ativado!" : "Grupo inativado!");
+    } catch (error) {
+      toast.error("Erro ao alterar status do grupo");
+    }
+  };
+
   const handleQuickGroupCreate = async () => {
     if (!quickGroupName.trim()) {
       toast.error("Nome do grupo é obrigatório");
@@ -320,7 +330,7 @@ export default function Audiences() {
         ) : (
           <>
             {/* Grupos de Público */}
-            {groups.map((group) => {
+            {groups.filter(g => showInactive || g.is_active !== false).map((group) => {
               const groupAudiences = getAudiencesByGroup(group.id);
               const isExpanded = expandedGroups[group.id] !== false;
               
@@ -347,6 +357,15 @@ export default function Audiences() {
                           </Badge>
                         </div>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={`h-8 w-8 ${group.is_active === false ? 'text-slate-400 hover:text-green-600' : 'text-green-600 hover:text-slate-400'}`}
+                            onClick={() => toggleGroupActive(group)}
+                            title={group.is_active === false ? "Ativar Grupo" : "Inativar Grupo"}
+                          >
+                            <Power className="w-4 h-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpen(null, group.id)}>
                             <Plus className="w-4 h-4" />
                           </Button>
@@ -381,6 +400,11 @@ export default function Audiences() {
                       </CardContent>
                     </CollapsibleContent>
                   </Collapsible>
+                  {group.is_active === false && (
+                    <div className="bg-slate-100 px-4 py-1 text-xs text-slate-500 font-medium flex items-center justify-center border-t border-slate-200">
+                        <EyeOff className="w-3 h-3 mr-1.5" /> Grupo Inativo
+                    </div>
+                  )}
                 </Card>
               );
             })}
