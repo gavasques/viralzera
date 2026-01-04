@@ -42,6 +42,10 @@ export function StepContext({ focusId, value, onChange }) {
 
   const audienceOptions = audiences
     ?.filter(a => a.is_active !== false)
+    .filter(a => {
+      const group = audienceGroups?.find(g => g.id === a.group_id);
+      return !group || group.is_active !== false;
+    })
     .map(a => {
       const group = audienceGroups?.find(g => g.id === a.group_id);
       return {

@@ -63,6 +63,16 @@ export default function Personas() {
     deleteSuccessMessage: "Persona removida!"
   });
 
+  const togglePersonaActive = async (persona) => {
+    try {
+      const newStatus = persona.is_active === false ? true : false;
+      await save(persona.id, { ...persona, is_active: newStatus });
+      toast.success(newStatus ? "Persona ativada!" : "Persona inativada!");
+    } catch (error) {
+      toast.error("Erro ao alterar status");
+    }
+  };
+
   // Helper to convert structured data to string for textarea display
   const stringifyField = (field) => {
     if (!field) return "";
@@ -341,16 +351,6 @@ export default function Personas() {
     save(editingId, data);
   }, [form, editingId, selectedFocusId, save]);
 
-  const togglePersonaActive = async (persona) => {
-    try {
-      const newStatus = persona.is_active === false ? true : false;
-      await save(persona.id, { ...persona, is_active: newStatus });
-      toast.success(newStatus ? "Persona ativada!" : "Persona inativada!");
-    } catch (error) {
-      toast.error("Erro ao alterar status");
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -374,7 +374,7 @@ export default function Personas() {
               className={showInactive ? "bg-slate-100 border-slate-300" : ""}
             >
               {showInactive ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-              {showInactive ? "Ocultar Inativas" : "Mostrar Inativas"}
+              {showInactive ? "Ocultar Inativos" : "Mostrar Inativos"}
             </Button>
             <Button onClick={() => setShowCreationType(true)} className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-200">
               <Plus className="w-4 h-4 mr-2" /> Nova Persona
@@ -405,7 +405,7 @@ export default function Personas() {
             const bordoes = persona.thoughts_phrases?.bordoes || [];
             
             return (
-              <Card key={persona.id} className="hover:shadow-md transition-shadow overflow-hidden">
+              <Card key={persona.id} className={`hover:shadow-md transition-shadow ${persona.is_active === false ? 'opacity-75 border-slate-300 bg-slate-50' : ''}`}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -448,6 +448,12 @@ export default function Personas() {
                     </div>
                   </div>
                   
+                  {persona.is_active === false && (
+                    <div className="bg-slate-200 -mx-6 px-6 py-1 mb-4 text-xs text-slate-500 font-medium flex items-center justify-center border-y border-slate-300">
+                        <EyeOff className="w-3 h-3 mr-1.5" /> Inativo
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     {/* Tom de Voz */}
                     {toneDescription && (
@@ -487,11 +493,6 @@ export default function Personas() {
                     )}
                   </div>
                 </CardContent>
-                {persona.is_active === false && (
-                  <div className="bg-slate-100 px-4 py-1 text-xs text-slate-500 font-medium flex items-center justify-center border-t border-slate-200">
-                      <EyeOff className="w-3 h-3 mr-1.5" /> Inativo
-                  </div>
-                )}
               </Card>
             );
           })

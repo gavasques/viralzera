@@ -202,7 +202,7 @@ export default function Audiences() {
       await saveGroup(group.id, { ...group, is_active: newStatus });
       toast.success(newStatus ? "Grupo ativado!" : "Grupo inativado!");
     } catch (error) {
-      toast.error("Erro ao alterar status do grupo");
+      toast.error("Erro ao alterar status");
     }
   };
 
@@ -335,7 +335,7 @@ export default function Audiences() {
               const isExpanded = expandedGroups[group.id] !== false;
               
               return (
-                <Card key={group.id} className="overflow-hidden">
+                <Card key={group.id} className={`overflow-hidden ${group.is_active === false ? 'opacity-75 border-slate-300 bg-slate-50' : ''}`}>
                   <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.id)}>
                     <CollapsibleTrigger asChild>
                       <div className="flex items-center justify-between p-4 bg-slate-50 border-b cursor-pointer hover:bg-slate-100 transition-colors">
@@ -381,9 +381,14 @@ export default function Audiences() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
+                        </div>
+                        {group.is_active === false && (
+                        <div className="bg-slate-200 px-4 py-1 text-xs text-slate-500 font-medium flex items-center justify-center border-t border-slate-300">
+                           <EyeOff className="w-3 h-3 mr-1.5" /> Grupo Inativo
+                        </div>
+                        )}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
                       <CardContent className="p-4 space-y-3">
                         {groupAudiences.length === 0 ? (
                           <p className="text-sm text-slate-500 text-center py-4">
@@ -400,11 +405,6 @@ export default function Audiences() {
                       </CardContent>
                     </CollapsibleContent>
                   </Collapsible>
-                  {group.is_active === false && (
-                    <div className="bg-slate-100 px-4 py-1 text-xs text-slate-500 font-medium flex items-center justify-center border-t border-slate-200">
-                        <EyeOff className="w-3 h-3 mr-1.5" /> Grupo Inativo
-                    </div>
-                  )}
                 </Card>
               );
             })}
