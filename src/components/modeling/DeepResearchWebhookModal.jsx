@@ -77,18 +77,48 @@ export default function DeepResearchWebhookModal({ open, onOpenChange, modelingI
         const result = Array.isArray(data) ? data[0] : data;
 
         if (result && result.output) {
-          await base44.entities.ModelingResearch.create({
+          // Save as ModelingText instead of ModelingResearch
+          const content = result.output;
+          const charCount = content.length;
+          const tokenEstimate = Math.ceil(charCount / 4);
+
+          const newText = await base44.entities.ModelingText.create({
             modeling_id: modelingId,
-            query: query.trim(),
-            output: result.output,
-            search_depth: searchDepth,
-            topic: topic,
-            time_range: timeRange !== 'null' ? timeRange : null,
-            status: 'completed'
+            title: `Pesquisa: ${query.trim()}`,
+            description: `Depth: ${searchDepth}, Topic: ${topic}, Range: ${timeRange !== 'null' ? timeRange : 'all'}`,
+            content: content,
+            text_type: 'research',
+            character_count: charCount,
+            token_estimate: tokenEstimate
           });
-          
-          queryClient.invalidateQueries({ queryKey: ['modelingResearches', modelingId] });
-          toast.success('Pesquisa salva com sucesso!');
+
+          // Update modeling totals
+          const allTexts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
+          const allVideos = await base44.entities.ModelingVideo.filter({ modeling_id: modelingId });
+
+          const textChars = allTexts.reduce((sum, t) => sum + (t.character_count || 0), 0);
+          const textTokens = allTexts.reduce((sum, t) => sum + (t.token_estimate || 0), 0);
+          const videoChars = allVideos.reduce((sum, v) => sum + (v.character_count || 0), 0);
+          const videoTokens = allVideos.reduce((sum, v) => sum + (v.token_estimate || 0), 0);
+
+          await base44.entities.Modeling.update(modelingId, {
+            total_characters: textChars + videoChars,
+            total_tokens_estimate: textTokens + videoTokens
+          });
+
+          // Run analysis
+          base44.functions.invoke('runModelingAnalysis', {
+            modeling_id: modelingId,
+            materialId: newText.id,
+            materialType: 'text',
+            content: content
+          }).catch(err => {
+            console.error('Erro ao analisar pesquisa:', err);
+          });
+
+          queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
+          queryClient.invalidateQueries({ queryKey: ['modelings'] });
+          toast.success('Pesquisa salva em Textos com sucesso!');
         } else {
           toast.success('Pesquisa enviada! Aguardando retorno via webhook...');
         }
