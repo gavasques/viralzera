@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Layers, Youtube, FileText, Plus, Hash, 
-  Video, Loader2, PlayCircle, Settings, BrainCircuit, Link2, Sparkles, Globe
+  Video, Loader2, PlayCircle, Settings, BrainCircuit, Link2, Sparkles, Globe, Search
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -26,6 +26,7 @@ import TranscriptViewerModal from "@/components/modeling/TranscriptViewerModal";
 import ModelingFormModal from "@/components/modeling/ModelingFormModal";
 import AssistantDrawer from "@/components/modeling/AssistantDrawer";
 import { useDeepResearch } from "@/components/providers/DeepResearchProvider";
+import DeepResearchWebhookModal from "@/components/modeling/DeepResearchWebhookModal";
 
 export default function ModelagemDetalhe() {
   const queryClient = useQueryClient();
@@ -44,6 +45,7 @@ export default function ModelagemDetalhe() {
   const [generatingDossier, setGeneratingDossier] = useState(false);
   const [analyzingId, setAnalyzingId] = useState(null);
   const { openDeepResearch } = useDeepResearch();
+  const [showDeepResearchWebhook, setShowDeepResearchWebhook] = useState(false);
 
   // Fetch modeling
   const { data: modeling, isLoading: loadingModeling } = useQuery({
@@ -745,6 +747,15 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         </div>
 
         <div className="flex items-center gap-3">
+          <Button 
+            variant="outline"
+            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+            onClick={() => setShowDeepResearchWebhook(true)}
+          >
+            <Search className="w-4 h-4 mr-2" />
+            Pesquisa Profunda
+          </Button>
+
           <div className="text-right hidden sm:block">
             <p className="text-2xl font-bold text-slate-900">{formatNumber(modeling.total_tokens_estimate || 0)}</p>
             <p className="text-xs text-slate-500">tokens estimados</p>
@@ -1060,6 +1071,11 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         open={showAssistant}
         onOpenChange={setShowAssistant}
         modelingId={modelingId}
+      />
+
+      <DeepResearchWebhookModal
+        open={showDeepResearchWebhook}
+        onOpenChange={setShowDeepResearchWebhook}
       />
       </div>
       );
