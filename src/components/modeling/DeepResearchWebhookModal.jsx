@@ -8,12 +8,22 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Search, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
 export default function DeepResearchWebhookModal({ open, onOpenChange }) {
   const [query, setQuery] = useState('');
+  const [searchDepth, setSearchDepth] = useState('basic');
+  const [timeRange, setTimeRange] = useState('null');
+  const [topic, setTopic] = useState('general');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -31,15 +41,24 @@ export default function DeepResearchWebhookModal({ open, onOpenChange }) {
       }
 
       // Send directly from frontend as requested
+      const payload = { 
+        query: query.trim(),
+        timestamp: new Date().toISOString(),
+        search_depth: searchDepth,
+        topic: topic,
+      };
+
+      // Only add time_range if it's not 'null'
+      if (timeRange !== 'null') {
+        payload.time_range = timeRange;
+      }
+
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          query: query.trim(),
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -49,6 +68,11 @@ export default function DeepResearchWebhookModal({ open, onOpenChange }) {
       
       onOpenChange(false);
       setQuery('');
+      // Reset defaults
+      setSearchDepth('basic');
+      setTimeRange('null');
+      setTopic('general');
+      
       toast.success('Pesquisa enviada com sucesso!');
     } catch (error) {
       console.error('Erro ao enviar pesquisa:', error);
@@ -60,7 +84,7 @@ export default function DeepResearchWebhookModal({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Search className="w-5 h-5 text-blue-600" />
@@ -68,17 +92,74 @@ export default function DeepResearchWebhookModal({ open, onOpenChange }) {
           </DialogTitle>
         </DialogHeader>
         
-        <div className="py-4">
-          <label className="text-sm font-medium text-slate-700 mb-2 block">
-            O que você quer procurar?
-          </label>
-          <Textarea
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Descreva detalhadamente o que você precisa pesquisar..."
-            className="min-h-[120px] resize-none"
-            autoFocus
-          />
+        <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 block">
+              O que você quer procurar?
+            </label>
+            <Textarea
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Descreva detalhadamente o que você precisa pesquisar..."
+              className="min-h-[100px] resize-none"
+              autoFocus
+            />
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2 text-slate-500 mb-2">
+              <Settings2 className="w-4 h-4" />
+              <span className="text-sm font-medium">Configurações Avançadas</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Search Depth */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Profundidade</label>
+                <Select value={searchDepth} onValueChange={setSearchDepth}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Basic (Padrão)</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Time Range */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Período</label>
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">Sem filtro</SelectItem>
+                    <SelectItem value="day">Últimas 24h</SelectItem>
+                    <SelectItem value="week">Última semana</SelectItem>
+                    <SelectItem value="month">Último mês</SelectItem>
+                    <SelectItem value="year">Último ano</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Topic */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Tópico</label>
+                <Select value={topic} onValueChange={setTopic}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">Geral</SelectItem>
+                    <SelectItem value="news">Notícias</SelectItem>
+                    <SelectItem value="finance">Finanças</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
