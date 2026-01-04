@@ -32,18 +32,52 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Missing output' }, { status: 400 });
         }
 
-        // Create the record using service role
-        await base44.asServiceRole.entities.ModelingResearch.create({
+        // Create the record using service role (as ModelingText)
+        const content = output;
+        const charCount = content.length;
+        const tokenEstimate = Math.ceil(charCount / 4);
+
+        const text = await base44.asServiceRole.entities.ModelingText.create({
             modeling_id,
-            output,
-            query: query || '',
-            search_depth: search_depth || '',
-            topic: topic || '',
-            time_range: time_range || '',
-            status: 'completed'
+            title: `Pesquisa: ${query || 'Deep Research'}`,
+            description: `Depth: ${search_depth || 'N/A'}, Topic: ${topic || 'N/A'}, Range: ${time_range || 'all'}`,
+            content: content,
+            text_type: 'research',
+            character_count: charCount,
+            token_estimate: tokenEstimate
         });
 
-        return Response.json({ success: true });
+        // Update modeling totals (optional)
+        try {
+            const allTexts = await base44.asServiceRole.entities.ModelingText.filter({ modeling_id });
+            const allVideos = await base44.asServiceRole.entities.ModelingVideo.filter({ modeling_id });
+            
+            const textChars = allTexts.reduce((sum, t) => sum + (t.character_count || 0), 0);
+            const textTokens = allTexts.reduce((sum, t) => sum + (t.token_estimate || 0), 0);
+            const videoChars = allVideos.reduce((sum, v) => sum + (v.character_count || 0), 0);
+            const videoTokens = allVideos.reduce((sum, v) => sum + (v.token_estimate || 0), 0);
+
+            await base44.asServiceRole.entities.Modeling.update(modeling_id, {
+                total_characters: textChars + videoChars,
+                total_tokens_estimate: textTokens + videoTokens
+            });
+        } catch (e) {
+            console.error("Error updating totals:", e);
+        }
+
+        // Trigger analysis
+        try {
+             await base44.asServiceRole.functions.invoke('runModelingAnalysis', {
+                modeling_id: modeling_id,
+                materialId: text.id,
+                materialType: 'text',
+                content: content
+            });
+        } catch (e) {
+            console.error("Error triggering analysis:", e);
+        }
+
+        return Response.json({ success: true, id: text.id });
 
     } catch (error) {
         console.error('Error processing webhook:', error);
