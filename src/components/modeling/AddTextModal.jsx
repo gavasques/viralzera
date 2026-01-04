@@ -56,12 +56,13 @@ export default function AddTextModal({ open, onOpenChange, modelingId, textToEdi
         token_estimate: Math.ceil(data.content.length / 4)
       };
 
+      let result;
       if (textToEdit) {
-        return await base44.entities.ModelingText.update(textToEdit.id, payload);
+        await base44.entities.ModelingText.update(textToEdit.id, payload);
+        result = { ...textToEdit, ...payload };
       } else {
-        return await base44.entities.ModelingText.create(payload);
+        result = await base44.entities.ModelingText.create(payload);
       }
-    },
 
       // Update modeling totals
       const allTexts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
@@ -77,7 +78,7 @@ export default function AddTextModal({ open, onOpenChange, modelingId, textToEdi
         total_tokens_estimate: textTokens + videoTokens
       });
 
-      return newText;
+      return result;
     },
     onSuccess: (newText) => {
       queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
