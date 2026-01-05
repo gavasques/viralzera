@@ -175,10 +175,53 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 userNotes: formData.userNotes
             });
 
-            // 4. Refine prompt via Refiner Agent (if configured)
+            // 4. Refine prompt via Webhook or Refiner Agent (if configured)
             let prompt = rawPrompt;
             
-            if (refinerConfig?.model && refinerConfig?.prompt) {
+            // Prioridade: Webhook > Modelo de IA
+            if (refinerConfig?.webhook_url) {
+                setGenerationStatus('Refinando prompt via webhook...');
+                
+                try {
+                    const webhookPayload = {
+                        rawPrompt,
+                        postType: postType?.data || postType,
+                        persona: persona?.data || persona,
+                        audience: audience?.data || audience,
+                        materials: Array.isArray(materials) ? materials : (materials?.data || []),
+                        userNotes: formData.userNotes,
+                        includeExamples: formData.includeExamples
+                    };
+                    
+                    const webhookResponse = await fetch(refinerConfig.webhook_url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(webhookPayload)
+                    });
+                    
+                    if (!webhookResponse.ok) {
+                        throw new Error(`Webhook error: ${webhookResponse.status}`);
+                    }
+                    
+                    const webhookResult = await webhookResponse.json();
+                    
+                    // O webhook pode retornar { prompt: "..." } ou diretamente uma string
+                    const refinedPrompt = typeof webhookResult === 'string' 
+                        ? webhookResult 
+                        : (webhookResult.prompt || webhookResult.refinedPrompt || webhookResult.output);
+                    
+                    if (refinedPrompt) {
+                        prompt = refinedPrompt;
+                        console.log('Prompt refinado via webhook com sucesso');
+                    }
+                } catch (webhookError) {
+                    console.warn('Falha no webhook, tentando refiner de IA:', webhookError);
+                    // Fallback para refiner de IA se webhook falhar
+                }
+            }
+            
+            // Fallback: usar modelo de IA se webhook não configurado ou falhou
+            if (prompt === rawPrompt && refinerConfig?.model && refinerConfig?.prompt) {
                 setGenerationStatus('Refinando prompt com IA...');
                 
                 try {
