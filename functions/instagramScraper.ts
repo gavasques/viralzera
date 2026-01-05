@@ -25,46 +25,23 @@ Deno.serve(async (req) => {
       }
       const shortcode = shortcodeMatch[1];
 
-      // Tentar múltiplas APIs em fallback
-      let response;
-      let apiUsed = '';
-      
-      // API 1: Instagram-scraper-api2
-      response = await fetch(
-        `https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${shortcode}`,
+      // Usar Instagram Scraper API (rocketapi) - mais confiável
+      const response = await fetch(
+        `https://rocketapi-for-instagram.p.rapidapi.com/instagram/media/get_info_by_shortcode?shortcode=${shortcode}`,
         {
           method: 'GET',
           headers: {
-            'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
+            'x-rapidapi-host': 'rocketapi-for-instagram.p.rapidapi.com',
             'x-rapidapi-key': RAPIDAPI_KEY
           }
         }
       );
-      apiUsed = 'instagram-scraper-api2';
-      
-      // Fallback: API 2 se primeira falhar
-      if (!response.ok) {
-        console.log('API 1 failed, trying fallback...');
-        response = await fetch(
-          `https://instagram-bulk-scraper-latest.p.rapidapi.com/media_info_v2/${shortcode}`,
-          {
-            method: 'GET',
-            headers: {
-              'x-rapidapi-host': 'instagram-bulk-scraper-latest.p.rapidapi.com',
-              'x-rapidapi-key': RAPIDAPI_KEY
-            }
-          }
-        );
-        apiUsed = 'instagram-bulk-scraper';
-      }
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('RapidAPI error:', response.status, errorText);
-        return Response.json({ error: `Erro na API do Instagram: ${response.status}. Verifique se a chave RAPIDAPI_KEY está válida.` });
+        return Response.json({ error: `Erro na API do Instagram: ${response.status}. Verifique se sua chave RapidAPI está subscrita nesta API: rocketapi-for-instagram` });
       }
-      
-      console.log('API used:', apiUsed);
 
       const result = await response.json();
       console.log('Instagram API response:', JSON.stringify(result).substring(0, 1000));
