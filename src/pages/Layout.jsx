@@ -56,6 +56,7 @@ export default function Layout({ children }) {
   // State for collapsible sidebar groups
   const [expandedGroups, setExpandedGroups] = React.useState({
     'Principal': true,
+    'Youtube': true,
     'Criação': true,
     'Conteúdo': true,
     'DNA': true
@@ -145,11 +146,18 @@ export default function Layout({ children }) {
             ]
           },
           {
+            label: 'Youtube',
+            items: [
+              { name: 'Modelagem', icon: Layers, page: 'Modelagem' },
+              { name: 'Dossiês', icon: FileText, page: 'ContentDossiers' },
+              { name: 'Roteiros YouTube', icon: Youtube, page: 'YoutubeScripts' },
+            ]
+          },
+          {
             label: 'Criação',
             items: [
               { name: 'Multi Chat', icon: Sparkles, page: 'TitanosRouter' },
               { name: 'Canvas', icon: FileText, page: 'Canvas' },
-              { name: 'Roteiros YouTube', icon: Youtube, page: 'YoutubeScripts' },
             ]
           },
           {
@@ -161,8 +169,6 @@ export default function Layout({ children }) {
               { name: 'Matriz de Temas', icon: FolderTree, page: 'ThemeMatrix' },
               { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
               { name: 'Tipos de Postagem', icon: Layers, page: 'PostTypes' },
-              { name: 'Modelagem', icon: Layers, page: 'Modelagem' },
-              { name: 'Dossiês', icon: FileText, page: 'ContentDossiers' },
             ]
           },
           {
