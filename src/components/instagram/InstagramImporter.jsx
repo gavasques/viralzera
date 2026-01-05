@@ -141,6 +141,10 @@ AUTOR: @${postData.username || 'desconhecido'}`;
     return num?.toString() || '0';
   };
 
+  // Detectar tipo de post
+  const isReels = postData?.transcricao !== undefined;
+  const isCarrossel = postData?.carrosseis && postData.carrosseis.length > 0;
+
   return (
     <div className="space-y-4">
       {/* URL Input */}
@@ -166,198 +170,93 @@ AUTOR: @${postData.username || 'desconhecido'}`;
         </div>
       </div>
 
-      {/* Image View Modal */}
-      <Dialog open={!!viewImage} onOpenChange={(open) => !open && setViewImage(null)}>
-        <DialogContent className="max-w-[90vw] h-[90vh] p-0 border-0 bg-transparent shadow-none flex flex-col items-center justify-center">
-            <div className="relative w-full h-full flex items-center justify-center bg-black/80 rounded-lg overflow-hidden p-4">
-                <Button 
-                    className="absolute top-4 right-4 z-50 rounded-full bg-black/50 hover:bg-black/70 text-white border-0"
-                    size="icon"
-                    onClick={() => setViewImage(null)}
-                >
-                    <ZoomOut className="w-4 h-4 rotate-45" /> {/* Using rotate-45 of zoom-out as close/X replacement if X not available or just X from dialog */}
-                </Button>
-                
-                <div className="absolute bottom-8 flex gap-2 z-50">
-                    <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="bg-black/50 text-white hover:bg-black/70 border-0 backdrop-blur-sm"
-                        onClick={() => setImageZoom(prev => Math.max(0.5, prev - 0.25))}
-                    >
-                        <ZoomOut className="w-4 h-4 mr-2" /> Menos Zoom
-                    </Button>
-                    <span className="bg-black/50 text-white px-3 py-1.5 rounded text-sm backdrop-blur-sm flex items-center">
-                        {Math.round(imageZoom * 100)}%
-                    </span>
-                    <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="bg-black/50 text-white hover:bg-black/70 border-0 backdrop-blur-sm"
-                        onClick={() => setImageZoom(prev => Math.min(3, prev + 0.25))}
-                    >
-                        <ZoomIn className="w-4 h-4 mr-2" /> Mais Zoom
-                    </Button>
-                </div>
-
-                <div className="overflow-auto w-full h-full flex items-center justify-center">
-                    {viewImage && (
-                        <img 
-                            src={viewImage.cloudinary_url || viewImage.url} 
-                            alt="Full view"
-                            style={{ 
-                                transform: `scale(${imageZoom})`,
-                                transition: 'transform 0.2s ease-out',
-                                maxWidth: '100%',
-                                maxHeight: '100%',
-                                objectFit: 'contain'
-                            }}
-                            className="rounded shadow-2xl"
-                        />
-                    )}
-                </div>
-            </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Post Data Preview */}
       {postData && (
         <Card className="border-pink-200 bg-gradient-to-br from-pink-50 to-purple-50">
           <CardContent className="p-4 space-y-4">
+            {/* Header com autor */}
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="bg-white">
+                @{postData.username}
+              </Badge>
+              <Badge className={isReels ? 'bg-red-100 text-red-700' : isCarrossel ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}>
+                {isReels ? 'Reels' : isCarrossel ? `Carrossel (${postData.carrosseis.length} slides)` : 'Post'}
+              </Badge>
+            </div>
+
             {/* Stats */}
             <div className="flex gap-4 text-sm">
               <div className="flex items-center gap-1.5 text-slate-600">
                 <Heart className="w-4 h-4 text-red-500" />
                 <span className="font-medium">{formatNumber(postData.likes)}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <Eye className="w-4 h-4 text-blue-500" />
-                <span className="font-medium">{formatNumber(postData.views)}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <MessageCircle className="w-4 h-4 text-green-500" />
-                <span className="font-medium">{formatNumber(postData.comments)}</span>
-              </div>
-              <Badge variant="outline" className="ml-auto">
-                {postData.images?.length || 0} imagens
-              </Badge>
+              {postData.views && (
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <Eye className="w-4 h-4 text-blue-500" />
+                  <span className="font-medium">{formatNumber(postData.views)}</span>
+                </div>
+              )}
+              {postData.comentarios && (
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <MessageCircle className="w-4 h-4 text-green-500" />
+                  <span className="font-medium">{formatNumber(postData.comentarios)}</span>
+                </div>
+              )}
             </div>
 
-            {/* Images Preview & Manual Text */}
-            {postData.images?.length > 0 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label className="text-xs text-slate-500">Imagens do Post</Label>
-                    <ScrollArea className="w-full">
-                    <div className="flex gap-2 pb-2">
-                        {postData.images.map((img, idx) => (
-                        <div key={idx} className="relative shrink-0 group">
-                            <img 
-                            src={img.cloudinary_url || img.url} 
-                            alt={`Slide ${idx + 1}`}
-                            className="w-20 h-20 object-cover rounded-lg border border-slate-200 cursor-zoom-in"
-                            onClick={() => {
-                                setViewImage(img);
-                                setImageZoom(1);
-                            }}
-                            />
-                            <div 
-                                className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center cursor-pointer"
-                                onClick={() => {
-                                    setViewImage(img);
-                                    setImageZoom(1);
-                                }}
-                            >
-                                <Maximize2 className="w-6 h-6 text-white drop-shadow-md" />
-                            </div>
-                            <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                            {idx + 1}
-                            </Badge>
-                        </div>
-                        ))}
+            {/* First Frame (Reels) */}
+            {isReels && postData.firstframe && (
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-500">First Frame</Label>
+                <img 
+                  src={postData.firstframe} 
+                  alt="First Frame" 
+                  className="w-full max-h-48 object-cover rounded-lg border border-slate-200"
+                />
+              </div>
+            )}
+
+            {/* OCR / Texto Sobreposto (Reels) */}
+            {isReels && postData.ocr_first_frame && (
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Texto Sobreposto (OCR)</Label>
+                <p className="text-sm text-slate-700 bg-white p-2 rounded border border-slate-100 font-medium">
+                  {postData.ocr_first_frame}
+                </p>
+              </div>
+            )}
+
+            {/* Transcrição (Reels) */}
+            {isReels && postData.transcricao && postData.transcricao !== 'Não tem Texto' && (
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Transcrição do Áudio</Label>
+                <p className="text-sm text-slate-700 bg-white p-2 rounded border border-slate-100 max-h-24 overflow-y-auto">
+                  {postData.transcricao}
+                </p>
+              </div>
+            )}
+
+            {/* Slides do Carrossel */}
+            {isCarrossel && (
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-500">Conteúdo dos Slides</Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {postData.carrosseis.map((slide, idx) => (
+                    <div key={idx} className="bg-white p-2 rounded border border-slate-100">
+                      <Badge variant="outline" className="mb-1 text-[10px]">Slide {slide.carrossel}</Badge>
+                      <p className="text-xs text-slate-700">{slide.texto}</p>
                     </div>
-                    </ScrollArea>
+                  ))}
                 </div>
-
-                {/* OCR & Manual Text Section */}
-                {(postTypeFormat === 'Carrossel' || postTypeFormat === 'Post' || postTypeFormat === 'Reels') && (
-                  <div className="space-y-3 pt-2 border-t border-slate-100">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center">
-                            <Label className="text-xs font-semibold text-slate-700">Texto Sobreposto / Manual</Label>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleExtractText}
-                                disabled={isExtractingText}
-                                className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                            >
-                                {isExtractingText ? (
-                                    <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                                ) : (
-                                    <Sparkles className="w-3 h-3 mr-1.5" />
-                                )}
-                                {isExtractingText ? 'Extraindo...' : 'Usar IA (OCR)'}
-                            </Button>
-                        </div>
-                        
-                        <Textarea 
-                            placeholder="Escreva aqui o que está escrito na imagem (ou use o botão de OCR acima)..."
-                            value={manualOverlayText}
-                            onChange={(e) => setManualOverlayText(e.target.value)}
-                            className="min-h-[100px] text-sm font-mono bg-white"
-                        />
-                        <p className="text-[10px] text-slate-400">
-                            Para Reels/Stories, digite o texto principal que aparece sobre o vídeo/imagem.
-                        </p>
-                    </div>
-
-                    {/* Video Transcription - Only for Reels */}
-                    {postTypeFormat === 'Reels' && postData?.raw?.video_versions?.length > 0 && (
-                      <div className="flex flex-col gap-2 pt-3 border-t border-slate-100">
-                        <div className="flex justify-between items-center">
-                            <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                                <Mic className="w-3.5 h-3.5 text-purple-500" />
-                                Transcrição do Vídeo (Áudio)
-                            </Label>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleTranscribeVideo}
-                                disabled={isTranscribing}
-                                className="h-7 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                            >
-                                {isTranscribing ? (
-                                    <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                                ) : (
-                                    <Video className="w-3 h-3 mr-1.5" />
-                                )}
-                                {isTranscribing ? 'Transcrevendo...' : 'Transcrever Vídeo'}
-                            </Button>
-                        </div>
-                        
-                        <Textarea 
-                            placeholder="A transcrição do áudio do vídeo aparecerá aqui..."
-                            value={videoTranscription}
-                            onChange={(e) => setVideoTranscription(e.target.value)}
-                            className="min-h-[80px] text-sm font-mono bg-white"
-                        />
-                        <p className="text-[10px] text-slate-400">
-                            Use o botão acima para transcrever automaticamente o áudio do Reels via IA (Gemini).
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 
             {/* Caption Preview */}
-            {postData.caption && (
+            {postData.desscricao && (
               <div className="space-y-1">
-                <Label className="text-xs text-slate-500">Legenda</Label>
-                <p className="text-sm text-slate-700 line-clamp-3 bg-white p-2 rounded border border-slate-100">
-                  {postData.caption}
+                <Label className="text-xs text-slate-500">Legenda/Descrição</Label>
+                <p className="text-sm text-slate-700 line-clamp-4 bg-white p-2 rounded border border-slate-100">
+                  {postData.desscricao}
                 </p>
               </div>
             )}
