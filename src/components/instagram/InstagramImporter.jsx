@@ -55,9 +55,9 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       const shortcode = shortcodeMatch[1];
 
       // Chamar backend function para evitar CORS
-      const response = await base44.functions.invoke('instagramFetch', { shortcode });
+      const response = await base44.functions.instagramFetch({ shortcode });
 
-      if (response.data.error) {
+      if (response.data?.error) {
         toast.error(response.data.error);
         setIsLoading(false);
         return;
