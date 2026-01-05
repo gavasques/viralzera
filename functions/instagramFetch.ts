@@ -45,7 +45,21 @@ Deno.serve(async (req) => {
         return null;
       }
       const json = await res.json().catch(() => null);
-      return json?.data?.items?.[0] || null;
+      if (!json) return null;
+      // Extrair em diferentes formatos possíveis da API
+      const extract = (j) => {
+        if (!j) return null;
+        if (j.data) {
+          if (Array.isArray(j.data.items) && j.data.items.length) return j.data.items[0];
+          if (j.data.item) return j.data.item;
+          return j.data;
+        }
+        if (Array.isArray(j.items) && j.items.length) return j.items[0];
+        if (j.item) return j.item;
+        if (j.caption || j.user || j.image_versions2 || j.carousel_media) return j;
+        return null;
+      };
+      return extract(json);
     }
 
     let data = await fetchPost(codeOrUrl);
