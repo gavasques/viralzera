@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Instagram, Search, Eye, Heart, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+
+const WEBHOOK_URL = 'https://webhook.guivasques.app/webhook/9c5caeb2-5742-4575-af82-a4cca3a8d6ed';
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
   const [instagramUrl, setInstagramUrl] = useState('');
@@ -23,18 +24,29 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
     setPostData(null);
 
     try {
-      const response = await base44.functions.invoke('instagramWebhook', { 
-        url: instagramUrl.trim() 
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: instagramUrl.trim() })
       });
 
-      if (response.data?.error) {
-        throw new Error(response.data.error);
+      const text = await response.text();
+      
+      if (!text || text.trim() === '') {
+        throw new Error('Aguarde alguns segundos e tente novamente');
       }
 
-      setPostData(response.data);
+      const data = JSON.parse(text);
+      const post = Array.isArray(data) ? data[0] : data;
+      
+      if (!post || !post.id) {
+        throw new Error('Post não encontrado');
+      }
+
+      setPostData(post);
       toast.success('Dados do post carregados!');
     } catch (error) {
-      toast.error('Erro ao buscar dados: ' + error.message);
+      toast.error('Erro: ' + error.message);
       console.error(error);
     } finally {
       setIsLoading(false);
