@@ -387,6 +387,25 @@ export default function YoutubeScriptDetail() {
         onRestore={handleRestoreVersion}
       />
 
+      {/* Floating Save Button */}
+      {hasChanges && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={handleSave}
+            disabled={saveMutation.isPending}
+            size="lg"
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 rounded-full px-6 h-12 gap-2"
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
+          </Button>
+        </div>
+      )}
+
       {/* Unsaved Changes Dialog */}
       <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
         <AlertDialogContent className="max-w-md">
