@@ -25,9 +25,18 @@ Deno.serve(async (req) => {
       }
       const shortcode = shortcodeMatch[1];
 
-      // Usar API GraphQL pública do Instagram (via embed)
+      // Método 1: Tentar via embed do Instagram
       const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+      console.log('Trying embed URL:', embedUrl);
       
+      let images = [];
+      let caption = '';
+      let username = '';
+      let likes = 0;
+      let comments = 0;
+      let views = 0;
+      let videoVersions = [];
+
       const response = await fetch(embedUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -36,118 +45,118 @@ Deno.serve(async (req) => {
         }
       });
 
-      if (!response.ok) {
-        console.error('Instagram embed error:', response.status);
-        return Response.json({ error: `Erro ao acessar post. Status: ${response.status}` });
-      }
-
-      const html = await response.text();
-      console.log('Embed HTML length:', html.length);
-      
-      // Extrair dados do embed
-      let images = [];
-      let caption = '';
-      let username = '';
-      let likes = 0;
-      let comments = 0;
-      let views = 0;
-
-      // Extrair imagem principal do embed
-      const imgMatch = html.match(/class="EmbeddedMediaImage"[^>]*src="([^"]+)"/);
-      const imgMatch2 = html.match(/<img[^>]*class="[^"]*"[^>]*src="([^"]+scontent[^"]+)"/);
-      const imgMatch3 = html.match(/background-image:\s*url\(['"]?([^'")\s]+)['"]?\)/);
-      
-      let mainImage = imgMatch?.[1] || imgMatch2?.[1] || imgMatch3?.[1] || '';
-      
-      // Decodificar entidades HTML
-      mainImage = mainImage.replace(/&amp;/g, '&');
-      
-      if (mainImage) {
-        images = [{ url: mainImage, index: 0 }];
-      }
-
-      // Extrair caption do embed
-      const captionMatch = html.match(/class="Caption"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/);
-      const captionMatch2 = html.match(/<div class="CaptionComments"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/);
-      caption = captionMatch?.[1] || captionMatch2?.[1] || '';
-      // Limpar HTML do caption
-      caption = caption.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-
-      // Extrair username
-      const userMatch = html.match(/class="UsernameText"[^>]*>([^<]+)</);
-      const userMatch2 = html.match(/"username":"([^"]+)"/);
-      username = userMatch?.[1] || userMatch2?.[1] || '';
-
-      // Tentar extrair dados do script embutido
-      const scriptMatch = html.match(/window\.__additionalDataLoaded\s*\(\s*['"][^'"]+['"]\s*,\s*(\{[\s\S]+?\})\s*\)\s*;/);
-      if (scriptMatch) {
-        try {
-          const data = JSON.parse(scriptMatch[1]);
-          const media = data.shortcode_media || data;
-          
-          if (media.edge_sidecar_to_children?.edges) {
-            images = media.edge_sidecar_to_children.edges.map((edge, idx) => ({
-              url: edge.node.display_url,
-              index: idx
-            }));
-          } else if (media.display_url) {
-            images = [{ url: media.display_url, index: 0 }];
+      if (response.ok) {
+        const html = await response.text();
+        console.log('Embed HTML length:', html.length);
+        
+        // Extrair imagem do embed - múltiplas tentativas
+        const imgPatterns = [
+          /class="EmbeddedMediaImage"[^>]*src="([^"]+)"/,
+          /<img[^>]+src="(https:\/\/[^"]*scontent[^"]+)"/,
+          /background-image:\s*url\(['"]?(https:\/\/[^'")\s]+)['"]?\)/,
+          /"display_url":"([^"]+)"/,
+          /"thumbnail_src":"([^"]+)"/
+        ];
+        
+        for (const pattern of imgPatterns) {
+          const match = html.match(pattern);
+          if (match?.[1]) {
+            let imgUrl = match[1].replace(/\\u0026/g, '&').replace(/&amp;/g, '&');
+            if (imgUrl && !images.some(i => i.url === imgUrl)) {
+              images.push({ url: imgUrl, index: images.length });
+              console.log('Found image via pattern:', pattern.toString().substring(0, 50));
+            }
           }
-          
-          caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || caption;
-          username = media.owner?.username || username;
-          likes = media.edge_media_preview_like?.count || 0;
-          comments = media.edge_media_to_comment?.count || 0;
-          views = media.video_view_count || 0;
-        } catch (e) {
-          console.log('Script parse error:', e.message);
+        }
+
+        // Extrair múltiplas imagens para carrossel
+        const allImgMatches = html.matchAll(/"display_url":"([^"]+)"/g);
+        for (const match of allImgMatches) {
+          const imgUrl = match[1].replace(/\\u0026/g, '&');
+          if (!images.some(i => i.url === imgUrl)) {
+            images.push({ url: imgUrl, index: images.length });
+          }
+        }
+
+        // Extrair caption
+        const captionPatterns = [
+          /"text":"([^"]+)"/,
+          /class="Caption"[^>]*>([\s\S]*?)<\/div>/,
+          /"edge_media_to_caption":\{"edges":\[\{"node":\{"text":"([^"]+)"/
+        ];
+        
+        for (const pattern of captionPatterns) {
+          const match = html.match(pattern);
+          if (match?.[1] && !caption) {
+            caption = match[1].replace(/<[^>]+>/g, ' ').replace(/\\n/g, '\n').replace(/\s+/g, ' ').trim();
+          }
+        }
+
+        // Extrair username
+        const userPatterns = [
+          /"username":"([^"]+)"/,
+          /class="UsernameText"[^>]*>([^<]+)</
+        ];
+        
+        for (const pattern of userPatterns) {
+          const match = html.match(pattern);
+          if (match?.[1] && !username) {
+            username = match[1];
+          }
+        }
+
+        // Extrair métricas
+        const likesMatch = html.match(/"edge_media_preview_like":\{"count":(\d+)/);
+        const commentsMatch = html.match(/"edge_media_to_comment":\{"count":(\d+)/);
+        const viewsMatch = html.match(/"video_view_count":(\d+)/);
+        
+        likes = likesMatch ? parseInt(likesMatch[1]) : 0;
+        comments = commentsMatch ? parseInt(commentsMatch[1]) : 0;
+        views = viewsMatch ? parseInt(viewsMatch[1]) : 0;
+
+        // Extrair video versions para reels
+        const videoMatch = html.match(/"video_url":"([^"]+)"/);
+        if (videoMatch?.[1]) {
+          videoVersions.push({ url: videoMatch[1].replace(/\\u0026/g, '&') });
         }
       }
 
-      // Se não encontrou imagem via embed, tentar API alternativa
+      // Método 2: Se não encontrou nada, tentar página direta
       if (images.length === 0) {
-        console.log('No image found in embed, trying graphql...');
+        console.log('Embed failed, trying direct page...');
         
-        // Tentar endpoint graphql público
-        const graphqlUrl = `https://www.instagram.com/graphql/query/?query_hash=b3055c01b4b222b8a47dc12b090e4e64&variables=${encodeURIComponent(JSON.stringify({shortcode}))}`;
-        
-        try {
-          const gqlResponse = await fetch(graphqlUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Accept': 'application/json',
-            }
-          });
-          
-          if (gqlResponse.ok) {
-            const gqlData = await gqlResponse.json();
-            const media = gqlData.data?.shortcode_media;
-            
-            if (media) {
-              if (media.edge_sidecar_to_children?.edges) {
-                images = media.edge_sidecar_to_children.edges.map((edge, idx) => ({
-                  url: edge.node.display_url,
-                  index: idx
-                }));
-              } else if (media.display_url) {
-                images = [{ url: media.display_url, index: 0 }];
-              }
-              
-              caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || caption;
-              username = media.owner?.username || username;
-              likes = media.edge_media_preview_like?.count || likes;
-              comments = media.edge_media_to_comment?.count || comments;
-              views = media.video_view_count || views;
-            }
+        const directUrl = `https://www.instagram.com/p/${shortcode}/`;
+        const directResponse = await fetch(directUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+            'Accept': 'text/html,application/xhtml+xml',
           }
-        } catch (gqlError) {
-          console.log('GraphQL fallback error:', gqlError.message);
+        });
+
+        if (directResponse.ok) {
+          const html = await directResponse.text();
+          console.log('Direct page HTML length:', html.length);
+          
+          // Buscar og:image
+          const ogImage = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+          const ogDesc = html.match(/<meta property="og:description" content="([^"]+)"/)?.[1];
+          
+          if (ogImage) {
+            images.push({ url: ogImage.replace(/&amp;/g, '&'), index: 0 });
+          }
+          
+          if (ogDesc && !caption) {
+            // Extrair caption do og:description (formato: "X likes, Y comments - CAPTION")
+            const captionMatch = ogDesc.match(/comments?\s*-\s*(.+)/i);
+            caption = captionMatch?.[1] || ogDesc;
+            caption = caption.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+          }
         }
       }
 
       if (images.length === 0 && !caption) {
-        console.log('Could not extract data from embed');
-        return Response.json({ error: 'Não foi possível extrair dados do post. Tente outra URL.' });
+        console.log('All methods failed to extract data');
+        return Response.json({ error: 'Não foi possível extrair dados do post. O Instagram pode estar bloqueando ou o post é privado.' });
       }
 
       const postData = {
