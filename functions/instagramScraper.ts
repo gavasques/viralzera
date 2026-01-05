@@ -44,26 +44,40 @@ Deno.serve(async (req) => {
       }
 
       const result = await response.json();
-      const data = result.data;
+      console.log('Instagram API response:', JSON.stringify(result).substring(0, 1000));
+      
+      // Instagram191 retorna estrutura diferente
+      const data = result.data || result;
 
-      if (!data) {
-        return Response.json({ error: 'Post não encontrado' });
+      if (!data || result.error) {
+        return Response.json({ error: result.message || 'Post não encontrado' });
       }
 
-      // Processar imagens do carrossel ou imagem única
+      // Processar imagens - Instagram191 usa estrutura diferente
       let images = [];
-      if (data.carousel_media) {
+      
+      // Carrossel
+      if (data.carousel_media_count > 0 && data.carousel_media) {
         images = data.carousel_media.map((item, idx) => ({
-          url: item.image_versions?.items?.[0]?.url || item.thumbnail_url,
-          width: item.image_versions?.items?.[0]?.width || item.original_width,
-          height: item.image_versions?.items?.[0]?.height || item.original_height,
+          url: item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_url,
+          width: item.image_versions2?.candidates?.[0]?.width || item.original_width,
+          height: item.image_versions2?.candidates?.[0]?.height || item.original_height,
           index: idx
         }));
-      } else if (data.image_versions?.items?.[0]) {
+      } 
+      // Post único ou Reel
+      else if (data.image_versions2?.candidates?.[0]) {
         images = [{
-          url: data.image_versions.items[0].url,
-          width: data.image_versions.items[0].width,
-          height: data.image_versions.items[0].height,
+          url: data.image_versions2.candidates[0].url,
+          width: data.image_versions2.candidates[0].width,
+          height: data.image_versions2.candidates[0].height,
+          index: 0
+        }];
+      } else if (data.display_url) {
+        images = [{
+          url: data.display_url,
+          width: data.original_width,
+          height: data.original_height,
           index: 0
         }];
       } else if (data.thumbnail_url) {
@@ -76,15 +90,15 @@ Deno.serve(async (req) => {
       }
 
       const postData = {
-        id: data.id,
-        shortcode: data.code,
-        caption: data.caption?.text || '',
+        id: data.id || data.pk,
+        shortcode: data.code || shortcode,
+        caption: data.caption?.text || data.edge_media_to_caption?.edges?.[0]?.node?.text || '',
         title: data.title || '',
-        likes: data.like_count || 0,
-        comments: data.comment_count || 0,
-        views: data.play_count || data.view_count || 0,
-        username: data.user?.username || '',
-        user_full_name: data.user?.full_name || '',
+        likes: data.like_count || data.edge_liked_by?.count || 0,
+        comments: data.comment_count || data.edge_media_to_comment?.count || 0,
+        views: data.play_count || data.video_play_count || data.video_view_count || 0,
+        username: data.user?.username || data.owner?.username || '',
+        user_full_name: data.user?.full_name || data.owner?.full_name || '',
         images: images,
         raw: data
       };
