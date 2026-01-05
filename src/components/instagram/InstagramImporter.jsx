@@ -45,10 +45,23 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
     setExtractedTexts([]);
 
     try {
-      const response = await base44.functions.invoke('instagramScraper', {
-        action: 'getPostDetails',
-        url: instagramUrl
-      });
+      let response;
+      
+      // Tentar base44.functions.invoke primeiro, senão usar fetch direto
+      if (base44.functions?.invoke) {
+        response = await base44.functions.invoke('instagramScraper', {
+          action: 'getPostDetails',
+          url: instagramUrl
+        });
+      } else {
+        // Fallback: chamar função diretamente via fetch
+        const funcResponse = await fetch('/api/functions/instagramScraper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getPostDetails', url: instagramUrl })
+        });
+        response = { data: await funcResponse.json() };
+      }
 
       if (response.data?.error) {
         toast.error(response.data.error);
