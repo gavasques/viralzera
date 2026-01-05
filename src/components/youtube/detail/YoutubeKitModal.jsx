@@ -99,6 +99,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
     if (!open) {
       setKit(null);
       setSelectedTemplateId('');
+      setSelectedVersionId(null);
     }
   }, [open]);
 
