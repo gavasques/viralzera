@@ -87,7 +87,7 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       const shortcode = shortcodeMatch[1];
 
       // Chamar backend function para evitar CORS
-      const response = await base44.functions.instagramFetch({ shortcode });
+      const response = await callBackendFunction('instagramFetch', { shortcode });
 
       if (response.data?.error) {
         toast.error(response.data.error);
@@ -125,7 +125,7 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       }
 
       // Extract text using Gemini vision
-      const response = await base44.functions.instagramScraper({
+      const response = await callBackendFunction('instagramScraper', {
         action: 'extractTextFromImages',
         imageUrls
       });
@@ -174,7 +174,7 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
         return;
       }
 
-      const response = await base44.functions.instagramScraper({
+      const response = await callBackendFunction('instagramScraper', {
         action: 'transcribeVideo',
         videoUrl
       });
