@@ -362,11 +362,11 @@ export default function ChatSettingsModal({
             </p>
           </div>
 
-          {/* Webhook URL (Deep Research Only) */}
-          {configEntity === 'DeepResearchConfig' && (
+          {/* Webhook URL (Deep Research and RefinerConfig) */}
+          {(configEntity === 'DeepResearchConfig' || configEntity === 'RefinerConfig') && (
             <div className="space-y-3 p-4 bg-green-50/50 rounded-lg border border-green-200">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium text-slate-900">Webhook URL</Label>
+                <Label className="text-sm font-medium text-slate-900">Webhook URL (Opcional)</Label>
               </div>
               <Input
                 type="url"
@@ -376,7 +376,9 @@ export default function ChatSettingsModal({
                 className="w-full"
               />
               <p className="text-xs text-slate-500">
-                URL para enviar as pesquisas diretamente do frontend.
+                {configEntity === 'RefinerConfig' 
+                  ? 'Se configurado, o webhook será usado para refinar o prompt ao invés do modelo de IA interno. O webhook deve retornar o prompt refinado.'
+                  : 'URL para enviar as pesquisas diretamente do frontend.'}
               </p>
             </div>
           )}
