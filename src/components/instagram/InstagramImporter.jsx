@@ -34,49 +34,57 @@ const callBackendFunction = async (functionName, payload = {}) => {
       }
 
       // 3. Fallback: Manual fetch se functions não existir no objeto base44
-      if (base44.getConfig) {
+      if (typeof base44.getConfig === 'function') {
           const config = base44.getConfig();
           if (config?.apiUrl) {
               let token = null;
               // Tenta obter token da sessão
               if (base44.auth && typeof base44.auth.getSession === 'function') {
-                  const session = await base44.auth.getSession();
-                  token = session?.access_token;
-              }
-
-              if (token) {
-                  const response = await fetch(`${config.apiUrl}/functions/${functionName}`, {
-                      method: 'POST',
-                      headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}`
-                      },
-                      body: JSON.stringify(payload)
-                  });
-
-                  if (!response.ok) {
-                       const errText = await response.text();
-                       throw new Error(`Erro ${response.status}: ${errText}`);
+                  try {
+                      const session = await base44.auth.getSession();
+                      token = session?.access_token;
+                  } catch (e) {
+                      console.warn("[InstagramImporter] Erro ao obter sessão:", e);
                   }
-
-                  const data = await response.json();
-                  // Compatibilidade com resposta axios-like { data: ... }
-                  return { data };
               }
+
+              // Mesmo sem token, tentamos (algumas funções podem ser públicas ou lidar com anonimato)
+              const url = `${config.apiUrl}/functions/${functionName}`;
+              // console.log(`[InstagramImporter] Tentando fetch direto: ${url}`);
+
+              const headers = { 'Content-Type': 'application/json' };
+              if (token) headers['Authorization'] = `Bearer ${token}`;
+
+              const response = await fetch(url, {
+                  method: 'POST',
+                  headers,
+                  body: JSON.stringify(payload)
+              });
+
+              if (!response.ok) {
+                   const errText = await response.text();
+                   throw new Error(`Erro ${response.status} no fetch: ${errText}`);
+              }
+
+              const data = await response.json();
+              // Compatibilidade com resposta axios-like { data: ... }
+              return { data };
+          } else {
+              // console.warn("[InstagramImporter] Config.apiUrl não encontrado", config);
           }
       }
 
       // Se chegou aqui, functions pode estar vazio ou carregando
     } catch (err) {
-      console.warn(`[InstagramImporter] Tentativa ${i+1}/${maxRetries} falhou:`, err);
+      console.warn(`[InstagramImporter] Tentativa ${i+1}/${maxRetries} falhou:`, err.message);
       lastError = err;
     }
 
     await new Promise(r => setTimeout(r, interval));
   }
 
-  console.error('[InstagramImporter] Falha ao acessar função backend:', base44);
-  throw new Error(lastError?.message || 'Não foi possível conectar às funções do backend. Recarregue a página e tente novamente.');
+  console.error('[InstagramImporter] Falha crítica ao acessar função backend. Objeto base44:', base44);
+  throw new Error(lastError?.message || 'Não foi possível conectar às funções do backend. Verifique o console para mais detalhes.');
 };
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
