@@ -12,22 +12,26 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
-// Helper to call backend functions com espera mais robusta
+// Helper para chamar backend functions com fallback e espera estendida
 const callBackendFunction = async (functionName, payload = {}) => {
-  // aguarda até 2s pela hidratação do SDK
-  for (let i = 0; i < 20; i++) {
+  // aguarda até ~3s pela hidratação do SDK
+  for (let i = 0; i < 30; i++) {
     const invoker = base44?.functions?.invoke;
     if (typeof invoker === 'function') {
       return await invoker(functionName, payload);
     }
+    const direct = base44?.functions?.[functionName];
+    if (typeof direct === 'function') {
+      return await direct(payload);
+    }
     await new Promise((r) => setTimeout(r, 100));
   }
-  // tentativa final diretamente
-  const finalInvoker = base44?.functions?.invoke;
-  if (typeof finalInvoker === 'function') {
-    return await finalInvoker(functionName, payload);
-  }
-  throw new Error('Serviços ainda inicializando. Aguarde alguns segundos e tente novamente.');
+  // Tentativa final (dupla)
+  const invoker = base44?.functions?.invoke;
+  if (typeof invoker === 'function') return await invoker(functionName, payload);
+  const direct = base44?.functions?.[functionName];
+  if (typeof direct === 'function') return await direct(payload);
+  throw new Error('Funções do backend ainda inicializando. Tente novamente em alguns segundos.');
 };
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
