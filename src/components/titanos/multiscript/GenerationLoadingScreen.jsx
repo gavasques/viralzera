@@ -15,16 +15,15 @@ import {
 } from 'lucide-react';
 
 const GENERATION_STEPS = [
-  { id: 'collect', icon: Database, label: 'Coletando informações...', duration: 2000 },
-  { id: 'analyze', icon: Search, label: 'Analisando contexto e dados...', duration: 2500 },
-  { id: 'identify', icon: Brain, label: 'Identificando melhor estilo...', duration: 2000 },
-  { id: 'build', icon: FileText, label: 'Construindo prompt otimizado...', duration: 2500 },
-  { id: 'refine', icon: Wand2, label: 'Refinando com IA especialista...', duration: 3000 },
-  { id: 'send', icon: Bot, label: 'Enviando para os Agentes...', duration: 2000 },
-  { id: 'research', icon: Search, label: 'Agentes pesquisando...', duration: 3000 },
-  { id: 'thinking', icon: Brain, label: 'Agentes analisando e criando...', duration: 4000 },
-  { id: 'writing', icon: Sparkles, label: 'Escrevendo scripts magnéticos...', duration: 3500 },
-  { id: 'finish', icon: CheckCircle2, label: 'Finalizando...', duration: 1500 },
+  { id: 'collect', icon: Database, label: 'Coletando informações...', duration: 4000 },
+  { id: 'analyze', icon: Search, label: 'Analisando contexto e dados...', duration: 5000 },
+  { id: 'identify', icon: Brain, label: 'Identificando melhor estilo...', duration: 5000 },
+  { id: 'build', icon: FileText, label: 'Construindo prompt otimizado...', duration: 5000 },
+  { id: 'refine', icon: Wand2, label: 'Refinando com IA especialista...', duration: 6000 },
+  { id: 'send', icon: Bot, label: 'Enviando para os Agentes...', duration: 5000 },
+  { id: 'research', icon: Search, label: 'Agentes pesquisando...', duration: 8000 },
+  { id: 'thinking', icon: Brain, label: 'Agentes analisando e criando...', duration: 10000 },
+  { id: 'writing', icon: Sparkles, label: 'Escrevendo scripts magnéticos...', duration: 12000 },
 ];
 
 export default function GenerationLoadingScreen({ isGenerating, currentStatus }) {
