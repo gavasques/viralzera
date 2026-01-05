@@ -1,18 +1,33 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Recriada integração com RapidAPI (instagram-scraper-20251)
+// Aceita: { shortcode?: string, code_or_url?: string, url?: string }
+// Retorna: objeto padronizado com imagens, metrículas e metadados
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { shortcode } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { shortcode, code_or_url, url } = body || {};
 
-    if (!shortcode) {
-      return Response.json({ error: 'Shortcode é obrigatório' }, { status: 400 });
+    // Derivar code_or_url
+    let codeOrUrl = code_or_url || shortcode || url || '';
+    if (!codeOrUrl && body?.instagram_url) codeOrUrl = body.instagram_url;
+
+    // Se veio URL completa do Instagram, extrair o shortcode
+    if (codeOrUrl && codeOrUrl.includes('instagram.com')) {
+      const m = codeOrUrl.match(/(?:\/p\/|\/reel\/|\/reels\/|\/tv\/)([A-Za-z0-9_-]+)/);
+      if (m && m[1]) {
+        codeOrUrl = m[1];
+      }
+    }
+
+    if (!codeOrUrl || typeof codeOrUrl !== 'string') {
+      return Response.json({ error: 'Parâmetro ausente: forneça shortcode ou URL' }, { status: 400 });
     }
 
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
@@ -20,57 +35,56 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'RAPIDAPI_KEY não configurada' }, { status: 500 });
     }
 
-    // Chamar RapidAPI
-    const response = await fetch(
-      `https://instagram-scraper-20251.p.rapidapi.com/postdetail/?code_or_url=${shortcode}&url_embed_safe=true`,
-      {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
-          'x-rapidapi-key': rapidApiKey
-        }
-      }
-    );
+    const endpoint = `https://instagram-scraper-20251.p.rapidapi.com/postdetail/?code_or_url=${encodeURIComponent(codeOrUrl)}&url_embed_safe=true`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('RapidAPI error:', response.status, errorText);
-      return Response.json({ error: `Erro na API: ${response.status}` }, { status: response.status });
+    const raRes = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
+        'x-rapidapi-key': rapidApiKey,
+      },
+    });
+
+    if (!raRes.ok) {
+      const text = await raRes.text().catch(() => '');
+      console.error('RapidAPI error:', raRes.status, text);
+      return Response.json({ error: `Erro na API: ${raRes.status}` }, { status: raRes.status });
     }
 
-    const result = await response.json();
-    
-    // A resposta vem em data.items[0]
-    const data = result.data?.items?.[0];
-
+    const result = await raRes.json();
+    const data = result?.data?.items?.[0];
     if (!data) {
       return Response.json({ error: 'Post não encontrado' }, { status: 404 });
     }
 
-    // Processar imagens do carrossel ou imagem única
+    // Montar lista de imagens (carrossel ou única)
     let images = [];
-    if (data.carousel_media) {
-      images = data.carousel_media.map((item, idx) => ({
-        url: item.image_versions2?.candidates?.[0]?.url || item.image_versions?.items?.[0]?.url,
-        width: item.image_versions2?.candidates?.[0]?.width || item.original_width,
-        height: item.image_versions2?.candidates?.[0]?.height || item.original_height,
-        index: idx
-      }));
-    } else if (data.image_versions2?.candidates?.[0]) {
-      images = [{
-        url: data.image_versions2.candidates[0].url,
-        width: data.image_versions2.candidates[0].width,
-        height: data.image_versions2.candidates[0].height,
-        index: 0
-      }];
+    try {
+      if (Array.isArray(data.carousel_media) && data.carousel_media.length > 0) {
+        images = data.carousel_media.map((item, index) => {
+          const candidate = item?.image_versions2?.candidates?.[0] || item?.image_versions?.items?.[0] || null;
+          return {
+            url: candidate?.url || null,
+            width: candidate?.width || item?.original_width || null,
+            height: candidate?.height || item?.original_height || null,
+            index,
+            cloudinary_url: null, // opcional (podemos popular futuramente)
+          };
+        }).filter((x) => !!x.url);
+      } else if (data?.image_versions2?.candidates?.[0]) {
+        const c = data.image_versions2.candidates[0];
+        images = [{ url: c.url, width: c.width, height: c.height, index: 0, cloudinary_url: null }];
+      }
+    } catch (_) {
+      // mantém images = []
     }
 
-    // Extrair video_versions se existir
-    const videoVersions = data.video_versions || [];
+    const videoVersions = Array.isArray(data.video_versions) ? data.video_versions : [];
 
-    const postDataParsed = {
-      id: data.id || data.pk,
-      shortcode: data.code,
+    // Objeto padronizado
+    const parsed = {
+      id: data.id || data.pk || null,
+      shortcode: data.code || codeOrUrl,
       caption: data.caption?.text || '',
       title: data.title || '',
       likes: data.like_count || 0,
@@ -79,7 +93,7 @@ Deno.serve(async (req) => {
       shares: data.reshare_count || 0,
       username: data.user?.username || data.owner?.username || '',
       user_full_name: data.user?.full_name || data.owner?.full_name || '',
-      images: images,
+      images,
       raw: {
         ...data,
         video_versions: videoVersions,
@@ -87,14 +101,14 @@ Deno.serve(async (req) => {
           like_count: data.like_count,
           comment_count: data.comment_count,
           play_count: data.play_count || data.ig_play_count,
-          share_count: data.reshare_count
-        }
-      }
+          share_count: data.reshare_count,
+        },
+      },
     };
 
-    return Response.json(postDataParsed);
+    return Response.json(parsed);
   } catch (error) {
-    console.error('Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('instagramFetch error:', error);
+    return Response.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
   }
 });
