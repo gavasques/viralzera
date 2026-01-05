@@ -34,7 +34,19 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
         throw new Error(`Erro ${response.status}`);
       }
 
-      const data = await response.json();
+      const text = await response.text();
+
+      if (!text || text.trim() === '') {
+        throw new Error('Webhook retornou resposta vazia. Tente novamente.');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Resposta não é JSON válido:', text);
+        throw new Error('Resposta inválida do webhook');
+      }
 
       // O webhook retorna um array, pegamos o primeiro item
       const post = Array.isArray(data) ? data[0] : data;
