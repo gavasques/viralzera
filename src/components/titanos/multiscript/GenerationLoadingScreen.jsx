@@ -102,22 +102,22 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
         <motion.div
           className="relative mb-8"
           animate={{ 
-            scale: [1, 1.05, 1],
+            scale: [1, 1.03, 1],
           }}
           transition={{ 
-            duration: 2, 
+            duration: 3, 
             repeat: Infinity,
             ease: "easeInOut"
           }}
         >
           {/* Glow Effect */}
-          <div className="absolute inset-0 bg-pink-500/30 rounded-full blur-2xl scale-150" />
+          <div className="absolute inset-0 bg-pink-200/50 rounded-full blur-3xl scale-150" />
           
           {/* Icon Container */}
           <motion.div 
-            className="relative bg-gradient-to-br from-pink-500 to-pink-600 p-6 rounded-2xl shadow-2xl shadow-pink-500/30"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="relative bg-gradient-to-br from-pink-500 to-pink-600 p-6 rounded-2xl shadow-xl shadow-pink-300/40"
+            animate={{ rotate: [0, 3, -3, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
           >
             <AnimatePresence mode="wait">
               <motion.div
@@ -125,7 +125,7 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.5, opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4 }}
               >
                 <CurrentIcon className="w-12 h-12 text-white" />
               </motion.div>
@@ -136,20 +136,20 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="absolute w-3 h-3 bg-pink-400 rounded-full"
+              className="absolute w-2.5 h-2.5 bg-pink-300 rounded-full"
               style={{ 
                 top: '50%', 
                 left: '50%',
               }}
               animate={{
-                x: [0, Math.cos(i * 2.094) * 60, 0],
-                y: [0, Math.sin(i * 2.094) * 60, 0],
-                opacity: [0.5, 1, 0.5]
+                x: [0, Math.cos(i * 2.094) * 55, 0],
+                y: [0, Math.sin(i * 2.094) * 55, 0],
+                opacity: [0.4, 0.8, 0.4]
               }}
               transition={{
-                duration: 2,
+                duration: 3,
                 repeat: Infinity,
-                delay: i * 0.3,
+                delay: i * 0.4,
                 ease: "easeInOut"
               }}
             />
