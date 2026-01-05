@@ -12,20 +12,36 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
-// Helper to call backend functions (resilient)
+// Helper to call backend functions (robusto: espera SDK estar pronto)
 const callBackendFunction = async (functionName, payload) => {
-  if (base44?.functions?.invoke) {
-    return await base44.functions.invoke(functionName, payload);
+  const tryOnce = async () => {
+    if (base44 && base44.functions) {
+      if (typeof base44.functions.invoke === 'function') {
+        return await base44.functions.invoke(functionName, payload);
+      }
+      if (typeof base44.functions[functionName] === 'function') {
+        return await base44.functions[functionName](payload);
+      }
+    }
+    throw new Error('functions-not-ready');
+  };
+
+  // Tenta por até ~500ms aguardando a hidratação do SDK
+  for (let i = 0; i < 10; i++) {
+    try {
+      return await tryOnce();
+    } catch (err) {
+      if (err?.message !== 'functions-not-ready') throw err;
+      await new Promise((r) => setTimeout(r, 50));
+    }
   }
-  if (typeof base44?.functions?.[functionName] === 'function') {
-    return await base44.functions[functionName](payload);
+
+  // Última tentativa (propaga erro legível)
+  try {
+    return await tryOnce();
+  } catch {
+    throw new Error('Funções indisponíveis no momento. Recarregue a página e tente novamente.');
   }
-  // Small retry in case SDK not ready yet
-  await new Promise((r) => setTimeout(r, 0));
-  if (base44?.functions?.invoke) {
-    return await base44.functions.invoke(functionName, payload);
-  }
-  throw new Error('Funções indisponíveis no momento. Recarregue a página e tente novamente.');
 };
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
