@@ -48,7 +48,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
   const [selectedVersionId, setSelectedVersionId] = useState(null);
 
   // Buscar versões salvas do kit
-  const { data: kitVersions = [] } = useQuery({
+  const { data: kitVersions = [], isLoading: isLoadingVersions } = useQuery({
     queryKey: ['youtube-kit-versions', scriptId],
     queryFn: () => base44.entities.YoutubeKitVersion.filter(
       { script_id: scriptId },
@@ -57,9 +57,9 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
     enabled: open && !!scriptId
   });
 
-  // Carregar última versão ao abrir
+  // Carregar última versão ao abrir (apenas se já terminou de buscar e tem versões)
   useEffect(() => {
-    if (open && kitVersions.length > 0 && !kit && !selectedVersionId) {
+    if (open && !isLoadingVersions && kitVersions.length > 0 && !kit && !selectedVersionId) {
       const latestVersion = kitVersions[0];
       setKit({
         titulos: latestVersion.titulos || [],
@@ -69,7 +69,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
       });
       setSelectedVersionId(latestVersion.id);
     }
-  }, [open, kitVersions, kit, selectedVersionId]);
+  }, [open, kitVersions, kit, selectedVersionId, isLoadingVersions]);
 
   // Buscar templates de descrição
   const { data: templates = [] } = useQuery({
