@@ -26,8 +26,17 @@ import {
   Copy, 
   Check,
   RefreshCw,
-  FileCode
+  FileCode,
+  History,
+  ChevronDown
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { format } from 'date-fns';
 
 export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scriptTitle, scriptId }) {
   const { selectedFocusId } = useSelectedFocus();
