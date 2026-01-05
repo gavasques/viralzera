@@ -64,7 +64,6 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
   const { data: canvasItems = [], isLoading } = useQuery({
     queryKey: ['canvas-items', currentPage],
     queryFn: () => base44.entities.Canvas.filter({}, '-created_date', ITEMS_PER_PAGE, (currentPage - 1) * ITEMS_PER_PAGE),
-    keepPreviousData: true,
   });
 
   // Fetch single selected canvas if not in current list (for direct access/editing)

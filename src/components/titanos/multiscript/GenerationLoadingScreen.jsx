@@ -5,8 +5,6 @@ import {
   Search, 
   Sparkles, 
   FileText, 
-  Users, 
-  Zap,
   Bot,
   Database,
   Wand2,
