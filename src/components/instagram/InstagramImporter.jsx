@@ -12,16 +12,16 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
-// Helper to call backend functions (robusto: espera SDK estar pronto)
+// Helper to call backend functions (robusto + optional chaining)
 const callBackendFunction = async (functionName, payload) => {
   const tryOnce = async () => {
-    if (base44 && base44.functions) {
-      if (typeof base44.functions.invoke === 'function') {
-        return await base44.functions.invoke(functionName, payload);
-      }
-      if (typeof base44.functions[functionName] === 'function') {
-        return await base44.functions[functionName](payload);
-      }
+    const invoker = base44?.functions?.invoke;
+    if (typeof invoker === 'function') {
+      return await invoker(functionName, payload);
+    }
+    const direct = base44?.functions?.[functionName];
+    if (typeof direct === 'function') {
+      return await direct(payload);
     }
     throw new Error('functions-not-ready');
   };
