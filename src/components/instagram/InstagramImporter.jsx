@@ -53,183 +53,86 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
     }
   };
 
-  const handleExtractText = async () => {
-    if (!postData?.images?.length) {
-      toast.error('Nenhuma imagem disponível para OCR');
-      return;
-    }
-
-    setIsExtractingText(true);
-
-    try {
-      // Use Cloudinary URLs (already uploaded when fetching post)
-      const imageUrls = postData.images
-        .map(img => img.cloudinary_url || img.url)
-        .filter(Boolean);
-
-      if (imageUrls.length === 0) {
-        toast.error('Nenhuma imagem disponível');
-        return;
-      }
-
-      // Extract text using Gemini vision
-      const response = await callBackendFunction('instagramScraper', {
-        action: 'extractTextFromImages',
-        imageUrls
-      });
-
-      if (response.data.error) {
-        toast.error(response.data.error);
-        return;
-      }
-
-      const texts = response.data.extractedTexts || [];
-      setExtractedTexts(texts);
-      
-      // Auto-fill manual text with OCR result if empty or append
-      const combinedText = texts
-        .map(t => t.text)
-        .filter(t => t && t !== 'SEM TEXTO')
-        .join('\n\n');
-      
-      if (combinedText) {
-        setManualOverlayText(prev => prev ? `${prev}\n\n${combinedText}` : combinedText);
-      }
-
-      toast.success('Texto extraído das imagens!');
-    } catch (error) {
-      toast.error('Erro ao extrair texto das imagens');
-      console.error(error);
-    } finally {
-      setIsExtractingText(false);
-    }
-  };
-
-  const handleTranscribeVideo = async () => {
-    if (!postData?.raw?.video_versions?.length) {
-      toast.error('Nenhum vídeo disponível para transcrição');
-      return;
-    }
-
-    setIsTranscribing(true);
-
-    try {
-      // Get best quality video URL
-      const videoUrl = postData.raw.video_versions[0]?.url;
-      
-      if (!videoUrl) {
-        toast.error('URL do vídeo não encontrada');
-        return;
-      }
-
-      const response = await callBackendFunction('instagramScraper', {
-        action: 'transcribeVideo',
-        videoUrl
-      });
-
-      if (response.data.error) {
-        toast.error(response.data.error);
-        return;
-      }
-
-      const transcription = response.data.transcription || '';
-      setVideoTranscription(transcription);
-      toast.success('Vídeo transcrito com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao transcrever vídeo');
-      console.error(error);
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
-
   const handleImport = () => {
     if (!postData) return;
 
-    if (postTypeFormat === 'Reels') {
-        const metrics = postData.raw?.metrics || {};
-        const shares = metrics.share_count || postData.raw?.share_count || 0;
-        const plays = postData.views;
-        const imageUrl = postData.images?.[0]?.cloudinary_url || postData.images?.[0]?.url || '';
+    // Detectar tipo de post baseado nos dados retornados
+    const isReels = postData.transcricao !== undefined; // Reels tem transcricao
+    const isCarrossel = postData.carrosseis && postData.carrosseis.length > 0;
 
-        // Use manual text if available, otherwise fallback to OCR extracted list (though manual should be populated by OCR)
-        const contentText = manualOverlayText || extractedTexts
-            .map(t => t.text)
-            .filter(t => t && t !== 'SEM TEXTO')
-            .join('\n');
+    let formattedContent = '';
 
-        const formattedContent = `CONTEÚDO (Texto sobre a imagem):
-${contentText || '(Sem texto extraído/informado)'}
+    if (isReels) {
+      // Formato Reels
+      formattedContent = `TEXTO SOBREPOSTO (OCR First Frame):
+${postData.ocr_first_frame || '(Sem texto)'}
 
 ---
 
-TRANSCRIÇÃO DO VÍDEO:
-${videoTranscription || '(Sem transcrição)'}
-
----
-
-DESCRIÇÃO:
-${postData.caption || '(Sem legenda)'}
-
----
-
-MÉTRICAS:
-Likes: ${postData.likes}
-Plays: ${plays}
-Shares: ${shares}
-
-AUTOR:
-Nome: ${postData.user_full_name}
-User: @${postData.username}
-
-URL DA IMAGEM (First Frame):
-${imageUrl}`;
-
-        onImport({
-            content: formattedContent,
-            comment: `Importado do Instagram (Reels): ${instagramUrl}`,
-            source_type: 'third_party'
-        });
-        return;
-    }
-
-    // Build content from extracted texts for other formats
-    // If user edited manual text, use it. Otherwise construct from OCR list.
-    let contentBody = '';
-    
-    if (manualOverlayText) {
-        contentBody = manualOverlayText;
-    } else {
-        contentBody = extractedTexts
-          .filter(t => t.text && t.text !== 'SEM TEXTO')
-          .map((t, i) => `[Slide ${i + 1}]\n${t.text}`)
-          .join('\n\n---\n\n');
-    }
-
-    const formattedContent = `CONTEÚDO:
-${contentBody || '(Sem texto extraído das imagens)'}
+TRANSCRIÇÃO DO ÁUDIO:
+${postData.transcricao && postData.transcricao !== 'Não tem Texto' ? postData.transcricao : '(Sem transcrição/áudio)'}
 
 ---
 
 DESCRIÇÃO/LEGENDA:
-${postData.caption || '(Sem legenda)'}
+${postData.desscricao || '(Sem legenda)'}
 
 ---
 
-TÍTULO:
-${postData.title || '(Sem título)'}
+MÉTRICAS:
+Likes: ${postData.likes || 0}
+Views: ${postData.views || 0}
+
+AUTOR: @${postData.username || 'desconhecido'}
+
+IMAGEM (First Frame):
+${postData.firstframe || ''}`;
+
+    } else if (isCarrossel) {
+      // Formato Carrossel
+      const slidesContent = postData.carrosseis
+        .map(slide => `[Slide ${slide.carrossel}]\n${slide.texto}`)
+        .join('\n\n---\n\n');
+
+      formattedContent = `CONTEÚDO DOS SLIDES:
+
+${slidesContent}
 
 ---
 
-VIEWS: ${postData.views || 0}
-LIKES: ${postData.likes || 0}
-COMENTÁRIOS: ${postData.comments || 0}`;
+DESCRIÇÃO/LEGENDA:
+${postData.desscricao || '(Sem legenda)'}
+
+---
+
+MÉTRICAS:
+Likes: ${postData.likes || 0}
+Comentários: ${postData.comentarios || 0}
+${postData.views ? `Views: ${postData.views}` : ''}
+
+AUTOR: @${postData.username || 'desconhecido'}`;
+
+    } else {
+      // Formato genérico (Post único)
+      formattedContent = `CONTEÚDO:
+${postData.desscricao || '(Sem conteúdo)'}
+
+---
+
+MÉTRICAS:
+Likes: ${postData.likes || 0}
+Comentários: ${postData.comentarios || 0}
+
+AUTOR: @${postData.username || 'desconhecido'}`;
+    }
 
     onImport({
       content: formattedContent,
       comment: `Importado do Instagram: ${instagramUrl}`,
       source_type: 'third_party'
     });
+    
+    toast.success('Exemplo importado!');
   };
 
   const formatNumber = (num) => {
