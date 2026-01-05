@@ -11,8 +11,10 @@ export function StepTema({ focusId, value, onChange }) {
   // Fetch modelings for selector
   const { data: modelings = [] } = useQuery({
     queryKey: ['modelings-wizard-tema', focusId],
-    queryFn: () => base44.entities.Modeling.filter({ focus_id: focusId }, '-created_date', 50),
-    enabled: !!focusId
+    queryFn: () => base44.entities.Modeling.filter({ focus_id: focusId }, '-updated_date', 50),
+    enabled: !!focusId,
+    staleTime: 0,
+    refetchOnMount: true
   });
 
   const handleModelingChange = (modelingId) => {
