@@ -12,9 +12,20 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
-// Helper to call backend functions (V3+)
+// Helper to call backend functions (resilient)
 const callBackendFunction = async (functionName, payload) => {
-  return await base44.functions.invoke(functionName, payload);
+  if (base44?.functions?.invoke) {
+    return await base44.functions.invoke(functionName, payload);
+  }
+  if (typeof base44?.functions?.[functionName] === 'function') {
+    return await base44.functions[functionName](payload);
+  }
+  // Small retry in case SDK not ready yet
+  await new Promise((r) => setTimeout(r, 0));
+  if (base44?.functions?.invoke) {
+    return await base44.functions.invoke(functionName, payload);
+  }
+  throw new Error('Funções indisponíveis no momento. Recarregue a página e tente novamente.');
 };
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
