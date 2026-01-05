@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2, Instagram, Search, Image as ImageIcon, Eye, Heart, MessageCircle, FileText, Sparkles, Maximize2, ZoomIn, ZoomOut, Video, Mic } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
   const [instagramUrl, setInstagramUrl] = useState('');
@@ -24,13 +24,14 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
   const [viewImage, setViewImage] = useState(null);
   const [imageZoom, setImageZoom] = useState(1);
 
-  const { data: postTypeConfig } = useQueryClient().getQueryData(['postTypeConfig']) ? { data: useQueryClient().getQueryData(['postTypeConfig']) } : useQuery({
+  const { data: postTypeConfig } = useQuery({
     queryKey: ['postTypeConfig'],
     queryFn: async () => {
       const user = await base44.auth.me();
       const configs = await base44.entities.PostTypeConfig.filter({ created_by: user.email });
       return configs[0] || null;
-    }
+    },
+    staleTime: 60000
   });
 
   const handleFetchPost = async () => {
