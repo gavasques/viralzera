@@ -12,26 +12,38 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
-// Helper para chamar backend functions com fallback e espera estendida
+// Helper para chamar backend functions com retry robusto
 const callBackendFunction = async (functionName, payload = {}) => {
-  // aguarda até ~3s pela hidratação do SDK
-  for (let i = 0; i < 100; i++) {
-    const invoker = base44?.functions?.invoke;
-    if (typeof invoker === 'function') {
-      return await invoker(functionName, payload);
+  const maxRetries = 20; // 20 tentativas
+  const interval = 500; // 500ms entre tentativas (total 10s)
+  let lastError = null;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // Verifica se SDK está carregado
+      if (!base44) throw new Error("SDK base44 não encontrado");
+
+      // Tenta método invoke (V3)
+      if (base44.functions && typeof base44.functions.invoke === 'function') {
+        return await base44.functions.invoke(functionName, payload);
+      }
+
+      // Tenta acesso direto (V2)
+      if (base44.functions && typeof base44.functions[functionName] === 'function') {
+        return await base44.functions[functionName](payload);
+      }
+
+      // Se chegou aqui, functions pode estar vazio ou carregando
+    } catch (err) {
+      console.warn(`[InstagramImporter] Tentativa ${i+1}/${maxRetries} falhou:`, err);
+      lastError = err;
     }
-    const direct = base44?.functions?.[functionName];
-    if (typeof direct === 'function') {
-      return await direct(payload);
-    }
-    await new Promise((r) => setTimeout(r, 100));
+
+    await new Promise(r => setTimeout(r, interval));
   }
-  // Tentativa final (dupla)
-  const invoker = base44?.functions?.invoke;
-  if (typeof invoker === 'function') return await invoker(functionName, payload);
-  const direct = base44?.functions?.[functionName];
-  if (typeof direct === 'function') return await direct(payload);
-  throw new Error('Funções do backend ainda inicializando. Tente novamente em alguns segundos.');
+
+  console.error('[InstagramImporter] Falha ao acessar função backend:', base44);
+  throw new Error(lastError?.message || 'Não foi possível conectar às funções do backend. Recarregue a página e tente novamente.');
 };
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
