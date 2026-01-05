@@ -46,7 +46,7 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
 
     try {
       // Extrair o shortcode da URL
-      const shortcodeMatch = instagramUrl.match(/(?:\/p\/|\/reel\/|\/reels\/)([A-Za-z0-9_-]+)/);
+      const shortcodeMatch = instagramUrl.match(/(?:\/p\/|\/reel\/|\/reels\/|\/tv\/)([A-Za-z0-9_-]+)/);
       if (!shortcodeMatch) {
         toast.error('URL do Instagram inválida');
         setIsLoading(false);
@@ -54,12 +54,12 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       }
       const shortcode = shortcodeMatch[1];
 
-      // Chamar RapidAPI diretamente
-      const response = await fetch(`https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${shortcode}`, {
+      // Chamar RapidAPI diretamente - nova API instagram-scraper-20251
+      const response = await fetch(`https://instagram-scraper-20251.p.rapidapi.com/postdetail/?code_or_url=${shortcode}&url_embed_safe=true`, {
         method: 'GET',
         headers: {
-          'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
-          'x-rapidapi-key': '0bd132bc82msh7f8a99a6d1df5a3p103e28jsndb31b267a084'
+          'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
+          'x-rapidapi-key': '881427ad85msh4877a2bd5232007p1e35d3jsncf20ea7c7e4b'
         }
       });
 
@@ -68,7 +68,9 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       }
 
       const result = await response.json();
-      const data = result.data;
+      
+      // A resposta vem em data.items[0]
+      const data = result.data?.items?.[0];
 
       if (!data) {
         toast.error('Post não encontrado');
@@ -80,39 +82,45 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       let images = [];
       if (data.carousel_media) {
         images = data.carousel_media.map((item, idx) => ({
-          url: item.image_versions?.items?.[0]?.url || item.thumbnail_url,
-          width: item.image_versions?.items?.[0]?.width || item.original_width,
-          height: item.image_versions?.items?.[0]?.height || item.original_height,
+          url: item.image_versions2?.candidates?.[0]?.url || item.image_versions?.items?.[0]?.url,
+          width: item.image_versions2?.candidates?.[0]?.width || item.original_width,
+          height: item.image_versions2?.candidates?.[0]?.height || item.original_height,
           index: idx
         }));
-      } else if (data.image_versions?.items?.[0]) {
+      } else if (data.image_versions2?.candidates?.[0]) {
         images = [{
-          url: data.image_versions.items[0].url,
-          width: data.image_versions.items[0].width,
-          height: data.image_versions.items[0].height,
-          index: 0
-        }];
-      } else if (data.thumbnail_url) {
-        images = [{
-          url: data.thumbnail_url,
-          width: data.original_width,
-          height: data.original_height,
+          url: data.image_versions2.candidates[0].url,
+          width: data.image_versions2.candidates[0].width,
+          height: data.image_versions2.candidates[0].height,
           index: 0
         }];
       }
 
+      // Extrair video_versions se existir
+      const videoVersions = data.video_versions || [];
+
       const postDataParsed = {
-        id: data.id,
+        id: data.id || data.pk,
         shortcode: data.code,
         caption: data.caption?.text || '',
         title: data.title || '',
         likes: data.like_count || 0,
         comments: data.comment_count || 0,
-        views: data.play_count || data.view_count || 0,
-        username: data.user?.username || '',
-        user_full_name: data.user?.full_name || '',
+        views: data.play_count || data.ig_play_count || data.view_count || 0,
+        shares: data.reshare_count || 0,
+        username: data.user?.username || data.owner?.username || '',
+        user_full_name: data.user?.full_name || data.owner?.full_name || '',
         images: images,
-        raw: data
+        raw: {
+          ...data,
+          video_versions: videoVersions,
+          metrics: {
+            like_count: data.like_count,
+            comment_count: data.comment_count,
+            play_count: data.play_count || data.ig_play_count,
+            share_count: data.reshare_count
+          }
+        }
       };
 
       setPostData(postDataParsed);
