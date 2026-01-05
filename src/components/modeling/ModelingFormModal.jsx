@@ -69,6 +69,7 @@ export default function ModelingFormModal({ open, onOpenChange, modeling, focusI
     mutationFn: (data) => base44.entities.Modeling.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
+      queryClient.invalidateQueries({ queryKey: ['modelings-wizard-tema'] });
       toast.success('Modelagem criada!');
       onOpenChange(false);
     },
@@ -79,6 +80,7 @@ export default function ModelingFormModal({ open, onOpenChange, modeling, focusI
     mutationFn: ({ id, data }) => base44.entities.Modeling.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
+      queryClient.invalidateQueries({ queryKey: ['modelings-wizard-tema'] });
       toast.success('Modelagem atualizada!');
       onOpenChange(false);
     },

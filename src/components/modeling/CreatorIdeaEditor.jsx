@@ -20,6 +20,8 @@ export default function CreatorIdeaEditor({ modeling }) {
     mutationFn: (data) => base44.entities.Modeling.update(modeling.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modeling', modeling.id] });
+      queryClient.invalidateQueries({ queryKey: ['modelings-wizard-tema'] });
+      queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Ideia salva!');
       setIsEditing(false);
     },
