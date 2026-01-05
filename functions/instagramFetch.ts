@@ -14,17 +14,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { shortcode, code_or_url, url } = body || {};
 
-    // Derivar code_or_url
-    let codeOrUrl = code_or_url || shortcode || url || '';
-    if (!codeOrUrl && body?.instagram_url) codeOrUrl = body.instagram_url;
+    // Derivar code_or_url (preserva entrada original)
+    const originalInput = code_or_url || url || body?.instagram_url || shortcode || '';
+    let codeOrUrl = originalInput;
 
-    // Se veio URL completa do Instagram, extrair o shortcode
-    if (codeOrUrl && codeOrUrl.includes('instagram.com')) {
-      const m = codeOrUrl.match(/(?:\/p\/|\/reel\/|\/reels\/|\/tv\/)([A-Za-z0-9_-]+)/);
-      if (m && m[1]) {
-        codeOrUrl = m[1];
-      }
-    }
+    // Se vier URL completa do Instagram, manter a URL; a API aceita URL ou shortcode
+    // Não converter para shortcode para aumentar a taxa de sucesso
 
     if (!codeOrUrl || typeof codeOrUrl !== 'string') {
       return Response.json({ error: 'Parâmetro ausente: forneça shortcode ou URL' }, { status: 400 });
@@ -35,24 +30,35 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'RAPIDAPI_KEY não configurada' }, { status: 500 });
     }
 
-    const endpoint = `https://instagram-scraper-20251.p.rapidapi.com/postdetail/?code_or_url=${encodeURIComponent(codeOrUrl)}&url_embed_safe=true`;
-
-    const raRes = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
-        'x-rapidapi-key': rapidApiKey,
-      },
-    });
-
-    if (!raRes.ok) {
-      const text = await raRes.text().catch(() => '');
-      console.error('RapidAPI error:', raRes.status, text);
-      return Response.json({ error: `Erro na API: ${raRes.status}` }, { status: raRes.status });
+    async function fetchPost(codeOrUrlParam) {
+      const endpoint = `https://instagram-scraper-20251.p.rapidapi.com/postdetail/?code_or_url=${encodeURIComponent(codeOrUrlParam)}&url_embed_safe=true`;
+      const res = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
+          'x-rapidapi-key': rapidApiKey,
+        },
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error('RapidAPI error:', res.status, text);
+        return null;
+      }
+      const json = await res.json().catch(() => null);
+      return json?.data?.items?.[0] || null;
     }
 
-    const result = await raRes.json();
-    const data = result?.data?.items?.[0];
+    let data = await fetchPost(codeOrUrl);
+
+    // Fallback: tentar com shortcode extraído
+    if (!data) {
+      const m2 = originalInput?.match(/(?:\/p\/|\/reel\/|\/reels\/|\/tv\/)([A-Za-z0-9_-]+)/);
+      const short = m2?.[1];
+      if (short && short !== codeOrUrl) {
+        data = await fetchPost(short);
+      }
+    }
+
     if (!data) {
       return Response.json({ error: 'Post não encontrado' }, { status: 404 });
     }
