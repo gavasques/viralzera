@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
       const res = await fetch(endpoint, {
         method: 'GET',
         headers: {
-          'x-rapidapi-host': 'instagram-scraper-20251.p.rapidapi.com',
-          'x-rapidapi-key': rapidApiKey,
+          'X-RapidAPI-Host': 'instagram-scraper-20251.p.rapidapi.com',
+          'X-RapidAPI-Key': rapidApiKey,
         },
       });
       if (!res.ok) {
