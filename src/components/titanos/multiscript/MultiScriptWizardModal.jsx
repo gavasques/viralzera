@@ -16,6 +16,7 @@ import { StepRefinement } from "@/components/script/wizard/steps/StepRefinement"
 // Steps específicos do MultiScript
 import { StepName } from "./steps/StepName";
 import { StepModels } from "./steps/StepModels";
+import GenerationLoadingScreen from "./GenerationLoadingScreen";
 
 // Função para chamar OpenRouter diretamente (igual ao useSendMessage)
 async function callOpenRouter(apiKey, model, messages, options = {}) {
