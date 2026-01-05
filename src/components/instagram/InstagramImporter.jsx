@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 // Helper para chamar backend functions com fallback e espera estendida
 const callBackendFunction = async (functionName, payload = {}) => {
   // aguarda até ~3s pela hidratação do SDK
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 100; i++) {
     const invoker = base44?.functions?.invoke;
     if (typeof invoker === 'function') {
       return await invoker(functionName, payload);
