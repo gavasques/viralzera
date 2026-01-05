@@ -25,111 +25,153 @@ Deno.serve(async (req) => {
       }
       const shortcode = shortcodeMatch[1];
 
-      // Usar Instagram GraphQL público (sem API key necessária)
-      const instagramUrl = `https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`;
+      // Método 1: Tentar via embed do Instagram
+      const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+      console.log('Trying embed URL:', embedUrl);
       
-      let response = await fetch(instagramUrl, {
+      let images = [];
+      let caption = '';
+      let username = '';
+      let likes = 0;
+      let comments = 0;
+      let views = 0;
+      let videoVersions = [];
+
+      const response = await fetch(embedUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': 'https://www.instagram.com/',
-          'X-IG-App-ID': '936619743392459',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
         }
       });
 
-      // Se GraphQL falhar, tentar RapidAPI
-      if (!response.ok) {
-        console.log('GraphQL failed, trying RapidAPI...');
-        response = await fetch(
-          `https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${shortcode}`,
-          {
-            method: 'GET',
-            headers: {
-              'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
-              'x-rapidapi-key': RAPIDAPI_KEY
+      if (response.ok) {
+        const html = await response.text();
+        console.log('Embed HTML length:', html.length);
+        
+        // Extrair imagem do embed - múltiplas tentativas
+        const imgPatterns = [
+          /class="EmbeddedMediaImage"[^>]*src="([^"]+)"/,
+          /<img[^>]+src="(https:\/\/[^"]*scontent[^"]+)"/,
+          /background-image:\s*url\(['"]?(https:\/\/[^'")\s]+)['"]?\)/,
+          /"display_url":"([^"]+)"/,
+          /"thumbnail_src":"([^"]+)"/
+        ];
+        
+        for (const pattern of imgPatterns) {
+          const match = html.match(pattern);
+          if (match?.[1]) {
+            let imgUrl = match[1].replace(/\\u0026/g, '&').replace(/&amp;/g, '&');
+            if (imgUrl && !images.some(i => i.url === imgUrl)) {
+              images.push({ url: imgUrl, index: images.length });
+              console.log('Found image via pattern:', pattern.toString().substring(0, 50));
             }
           }
-        );
+        }
+
+        // Extrair múltiplas imagens para carrossel
+        const allImgMatches = html.matchAll(/"display_url":"([^"]+)"/g);
+        for (const match of allImgMatches) {
+          const imgUrl = match[1].replace(/\\u0026/g, '&');
+          if (!images.some(i => i.url === imgUrl)) {
+            images.push({ url: imgUrl, index: images.length });
+          }
+        }
+
+        // Extrair caption
+        const captionPatterns = [
+          /"text":"([^"]+)"/,
+          /class="Caption"[^>]*>([\s\S]*?)<\/div>/,
+          /"edge_media_to_caption":\{"edges":\[\{"node":\{"text":"([^"]+)"/
+        ];
+        
+        for (const pattern of captionPatterns) {
+          const match = html.match(pattern);
+          if (match?.[1] && !caption) {
+            caption = match[1].replace(/<[^>]+>/g, ' ').replace(/\\n/g, '\n').replace(/\s+/g, ' ').trim();
+          }
+        }
+
+        // Extrair username
+        const userPatterns = [
+          /"username":"([^"]+)"/,
+          /class="UsernameText"[^>]*>([^<]+)</
+        ];
+        
+        for (const pattern of userPatterns) {
+          const match = html.match(pattern);
+          if (match?.[1] && !username) {
+            username = match[1];
+          }
+        }
+
+        // Extrair métricas
+        const likesMatch = html.match(/"edge_media_preview_like":\{"count":(\d+)/);
+        const commentsMatch = html.match(/"edge_media_to_comment":\{"count":(\d+)/);
+        const viewsMatch = html.match(/"video_view_count":(\d+)/);
+        
+        likes = likesMatch ? parseInt(likesMatch[1]) : 0;
+        comments = commentsMatch ? parseInt(commentsMatch[1]) : 0;
+        views = viewsMatch ? parseInt(viewsMatch[1]) : 0;
+
+        // Extrair video versions para reels
+        const videoMatch = html.match(/"video_url":"([^"]+)"/);
+        if (videoMatch?.[1]) {
+          videoVersions.push({ url: videoMatch[1].replace(/\\u0026/g, '&') });
+        }
       }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Instagram API error:', response.status, errorText);
-        return Response.json({ error: `Não foi possível acessar o post. O Instagram pode estar bloqueando. Tente novamente mais tarde.` });
+      // Método 2: Se não encontrou nada, tentar página direta
+      if (images.length === 0) {
+        console.log('Embed failed, trying direct page...');
+        
+        const directUrl = `https://www.instagram.com/p/${shortcode}/`;
+        const directResponse = await fetch(directUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+            'Accept': 'text/html,application/xhtml+xml',
+          }
+        });
+
+        if (directResponse.ok) {
+          const html = await directResponse.text();
+          console.log('Direct page HTML length:', html.length);
+          
+          // Buscar og:image
+          const ogImage = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+          const ogDesc = html.match(/<meta property="og:description" content="([^"]+)"/)?.[1];
+          
+          if (ogImage) {
+            images.push({ url: ogImage.replace(/&amp;/g, '&'), index: 0 });
+          }
+          
+          if (ogDesc && !caption) {
+            // Extrair caption do og:description (formato: "X likes, Y comments - CAPTION")
+            const captionMatch = ogDesc.match(/comments?\s*-\s*(.+)/i);
+            caption = captionMatch?.[1] || ogDesc;
+            caption = caption.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+          }
+        }
       }
 
-      const result = await response.json();
-      console.log('Instagram API response keys:', Object.keys(result));
-      
-      // Processar dados - suporta múltiplos formatos de resposta
-      let data = result.graphql?.shortcode_media || result.items?.[0] || result.data || result;
-
-      if (!data) {
-        return Response.json({ error: 'Post não encontrado ou privado' });
-      }
-
-      // Processar imagens - suporta múltiplos formatos
-      let images = [];
-      
-      // Formato GraphQL - Carrossel
-      if (data.edge_sidecar_to_children?.edges) {
-        images = data.edge_sidecar_to_children.edges.map((edge, idx) => ({
-          url: edge.node.display_url || edge.node.display_resources?.[0]?.src,
-          width: edge.node.dimensions?.width,
-          height: edge.node.dimensions?.height,
-          index: idx
-        }));
-      }
-      // Formato API - Carrossel
-      else if (data.carousel_media) {
-        images = data.carousel_media.map((item, idx) => ({
-          url: item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_url,
-          width: item.image_versions2?.candidates?.[0]?.width || item.original_width,
-          height: item.image_versions2?.candidates?.[0]?.height || item.original_height,
-          index: idx
-        }));
-      }
-      // Post único - GraphQL
-      else if (data.display_url) {
-        images = [{
-          url: data.display_url,
-          width: data.dimensions?.width,
-          height: data.dimensions?.height,
-          index: 0
-        }];
-      }
-      // Post único - API
-      else if (data.image_versions2?.candidates?.[0]) {
-        images = [{
-          url: data.image_versions2.candidates[0].url,
-          width: data.image_versions2.candidates[0].width,
-          height: data.image_versions2.candidates[0].height,
-          index: 0
-        }];
-      }
-      // Fallback thumbnail
-      else if (data.thumbnail_url) {
-        images = [{
-          url: data.thumbnail_url,
-          width: data.original_width,
-          height: data.original_height,
-          index: 0
-        }];
+      if (images.length === 0 && !caption) {
+        console.log('All methods failed to extract data');
+        return Response.json({ error: 'Não foi possível extrair dados do post. O Instagram pode estar bloqueando ou o post é privado.' });
       }
 
       const postData = {
-        id: data.id || data.pk,
-        shortcode: data.shortcode || data.code || shortcode,
-        caption: data.edge_media_to_caption?.edges?.[0]?.node?.text || data.caption?.text || '',
-        title: data.title || '',
-        likes: data.edge_media_preview_like?.count || data.like_count || 0,
-        comments: data.edge_media_to_comment?.count || data.comment_count || 0,
-        views: data.video_view_count || data.play_count || 0,
-        username: data.owner?.username || data.user?.username || '',
-        user_full_name: data.owner?.full_name || data.user?.full_name || '',
+        id: shortcode,
+        shortcode: shortcode,
+        caption: caption,
+        title: '',
+        likes: likes,
+        comments: comments,
+        views: views,
+        username: username,
+        user_full_name: '',
         images: images,
-        raw: data
+        raw: videoVersions.length > 0 ? { video_versions: videoVersions } : null,
+        source: 'embed'
       };
 
       return Response.json(postData);
