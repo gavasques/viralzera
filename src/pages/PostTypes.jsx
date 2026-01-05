@@ -198,23 +198,50 @@ export default function PostTypes() {
     if (!exampleForm.content.trim()) return toast.error("O conteúdo do exemplo é obrigatório");
     
     if (editingExampleIndex !== null) {
-      const currentExamples = editingType.examples || [];
-      const safeExamples = currentExamples.map(ex => typeof ex === 'string' ? { content: ex, comment: "" } : ex);
-      const newExamples = [...safeExamples];
-      newExamples[editingExampleIndex] = exampleForm;
+      // Verificar se mudou de tipo
+      const isMovingToNewType = originalEditingType && editingType && originalEditingType.id !== editingType.id;
       
-      updateExamplesMutation.mutate({ typeId: editingType.id, examples: newExamples }, {
-        onSuccess: () => {
-          setIsExampleModalOpen(false);
-          setEditingExampleIndex(null);
-          setExampleForm({ content: "", comment: "" });
-          setEditingType(null);
-        }
-      });
+      if (isMovingToNewType) {
+        // Adicionar no novo tipo
+        const newTypeExamples = editingType.examples || [];
+        const safeNewExamples = newTypeExamples.map(ex => typeof ex === 'string' ? { content: ex, comment: "" } : ex);
+        const updatedNewExamples = [...safeNewExamples, exampleForm];
+        
+        updateExamplesMutation.mutate({ 
+          typeId: editingType.id, 
+          examples: updatedNewExamples,
+          removeFromTypeId: originalEditingType.id,
+          removeIndex: editingExampleIndex
+        }, {
+          onSuccess: () => {
+            setIsExampleModalOpen(false);
+            setEditingExampleIndex(null);
+            setExampleForm({ content: "", comment: "" });
+            setEditingType(null);
+            setOriginalEditingType(null);
+          }
+        });
+      } else {
+        // Atualizar no mesmo tipo
+        const currentExamples = editingType.examples || [];
+        const safeExamples = currentExamples.map(ex => typeof ex === 'string' ? { content: ex, comment: "" } : ex);
+        const newExamples = [...safeExamples];
+        newExamples[editingExampleIndex] = exampleForm;
+        
+        updateExamplesMutation.mutate({ typeId: editingType.id, examples: newExamples }, {
+          onSuccess: () => {
+            setIsExampleModalOpen(false);
+            setEditingExampleIndex(null);
+            setExampleForm({ content: "", comment: "" });
+            setEditingType(null);
+            setOriginalEditingType(null);
+          }
+        });
+      }
     } else {
       addExampleMutation.mutate(exampleForm);
     }
-  }, [exampleForm, editingExampleIndex, editingType, updateExamplesMutation, addExampleMutation]);
+  }, [exampleForm, editingExampleIndex, editingType, originalEditingType, updateExamplesMutation, addExampleMutation]);
 
   const handleSourceTypeChange = (value) => {
     setExampleForm(prev => ({ ...prev, source_type: value }));
