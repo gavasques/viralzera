@@ -368,15 +368,55 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
 
         {kit && !isGenerating && (
           <>
-            <div className="flex justify-end mb-2">
+            <div className="flex items-center justify-between mb-2">
+              {/* Seletor de Versões */}
+              {kitVersions.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <History className="w-4 h-4" />
+                      Versão {kitVersions.findIndex(v => v.id === selectedVersionId) + 1 || 1} de {kitVersions.length}
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto">
+                    {kitVersions.map((version, idx) => (
+                      <DropdownMenuItem
+                        key={version.id}
+                        onClick={() => {
+                          setKit({
+                            titulos: version.titulos || [],
+                            ideias_thumbnail: version.ideias_thumbnail || [],
+                            descricao_completa: version.descricao_completa || '',
+                            tags_seo: version.tags_seo || []
+                          });
+                          setSelectedVersionId(version.id);
+                        }}
+                        className={selectedVersionId === version.id ? 'bg-red-50' : ''}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">Versão {idx + 1}</span>
+                          <span className="text-xs text-slate-500">
+                            {format(new Date(version.created_date), 'dd/MM/yyyy HH:mm')}
+                          </span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => setKit(null)}
+                onClick={() => {
+                  setKit(null);
+                  setSelectedVersionId(null);
+                }}
                 className="gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Regenerar
+                Gerar Novo
               </Button>
             </div>
 
