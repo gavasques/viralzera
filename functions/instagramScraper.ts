@@ -25,112 +25,26 @@ Deno.serve(async (req) => {
       }
       const shortcode = shortcodeMatch[1];
 
-      // Scraping direto da página do Instagram
-      const postUrl = `https://www.instagram.com/p/${shortcode}/`;
+      // Usar API GraphQL pública do Instagram (via embed)
+      const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
       
-      const response = await fetch(postUrl, {
+      const response = await fetch(embedUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Cache-Control': 'no-cache',
-          'Sec-Fetch-Dest': 'document',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'none',
-          'Sec-Fetch-User': '?1',
-          'Upgrade-Insecure-Requests': '1',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
         }
       });
 
       if (!response.ok) {
-        console.error('Instagram fetch error:', response.status);
-        return Response.json({ error: `Não foi possível acessar o post. Status: ${response.status}` });
+        console.error('Instagram embed error:', response.status);
+        return Response.json({ error: `Erro ao acessar post. Status: ${response.status}` });
       }
 
       const html = await response.text();
-      console.log('HTML length:', html.length);
+      console.log('Embed HTML length:', html.length);
       
-      // Extrair dados do JSON embutido na página
-      let data = null;
-      
-      // Método 1: Buscar no script com __additionalDataLoaded
-      const additionalDataMatch = html.match(/__additionalDataLoaded\s*\(\s*['"][^'"]+['"]\s*,\s*({.+?})\s*\)\s*;/s);
-      if (additionalDataMatch) {
-        try {
-          const parsed = JSON.parse(additionalDataMatch[1]);
-          data = parsed.graphql?.shortcode_media || parsed.items?.[0];
-          console.log('Found data via additionalDataLoaded');
-        } catch (e) {
-          console.log('additionalDataLoaded parse error:', e.message);
-        }
-      }
-      
-      // Método 2: Buscar no script type="application/ld+json"
-      if (!data) {
-        const ldJsonMatch = html.match(/<script type="application\/ld\+json"[^>]*>({.+?})<\/script>/s);
-        if (ldJsonMatch) {
-          try {
-            const ldData = JSON.parse(ldJsonMatch[1]);
-            console.log('Found LD+JSON data');
-            // LD+JSON tem formato diferente
-            if (ldData.image || ldData.video) {
-              data = {
-                __ldJson: true,
-                image: ldData.image,
-                video: ldData.video,
-                caption: ldData.caption || ldData.articleBody || '',
-                author: ldData.author?.identifier?.value || ldData.author?.name || '',
-                interactionCount: ldData.interactionStatistic?.userInteractionCount || 0
-              };
-            }
-          } catch (e) {
-            console.log('LD+JSON parse error:', e.message);
-          }
-        }
-      }
-      
-      // Método 3: Buscar dados em window._sharedData ou window.__initialData
-      if (!data) {
-        const sharedDataMatch = html.match(/window\._sharedData\s*=\s*({.+?});<\/script>/s);
-        if (sharedDataMatch) {
-          try {
-            const shared = JSON.parse(sharedDataMatch[1]);
-            data = shared.entry_data?.PostPage?.[0]?.graphql?.shortcode_media;
-            console.log('Found data via _sharedData');
-          } catch (e) {
-            console.log('_sharedData parse error:', e.message);
-          }
-        }
-      }
-      
-      // Método 4: Buscar meta tags como fallback
-      if (!data) {
-        console.log('Using meta tags fallback');
-        const ogImage = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
-        const ogTitle = html.match(/<meta property="og:title" content="([^"]+)"/)?.[1];
-        const ogDescription = html.match(/<meta property="og:description" content="([^"]+)"/)?.[1];
-        const ogVideo = html.match(/<meta property="og:video" content="([^"]+)"/)?.[1];
-        
-        if (ogImage || ogVideo) {
-          data = {
-            __metaTags: true,
-            image: ogImage,
-            video: ogVideo,
-            title: ogTitle,
-            description: ogDescription
-          };
-        }
-      }
-
-      if (!data) {
-        console.log('No data found in HTML');
-        // Log uma amostra do HTML para debug
-        console.log('HTML sample:', html.substring(0, 2000));
-        return Response.json({ error: 'Não foi possível extrair dados do post. O Instagram pode estar bloqueando ou o post é privado.' });
-      }
-
-      // Processar dados baseado no formato encontrado
+      // Extrair dados do embed
       let images = [];
       let caption = '';
       let username = '';
@@ -138,64 +52,116 @@ Deno.serve(async (req) => {
       let comments = 0;
       let views = 0;
 
-      if (data.__metaTags) {
-        // Dados de meta tags
-        if (data.image) {
-          images = [{ url: data.image, index: 0 }];
+      // Extrair imagem principal do embed
+      const imgMatch = html.match(/class="EmbeddedMediaImage"[^>]*src="([^"]+)"/);
+      const imgMatch2 = html.match(/<img[^>]*class="[^"]*"[^>]*src="([^"]+scontent[^"]+)"/);
+      const imgMatch3 = html.match(/background-image:\s*url\(['"]?([^'")\s]+)['"]?\)/);
+      
+      let mainImage = imgMatch?.[1] || imgMatch2?.[1] || imgMatch3?.[1] || '';
+      
+      // Decodificar entidades HTML
+      mainImage = mainImage.replace(/&amp;/g, '&');
+      
+      if (mainImage) {
+        images = [{ url: mainImage, index: 0 }];
+      }
+
+      // Extrair caption do embed
+      const captionMatch = html.match(/class="Caption"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/);
+      const captionMatch2 = html.match(/<div class="CaptionComments"[^>]*>[\s\S]*?<div[^>]*>([\s\S]*?)<\/div>/);
+      caption = captionMatch?.[1] || captionMatch2?.[1] || '';
+      // Limpar HTML do caption
+      caption = caption.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // Extrair username
+      const userMatch = html.match(/class="UsernameText"[^>]*>([^<]+)</);
+      const userMatch2 = html.match(/"username":"([^"]+)"/);
+      username = userMatch?.[1] || userMatch2?.[1] || '';
+
+      // Tentar extrair dados do script embutido
+      const scriptMatch = html.match(/window\.__additionalDataLoaded\s*\(\s*['"][^'"]+['"]\s*,\s*(\{[\s\S]+?\})\s*\)\s*;/);
+      if (scriptMatch) {
+        try {
+          const data = JSON.parse(scriptMatch[1]);
+          const media = data.shortcode_media || data;
+          
+          if (media.edge_sidecar_to_children?.edges) {
+            images = media.edge_sidecar_to_children.edges.map((edge, idx) => ({
+              url: edge.node.display_url,
+              index: idx
+            }));
+          } else if (media.display_url) {
+            images = [{ url: media.display_url, index: 0 }];
+          }
+          
+          caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || caption;
+          username = media.owner?.username || username;
+          likes = media.edge_media_preview_like?.count || 0;
+          comments = media.edge_media_to_comment?.count || 0;
+          views = media.video_view_count || 0;
+        } catch (e) {
+          console.log('Script parse error:', e.message);
         }
-        caption = data.description || '';
-        // Tentar extrair username do título "username on Instagram..."
-        const usernameMatch = data.title?.match(/^([^@\s]+)\s+on Instagram/i);
-        username = usernameMatch?.[1] || '';
-      } else if (data.__ldJson) {
-        // Dados de LD+JSON
-        const imgUrl = Array.isArray(data.image) ? data.image[0] : data.image;
-        if (imgUrl) {
-          images = [{ url: imgUrl, index: 0 }];
-        }
-        caption = data.caption || '';
-        username = data.author || '';
-        views = data.interactionCount || 0;
-      } else {
-        // Dados do GraphQL/API
-        // Carrossel
-        if (data.edge_sidecar_to_children?.edges) {
-          images = data.edge_sidecar_to_children.edges.map((edge, idx) => ({
-            url: edge.node.display_url,
-            width: edge.node.dimensions?.width,
-            height: edge.node.dimensions?.height,
-            index: idx
-          }));
-        }
-        // Post único
-        else if (data.display_url) {
-          images = [{
-            url: data.display_url,
-            width: data.dimensions?.width,
-            height: data.dimensions?.height,
-            index: 0
-          }];
-        }
+      }
+
+      // Se não encontrou imagem via embed, tentar API alternativa
+      if (images.length === 0) {
+        console.log('No image found in embed, trying graphql...');
         
-        caption = data.edge_media_to_caption?.edges?.[0]?.node?.text || data.caption?.text || '';
-        username = data.owner?.username || '';
-        likes = data.edge_media_preview_like?.count || data.like_count || 0;
-        comments = data.edge_media_to_comment?.count || data.comment_count || 0;
-        views = data.video_view_count || data.play_count || 0;
+        // Tentar endpoint graphql público
+        const graphqlUrl = `https://www.instagram.com/graphql/query/?query_hash=b3055c01b4b222b8a47dc12b090e4e64&variables=${encodeURIComponent(JSON.stringify({shortcode}))}`;
+        
+        try {
+          const gqlResponse = await fetch(graphqlUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Accept': 'application/json',
+            }
+          });
+          
+          if (gqlResponse.ok) {
+            const gqlData = await gqlResponse.json();
+            const media = gqlData.data?.shortcode_media;
+            
+            if (media) {
+              if (media.edge_sidecar_to_children?.edges) {
+                images = media.edge_sidecar_to_children.edges.map((edge, idx) => ({
+                  url: edge.node.display_url,
+                  index: idx
+                }));
+              } else if (media.display_url) {
+                images = [{ url: media.display_url, index: 0 }];
+              }
+              
+              caption = media.edge_media_to_caption?.edges?.[0]?.node?.text || caption;
+              username = media.owner?.username || username;
+              likes = media.edge_media_preview_like?.count || likes;
+              comments = media.edge_media_to_comment?.count || comments;
+              views = media.video_view_count || views;
+            }
+          }
+        } catch (gqlError) {
+          console.log('GraphQL fallback error:', gqlError.message);
+        }
+      }
+
+      if (images.length === 0 && !caption) {
+        console.log('Could not extract data from embed');
+        return Response.json({ error: 'Não foi possível extrair dados do post. Tente outra URL.' });
       }
 
       const postData = {
-        id: data.id || data.pk || shortcode,
+        id: shortcode,
         shortcode: shortcode,
         caption: caption,
-        title: data.title || '',
+        title: '',
         likes: likes,
         comments: comments,
         views: views,
         username: username,
-        user_full_name: data.owner?.full_name || '',
+        user_full_name: '',
         images: images,
-        source: data.__metaTags ? 'meta_tags' : data.__ldJson ? 'ld_json' : 'graphql'
+        source: 'embed'
       };
 
       return Response.json(postData);
