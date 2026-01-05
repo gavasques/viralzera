@@ -106,19 +106,24 @@ export default function DeepResearchWebhookModal({ open, onOpenChange, modelingI
             total_tokens_estimate: textTokens + videoTokens
           });
 
-          // Run analysis
-          base44.functions.invoke('runModelingAnalysis', {
-            modeling_id: modelingId,
-            materialId: newText.id,
-            materialType: 'text',
-            content: content
-          }).catch(err => {
-            console.error('Erro ao analisar pesquisa:', err);
-          });
-
+          // Invalidate queries first to show the saved item immediately
           queryClient.invalidateQueries({ queryKey: ['modelingTexts', modelingId] });
           queryClient.invalidateQueries({ queryKey: ['modelings'] });
           toast.success('Pesquisa salva em Textos com sucesso!');
+
+          // Run analysis safely
+          if (base44.functions?.invoke) {
+            base44.functions.invoke('runModelingAnalysis', {
+              modeling_id: modelingId,
+              materialId: newText.id,
+              materialType: 'text',
+              content: content
+            }).catch(err => {
+              console.error('Erro ao analisar pesquisa:', err);
+            });
+          } else {
+            console.warn('Função de análise indisponível no momento');
+          }
         } else {
           toast.success('Pesquisa enviada! Aguardando retorno via webhook...');
         }
