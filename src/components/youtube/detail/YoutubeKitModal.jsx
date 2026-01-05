@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sendMessage } from "@/components/services/OpenRouterDirectService";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { toast } from "sonner";
