@@ -12,6 +12,11 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
+// Helper to call backend functions
+const callBackendFunction = async (functionName, payload) => {
+  return await base44.functions[functionName](payload);
+};
+
 export default function InstagramImporter({ onImport, postTypeFormat }) {
   const [instagramUrl, setInstagramUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
