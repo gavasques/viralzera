@@ -17,7 +17,7 @@ export function StepTema({ focusId, value, onChange }) {
     refetchOnMount: true
   });
 
-  const handleModelingChange = (modelingId) => {
+  const handleModelingChange = async (modelingId) => {
     if (modelingId === 'none') {
       onChange({ 
         ...value, 
@@ -27,26 +27,33 @@ export function StepTema({ focusId, value, onChange }) {
       return;
     }
 
-    const selectedModeling = modelings.find(m => m.id === modelingId);
-    if (selectedModeling) {
-      const idea = selectedModeling.creator_idea;
-      const title = selectedModeling.title;
+    // Fetch fresh data directly from API to ensure we get the latest
+    try {
+      const freshModeling = await base44.entities.Modeling.get(modelingId);
       
-      // Use creator_idea if available, otherwise title
-      const newTema = idea || title || value.tema;
-      
-      onChange({ 
-        ...value, 
-        tema: newTema,
-        selectedModelings: [modelingId],
-        creativeDirective: null
-      });
+      if (freshModeling) {
+        const idea = freshModeling.creator_idea;
+        const title = freshModeling.title;
+        
+        // Use creator_idea if available, otherwise title
+        const newTema = idea || title || value.tema;
+        
+        onChange({ 
+          ...value, 
+          tema: newTema,
+          selectedModelings: [modelingId],
+          creativeDirective: null
+        });
 
-      if (idea) {
-        toast.success("Tema preenchido com a Ideia do Criador do Dossiê");
-      } else {
-        toast.info("Tema preenchido com o título da Modelagem");
+        if (idea) {
+          toast.success("Tema preenchido com a Ideia do Criador do Dossiê");
+        } else {
+          toast.info("Tema preenchido com o título da Modelagem");
+        }
       }
+    } catch (err) {
+      console.error('Erro ao carregar modelagem:', err);
+      toast.error('Erro ao carregar dados da modelagem');
     }
   };
 
