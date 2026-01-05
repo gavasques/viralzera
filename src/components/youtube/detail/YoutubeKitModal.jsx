@@ -47,20 +47,30 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [selectedVersionId, setSelectedVersionId] = useState(null);
 
+  // Debug log
+  console.log('YoutubeKitModal props:', { scriptId, open });
+
   // Buscar versões salvas do kit
-  const { data: kitVersions = [], isLoading: isLoadingVersions } = useQuery({
+  const { data: kitVersions = [], isLoading: isLoadingVersions, refetch: refetchVersions } = useQuery({
     queryKey: ['youtube-kit-versions', scriptId],
-    queryFn: () => base44.entities.YoutubeKitVersion.filter(
-      { script_id: scriptId },
-      '-created_date'
-    ),
+    queryFn: async () => {
+      console.log('Fetching kit versions for scriptId:', scriptId);
+      const result = await base44.entities.YoutubeKitVersion.filter(
+        { script_id: scriptId },
+        '-created_date'
+      );
+      console.log('Kit versions fetched:', result);
+      return result;
+    },
     enabled: open && !!scriptId
   });
 
   // Carregar última versão ao abrir (apenas se já terminou de buscar e tem versões)
   useEffect(() => {
+    console.log('Version load effect:', { open, isLoadingVersions, kitVersionsLength: kitVersions.length, kit, selectedVersionId });
     if (open && !isLoadingVersions && kitVersions.length > 0 && !kit && !selectedVersionId) {
       const latestVersion = kitVersions[0];
+      console.log('Loading latest version:', latestVersion);
       setKit({
         titulos: latestVersion.titulos || [],
         ideias_thumbnail: latestVersion.ideias_thumbnail || [],
@@ -305,14 +315,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
           </DialogTitle>
         </DialogHeader>
 
-        {isLoadingVersions && (
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
-            <p className="text-slate-500 text-sm">Carregando...</p>
-          </div>
-        )}
-
-        {!kit && !isGenerating && !isLoadingVersions && (
+        {!kit && !isGenerating && (
           <div className="flex flex-col items-center justify-center py-8 gap-6">
             <div className="bg-red-50 p-4 rounded-full">
               <Sparkles className="w-10 h-10 text-red-500" />
@@ -395,8 +398,6 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
             </Button>
           </div>
         )}
-
-        {/* Note: isLoadingVersions state shows loading spinner above */}
 
         {isGenerating && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
