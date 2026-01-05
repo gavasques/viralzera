@@ -229,24 +229,30 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         console.log('Full parsed kit:', parsedKit);
         
         // Normalizar nomes de propriedades (IA pode usar variações)
+        let rawThumbnails = parsedKit.ideias_thumbnail || parsedKit.thumbnails || parsedKit.thumbnail_ideas || parsedKit.ideias_thumbnails || parsedKit.ideas_thumbnail || [];
+
         const normalizedKit = {
           titulos: parsedKit.titulos || parsedKit.titles || parsedKit.titulo || [],
-          ideias_thumbnail: parsedKit.ideias_thumbnail || parsedKit.thumbnails || parsedKit.thumbnail_ideas || parsedKit.ideias_thumbnails || parsedKit.ideas_thumbnail || [],
+          ideias_thumbnail: [],
           descricao_completa: parsedKit.descricao_completa || parsedKit.descricao || parsedKit.description || parsedKit.desc || parsedKit.full_description || parsedKit.descricao_final || '',
           tags_seo: parsedKit.tags_seo || parsedKit.tags || parsedKit.keywords || parsedKit.seo_tags || []
         };
-        
-        console.log('descricao_completa raw:', parsedKit.descricao_completa);
-        console.log('descricao raw:', parsedKit.descricao);
-        console.log('Normalized descricao_completa:', normalizedKit.descricao_completa);
-        
+
         // Garantir que arrays são arrays
         if (!Array.isArray(normalizedKit.titulos)) {
           normalizedKit.titulos = normalizedKit.titulos ? [normalizedKit.titulos] : [];
         }
-        if (!Array.isArray(normalizedKit.ideias_thumbnail)) {
-          normalizedKit.ideias_thumbnail = normalizedKit.ideias_thumbnail ? [normalizedKit.ideias_thumbnail] : [];
+
+        // Normalizar thumbnails para array de strings
+        if (!Array.isArray(rawThumbnails)) {
+          rawThumbnails = rawThumbnails ? [rawThumbnails] : [];
         }
+        normalizedKit.ideias_thumbnail = rawThumbnails.map(item => {
+          if (typeof item === 'string') return item;
+          // Se for objeto, extrair texto/descrição
+          return item?.texto || item?.text || item?.descricao || item?.description || item?.idea || JSON.stringify(item);
+        });
+
         if (!Array.isArray(normalizedKit.tags_seo)) {
           normalizedKit.tags_seo = typeof normalizedKit.tags_seo === 'string' 
             ? normalizedKit.tags_seo.split(',').map(t => t.trim()) 
