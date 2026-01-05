@@ -324,26 +324,28 @@ export default function PostTypes() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingExampleIndex !== null ? 'Editar Exemplo' : 'Adicionar Exemplo'}</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="flex items-center gap-2 flex-wrap">
               {editingExampleIndex !== null ? 'Editando exemplo de: ' : 'Adicionando ao tipo: '}
-              {editingExampleIndex !== null ? (
+              {editingExampleIndex !== null && postTypes && postTypes.length > 1 ? (
                 <select
+                  className="font-semibold text-indigo-600 bg-transparent border border-indigo-200 rounded px-2 py-0.5 text-sm cursor-pointer hover:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   value={editingType?.id || ''}
                   onChange={(e) => {
-                    const newType = postTypes?.find(pt => pt.id === e.target.value);
+                    const newType = postTypes.find(t => t.id === e.target.value);
                     if (newType) setEditingType(newType);
                   }}
-                  className="font-semibold text-indigo-600 bg-transparent border-b border-indigo-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
                 >
-                  {postTypes?.map(pt => (
-                    <option key={pt.id} value={pt.id}>{pt.title}</option>
+                  {postTypes.map(pt => (
+                    <option key={pt.id} value={pt.id}>{pt.title} ({pt.format})</option>
                   ))}
                 </select>
               ) : (
-                <span className="font-semibold text-indigo-600">{editingType?.title}</span>
-              )}
-              {editingType?.format && (
-                <Badge variant="outline" className="ml-2">{editingType.format}</Badge>
+                <>
+                  <span className="font-semibold text-indigo-600">{editingType?.title}</span>
+                  {editingType?.format && (
+                    <Badge variant="outline" className="ml-2">{editingType.format}</Badge>
+                  )}
+                </>
               )}
             </DialogDescription>
           </DialogHeader>
