@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 
-// Helper para chamar backend functions com retry robusto
+// Helper para chamar backend functions com retry robusto e fallback manual
 const callBackendFunction = async (functionName, payload = {}) => {
   const maxRetries = 20; // 20 tentativas
   const interval = 500; // 500ms entre tentativas (total 10s)
@@ -23,14 +23,47 @@ const callBackendFunction = async (functionName, payload = {}) => {
       // Verifica se SDK está carregado
       if (!base44) throw new Error("SDK base44 não encontrado");
 
-      // Tenta método invoke (V3)
+      // 1. Tenta método invoke (V3)
       if (base44.functions && typeof base44.functions.invoke === 'function') {
         return await base44.functions.invoke(functionName, payload);
       }
 
-      // Tenta acesso direto (V2)
+      // 2. Tenta acesso direto (V2)
       if (base44.functions && typeof base44.functions[functionName] === 'function') {
         return await base44.functions[functionName](payload);
+      }
+
+      // 3. Fallback: Manual fetch se functions não existir no objeto base44
+      if (base44.getConfig) {
+          const config = base44.getConfig();
+          if (config?.apiUrl) {
+              let token = null;
+              // Tenta obter token da sessão
+              if (base44.auth && typeof base44.auth.getSession === 'function') {
+                  const session = await base44.auth.getSession();
+                  token = session?.access_token;
+              }
+
+              if (token) {
+                  const response = await fetch(`${config.apiUrl}/functions/${functionName}`, {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify(payload)
+                  });
+
+                  if (!response.ok) {
+                       const errText = await response.text();
+                       throw new Error(`Erro ${response.status}: ${errText}`);
+                  }
+
+                  const data = await response.json();
+                  // Compatibilidade com resposta axios-like { data: ... }
+                  return { data };
+              }
+          }
       }
 
       // Se chegou aqui, functions pode estar vazio ou carregando
