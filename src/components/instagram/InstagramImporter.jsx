@@ -1,113 +1,18 @@
 import React, { useState } from 'react';
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Instagram, Search, Image as ImageIcon, Eye, Heart, MessageCircle, FileText, Sparkles, Maximize2, ZoomIn, ZoomOut, Video, Mic } from "lucide-react";
+import { Loader2, Instagram, Search, Eye, Heart, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
 
-// Helper para chamar backend functions com retry robusto e fallback manual
-const callBackendFunction = async (functionName, payload = {}) => {
-  const maxRetries = 20; // 20 tentativas
-  const interval = 500; // 500ms entre tentativas (total 10s)
-  let lastError = null;
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      // Verifica se SDK está carregado
-      if (!base44) throw new Error("SDK base44 não encontrado");
-
-      // 1. Tenta método invoke (V3)
-      if (base44.functions && typeof base44.functions.invoke === 'function') {
-        return await base44.functions.invoke(functionName, payload);
-      }
-
-      // 2. Tenta acesso direto (V2)
-      if (base44.functions && typeof base44.functions[functionName] === 'function') {
-        return await base44.functions[functionName](payload);
-      }
-
-      // 3. Fallback: Manual fetch se functions não existir no objeto base44
-      if (typeof base44.getConfig === 'function') {
-          const config = base44.getConfig();
-          if (config?.apiUrl) {
-              let token = null;
-              // Tenta obter token da sessão
-              if (base44.auth && typeof base44.auth.getSession === 'function') {
-                  try {
-                      const session = await base44.auth.getSession();
-                      token = session?.access_token;
-                  } catch (e) {
-                      console.warn("[InstagramImporter] Erro ao obter sessão:", e);
-                  }
-              }
-
-              // Mesmo sem token, tentamos (algumas funções podem ser públicas ou lidar com anonimato)
-              const url = `${config.apiUrl}/functions/${functionName}`;
-              // console.log(`[InstagramImporter] Tentando fetch direto: ${url}`);
-
-              const headers = { 'Content-Type': 'application/json' };
-              if (token) headers['Authorization'] = `Bearer ${token}`;
-
-              const response = await fetch(url, {
-                  method: 'POST',
-                  headers,
-                  body: JSON.stringify(payload)
-              });
-
-              if (!response.ok) {
-                   const errText = await response.text();
-                   throw new Error(`Erro ${response.status} no fetch: ${errText}`);
-              }
-
-              const data = await response.json();
-              // Compatibilidade com resposta axios-like { data: ... }
-              return { data };
-          } else {
-              // console.warn("[InstagramImporter] Config.apiUrl não encontrado", config);
-          }
-      }
-
-      // Se chegou aqui, functions pode estar vazio ou carregando
-    } catch (err) {
-      console.warn(`[InstagramImporter] Tentativa ${i+1}/${maxRetries} falhou:`, err.message);
-      lastError = err;
-    }
-
-    await new Promise(r => setTimeout(r, interval));
-  }
-
-  console.error('[InstagramImporter] Falha crítica ao acessar função backend. Objeto base44:', base44);
-  throw new Error(lastError?.message || 'Não foi possível conectar às funções do backend. Verifique o console para mais detalhes.');
-};
+const WEBHOOK_URL = 'https://webhook.guivasques.app/webhook/9c5caeb2-5742-4575-af82-a4cca3a8d6ed';
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
   const [instagramUrl, setInstagramUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isExtractingText, setIsExtractingText] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [postData, setPostData] = useState(null);
-  const [extractedTexts, setExtractedTexts] = useState([]);
-  const [manualOverlayText, setManualOverlayText] = useState('');
-  const [videoTranscription, setVideoTranscription] = useState('');
-  const [viewImage, setViewImage] = useState(null);
-  const [imageZoom, setImageZoom] = useState(1);
-
-  const { data: postTypeConfig } = useQuery({
-    queryKey: ['postTypeConfig'],
-    queryFn: async () => {
-      const user = await base44.auth.me();
-      const configs = await base44.entities.PostTypeConfig.filter({ created_by: user.email });
-      return configs[0] || null;
-    },
-    staleTime: 60000
-  });
 
   const handleFetchPost = async () => {
     if (!instagramUrl.trim()) {
@@ -117,31 +22,31 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
 
     setIsLoading(true);
     setPostData(null);
-    setExtractedTexts([]);
 
     try {
-      // Extrair o shortcode da URL
-      const shortcodeMatch = instagramUrl.match(/(?:\/p\/|\/reel\/|\/reels\/|\/tv\/)([A-Za-z0-9_-]+)/);
-      if (!shortcodeMatch) {
-        toast.error('URL do Instagram inválida');
-        setIsLoading(false);
-        return;
-      }
-      const shortcode = shortcodeMatch[1];
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: instagramUrl.trim() })
+      });
 
-      // Chamar backend function para evitar CORS
-      const response = await callBackendFunction('instagramFetch', { shortcode });
-
-      if (response.data?.error) {
-        toast.error(response.data.error);
-        setIsLoading(false);
-        return;
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}`);
       }
 
-      setPostData(response.data);
+      const data = await response.json();
+
+      // O webhook retorna um array, pegamos o primeiro item
+      const post = Array.isArray(data) ? data[0] : data;
+
+      if (!post || !post.id) {
+        throw new Error('Post não encontrado');
+      }
+
+      setPostData(post);
       toast.success('Dados do post carregados!');
     } catch (error) {
-      toast.error('Erro ao buscar dados do Instagram: ' + error.message);
+      toast.error('Erro ao buscar dados: ' + error.message);
       console.error(error);
     } finally {
       setIsLoading(false);
