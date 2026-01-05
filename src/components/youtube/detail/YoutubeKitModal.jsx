@@ -258,19 +258,25 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         
         // Salvar versão no banco
         if (scriptId) {
-          const savedVersion = await base44.entities.YoutubeKitVersion.create({
-            script_id: scriptId,
-            titulos: normalizedKit.titulos,
-            ideias_thumbnail: normalizedKit.ideias_thumbnail,
-            descricao_completa: normalizedKit.descricao_completa,
-            tags_seo: normalizedKit.tags_seo,
-            template_id: selectedTemplateId !== 'none' ? selectedTemplateId : null
-          });
-          setSelectedVersionId(savedVersion.id);
-          queryClient.invalidateQueries({ queryKey: ['youtube-kit-versions', scriptId] });
+          console.log('Saving kit version for scriptId:', scriptId);
+          try {
+            const savedVersion = await base44.entities.YoutubeKitVersion.create({
+              script_id: scriptId,
+              titulos: normalizedKit.titulos,
+              ideias_thumbnail: normalizedKit.ideias_thumbnail,
+              descricao_completa: normalizedKit.descricao_completa,
+              tags_seo: normalizedKit.tags_seo,
+              template_id: selectedTemplateId !== 'none' ? selectedTemplateId : null
+            });
+            console.log('Kit version saved:', savedVersion);
+            setSelectedVersionId(savedVersion.id);
+            queryClient.invalidateQueries({ queryKey: ['youtube-kit-versions', scriptId] });
+          } catch (saveError) {
+            console.error('Error saving kit version:', saveError);
+          }
         }
         
-        toast.success('Kit gerado e salvo!');
+        toast.success('Kit gerado com sucesso!');
       } else {
         console.error('No JSON found in response');
         throw new Error('Resposta não contém JSON válido');
