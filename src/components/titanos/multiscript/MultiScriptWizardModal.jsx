@@ -401,7 +401,13 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 flex flex-col min-w-0">
+                <div className="flex-1 flex flex-col min-w-0 relative">
+                    {/* Generation Loading Screen */}
+                    <GenerationLoadingScreen 
+                        isGenerating={isGenerating} 
+                        currentStatus={generationStatus} 
+                    />
+
                     {/* Header (Mobile Only) */}
                     <div className="md:hidden p-4 border-b flex items-center gap-2 bg-slate-50">
                         <span className="font-bold text-slate-900">Passo {currentStep + 1} de {STEPS.length}</span>
