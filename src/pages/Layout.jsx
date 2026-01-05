@@ -57,7 +57,7 @@ export default function Layout({ children }) {
   const [expandedGroups, setExpandedGroups] = React.useState({
     'Principal': true,
     'Youtube': true,
-    'Criação': true,
+    'Instagram': true,
     'Conteúdo': true,
     'DNA': true
   });
@@ -154,7 +154,7 @@ export default function Layout({ children }) {
             ]
           },
           {
-            label: 'Criação',
+            label: 'Instagram',
             items: [
               { name: 'Multi Chat', icon: Sparkles, page: 'TitanosRouter' },
               { name: 'Canvas', icon: FileText, page: 'Canvas' },
