@@ -250,8 +250,8 @@ export default function YoutubeScriptSectionEditor({
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Modern Editor Header */}
-        <div className="flex flex-col gap-4 px-6 pt-5 pb-2 bg-white">
+        {/* Modern Editor Header - Sticky */}
+        <div className="flex flex-col gap-4 px-6 pt-5 pb-2 bg-white sticky top-0 z-10 border-b border-slate-100">
           <div className="flex items-center justify-between">
             {/* Left: Info & Metadata */}
             <div className="flex items-center gap-3">
