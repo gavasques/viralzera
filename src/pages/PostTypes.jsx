@@ -326,7 +326,22 @@ export default function PostTypes() {
             <DialogTitle>{editingExampleIndex !== null ? 'Editar Exemplo' : 'Adicionar Exemplo'}</DialogTitle>
             <DialogDescription>
               {editingExampleIndex !== null ? 'Editando exemplo de: ' : 'Adicionando ao tipo: '}
-              <span className="font-semibold text-indigo-600">{editingType?.title}</span>
+              {editingExampleIndex !== null ? (
+                <select
+                  value={editingType?.id || ''}
+                  onChange={(e) => {
+                    const newType = postTypes?.find(pt => pt.id === e.target.value);
+                    if (newType) setEditingType(newType);
+                  }}
+                  className="font-semibold text-indigo-600 bg-transparent border-b border-indigo-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  {postTypes?.map(pt => (
+                    <option key={pt.id} value={pt.id}>{pt.title}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="font-semibold text-indigo-600">{editingType?.title}</span>
+              )}
               {editingType?.format && (
                 <Badge variant="outline" className="ml-2">{editingType.format}</Badge>
               )}
