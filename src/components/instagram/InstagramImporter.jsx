@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2, Instagram, Search, Image as ImageIcon, Eye, Heart, MessageCircle, FileText, Sparkles, Maximize2, ZoomIn, ZoomOut, Video, Mic } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
   const [instagramUrl, setInstagramUrl] = useState('');
@@ -45,10 +45,23 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
     setExtractedTexts([]);
 
     try {
-      const response = await base44.functions.invoke('instagramScraper', {
-        action: 'getPostDetails',
-        url: instagramUrl
-      });
+      let response;
+      
+      // Tentar base44.functions.invoke primeiro, senão usar fetch direto
+      if (base44.functions?.invoke) {
+        response = await base44.functions.invoke('instagramScraper', {
+          action: 'getPostDetails',
+          url: instagramUrl
+        });
+      } else {
+        // Fallback: chamar função diretamente via fetch
+        const funcResponse = await fetch('/api/functions/instagramScraper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getPostDetails', url: instagramUrl })
+        });
+        response = { data: await funcResponse.json() };
+      }
 
       if (response.data?.error) {
         toast.error(response.data.error);
@@ -85,10 +98,20 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       }
 
       // Extract text using Gemini vision
-      const response = await base44.functions.invoke('instagramScraper', {
-        action: 'extractTextFromImages',
-        imageUrls
-      });
+      let response;
+      if (base44.functions?.invoke) {
+        response = await base44.functions.invoke('instagramScraper', {
+          action: 'extractTextFromImages',
+          imageUrls
+        });
+      } else {
+        const funcResponse = await fetch('/api/functions/instagramScraper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'extractTextFromImages', imageUrls })
+        });
+        response = { data: await funcResponse.json() };
+      }
 
       if (response.data.error) {
         toast.error(response.data.error);
