@@ -86,17 +86,19 @@ export default function AddTextModal({ open, onOpenChange, modelingId, textToEdi
       
       toast.success(textToEdit ? 'Texto atualizado!' : 'Texto adicionado!');
 
-      // Chamar análise individual apenas se for criação ou se o conteúdo mudou significativamente
-      // Para simplificar, chamamos sempre na criação, e opcionalmente na edição (mas aqui vou manter para ambos por enquanto, ou remover na edição se for spam)
-      // Vamos manter a re-análise
-      base44.functions.invoke('runModelingAnalysis', {
-        modeling_id: modelingId,
-        materialId: newText.id || textToEdit.id,
-        materialType: 'text',
-        content: newText.content || payload.content
-      }).catch(err => {
-        console.error('Erro ao analisar texto:', err);
-      });
+      // Run analysis safely
+      if (base44.functions?.invoke) {
+        base44.functions.invoke('runModelingAnalysis', {
+          modeling_id: modelingId,
+          materialId: newText.id || textToEdit.id,
+          materialType: 'text',
+          content: newText.content || (newText && newText.content) || ''
+        }).catch(err => {
+          console.error('Erro ao analisar texto:', err);
+        });
+      } else {
+        console.warn('Função de análise indisponível no momento');
+      }
       
       setFormData({ title: '', description: '', content: '', text_type: 'reference' });
       onOpenChange(false);
