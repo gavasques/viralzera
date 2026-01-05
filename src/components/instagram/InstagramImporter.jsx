@@ -45,20 +45,80 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
     setExtractedTexts([]);
 
     try {
-      const response = await base44.functions.invoke('instagramScraper', {
-        action: 'getPostDetails',
-        url: instagramUrl
+      // Extrair o shortcode da URL
+      const shortcodeMatch = instagramUrl.match(/(?:\/p\/|\/reel\/|\/reels\/)([A-Za-z0-9_-]+)/);
+      if (!shortcodeMatch) {
+        toast.error('URL do Instagram inválida');
+        setIsLoading(false);
+        return;
+      }
+      const shortcode = shortcodeMatch[1];
+
+      // Chamar RapidAPI diretamente
+      const response = await fetch(`https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${shortcode}`, {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
+          'x-rapidapi-key': '0bd132bc82msh7f8a99a6d1df5a3p103e28jsndb31b267a084'
+        }
       });
 
-      if (response.data?.error) {
-        toast.error(response.data.error);
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
+
+      const result = await response.json();
+      const data = result.data;
+
+      if (!data) {
+        toast.error('Post não encontrado');
+        setIsLoading(false);
         return;
       }
 
-      setPostData(response.data);
+      // Processar imagens do carrossel ou imagem única
+      let images = [];
+      if (data.carousel_media) {
+        images = data.carousel_media.map((item, idx) => ({
+          url: item.image_versions?.items?.[0]?.url || item.thumbnail_url,
+          width: item.image_versions?.items?.[0]?.width || item.original_width,
+          height: item.image_versions?.items?.[0]?.height || item.original_height,
+          index: idx
+        }));
+      } else if (data.image_versions?.items?.[0]) {
+        images = [{
+          url: data.image_versions.items[0].url,
+          width: data.image_versions.items[0].width,
+          height: data.image_versions.items[0].height,
+          index: 0
+        }];
+      } else if (data.thumbnail_url) {
+        images = [{
+          url: data.thumbnail_url,
+          width: data.original_width,
+          height: data.original_height,
+          index: 0
+        }];
+      }
+
+      const postDataParsed = {
+        id: data.id,
+        shortcode: data.code,
+        caption: data.caption?.text || '',
+        title: data.title || '',
+        likes: data.like_count || 0,
+        comments: data.comment_count || 0,
+        views: data.play_count || data.view_count || 0,
+        username: data.user?.username || '',
+        user_full_name: data.user?.full_name || '',
+        images: images,
+        raw: data
+      };
+
+      setPostData(postDataParsed);
       toast.success('Dados do post carregados!');
     } catch (error) {
-      toast.error('Erro ao buscar dados do Instagram');
+      toast.error('Erro ao buscar dados do Instagram: ' + error.message);
       console.error(error);
     } finally {
       setIsLoading(false);
