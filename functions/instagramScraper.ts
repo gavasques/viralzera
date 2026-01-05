@@ -25,12 +25,13 @@ Deno.serve(async (req) => {
       }
       const shortcode = shortcodeMatch[1];
 
+      // Tentar Instagram191 API primeiro (mais estável)
       const response = await fetch(
-        `https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${shortcode}`,
+        `https://instagram191.p.rapidapi.com/v2/post/by/shortcode?shortcode=${shortcode}`,
         {
           method: 'GET',
           headers: {
-            'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
+            'x-rapidapi-host': 'instagram191.p.rapidapi.com',
             'x-rapidapi-key': RAPIDAPI_KEY
           }
         }
