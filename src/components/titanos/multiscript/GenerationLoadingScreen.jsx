@@ -69,25 +69,25 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 bg-gradient-to-br from-slate-900 via-pink-900/20 to-slate-900 flex flex-col items-center justify-center z-50 overflow-hidden"
+      className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-100 flex flex-col items-center justify-center z-50 overflow-hidden"
     >
       {/* Animated Background Particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-pink-500/30 rounded-full"
+            className="absolute w-2 h-2 bg-pink-400/20 rounded-full"
             initial={{ 
-              x: Math.random() * window.innerWidth, 
-              y: Math.random() * window.innerHeight,
+              x: Math.random() * 800, 
+              y: Math.random() * 600,
               scale: Math.random() * 0.5 + 0.5
             }}
             animate={{ 
               y: [null, Math.random() * -200 - 100],
-              opacity: [0.3, 0]
+              opacity: [0.2, 0]
             }}
             transition={{ 
-              duration: Math.random() * 3 + 2, 
+              duration: Math.random() * 4 + 3, 
               repeat: Infinity,
               ease: "linear"
             }}
