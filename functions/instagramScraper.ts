@@ -25,47 +25,81 @@ Deno.serve(async (req) => {
       }
       const shortcode = shortcodeMatch[1];
 
-      // Usar Instagram Scraper API (rocketapi) - mais confiável
-      const response = await fetch(
-        `https://rocketapi-for-instagram.p.rapidapi.com/instagram/media/get_info_by_shortcode?shortcode=${shortcode}`,
-        {
-          method: 'GET',
-          headers: {
-            'x-rapidapi-host': 'rocketapi-for-instagram.p.rapidapi.com',
-            'x-rapidapi-key': RAPIDAPI_KEY
-          }
+      // Usar Instagram GraphQL público (sem API key necessária)
+      const instagramUrl = `https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`;
+      
+      let response = await fetch(instagramUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': 'https://www.instagram.com/',
+          'X-IG-App-ID': '936619743392459',
         }
-      );
+      });
+
+      // Se GraphQL falhar, tentar RapidAPI
+      if (!response.ok) {
+        console.log('GraphQL failed, trying RapidAPI...');
+        response = await fetch(
+          `https://instagram-scraper-api2.p.rapidapi.com/v1/post_info?code_or_id_or_url=${shortcode}`,
+          {
+            method: 'GET',
+            headers: {
+              'x-rapidapi-host': 'instagram-scraper-api2.p.rapidapi.com',
+              'x-rapidapi-key': RAPIDAPI_KEY
+            }
+          }
+        );
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('RapidAPI error:', response.status, errorText);
-        return Response.json({ error: `Erro na API do Instagram: ${response.status}. Verifique se sua chave RapidAPI está subscrita nesta API: rocketapi-for-instagram` });
+        console.error('Instagram API error:', response.status, errorText);
+        return Response.json({ error: `Não foi possível acessar o post. O Instagram pode estar bloqueando. Tente novamente mais tarde.` });
       }
 
       const result = await response.json();
-      console.log('Instagram API response:', JSON.stringify(result).substring(0, 1000));
+      console.log('Instagram API response keys:', Object.keys(result));
       
-      // Instagram191 retorna estrutura diferente
-      const data = result.data || result;
+      // Processar dados - suporta múltiplos formatos de resposta
+      let data = result.graphql?.shortcode_media || result.items?.[0] || result.data || result;
 
-      if (!data || result.error) {
-        return Response.json({ error: result.message || 'Post não encontrado' });
+      if (!data) {
+        return Response.json({ error: 'Post não encontrado ou privado' });
       }
 
-      // Processar imagens - Instagram191 usa estrutura diferente
+      // Processar imagens - suporta múltiplos formatos
       let images = [];
       
-      // Carrossel
-      if (data.carousel_media_count > 0 && data.carousel_media) {
+      // Formato GraphQL - Carrossel
+      if (data.edge_sidecar_to_children?.edges) {
+        images = data.edge_sidecar_to_children.edges.map((edge, idx) => ({
+          url: edge.node.display_url || edge.node.display_resources?.[0]?.src,
+          width: edge.node.dimensions?.width,
+          height: edge.node.dimensions?.height,
+          index: idx
+        }));
+      }
+      // Formato API - Carrossel
+      else if (data.carousel_media) {
         images = data.carousel_media.map((item, idx) => ({
           url: item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_url,
           width: item.image_versions2?.candidates?.[0]?.width || item.original_width,
           height: item.image_versions2?.candidates?.[0]?.height || item.original_height,
           index: idx
         }));
-      } 
-      // Post único ou Reel
+      }
+      // Post único - GraphQL
+      else if (data.display_url) {
+        images = [{
+          url: data.display_url,
+          width: data.dimensions?.width,
+          height: data.dimensions?.height,
+          index: 0
+        }];
+      }
+      // Post único - API
       else if (data.image_versions2?.candidates?.[0]) {
         images = [{
           url: data.image_versions2.candidates[0].url,
@@ -73,14 +107,9 @@ Deno.serve(async (req) => {
           height: data.image_versions2.candidates[0].height,
           index: 0
         }];
-      } else if (data.display_url) {
-        images = [{
-          url: data.display_url,
-          width: data.original_width,
-          height: data.original_height,
-          index: 0
-        }];
-      } else if (data.thumbnail_url) {
+      }
+      // Fallback thumbnail
+      else if (data.thumbnail_url) {
         images = [{
           url: data.thumbnail_url,
           width: data.original_width,
@@ -91,14 +120,14 @@ Deno.serve(async (req) => {
 
       const postData = {
         id: data.id || data.pk,
-        shortcode: data.code || shortcode,
-        caption: data.caption?.text || data.edge_media_to_caption?.edges?.[0]?.node?.text || '',
+        shortcode: data.shortcode || data.code || shortcode,
+        caption: data.edge_media_to_caption?.edges?.[0]?.node?.text || data.caption?.text || '',
         title: data.title || '',
-        likes: data.like_count || data.edge_liked_by?.count || 0,
-        comments: data.comment_count || data.edge_media_to_comment?.count || 0,
-        views: data.play_count || data.video_play_count || data.video_view_count || 0,
-        username: data.user?.username || data.owner?.username || '',
-        user_full_name: data.user?.full_name || data.owner?.full_name || '',
+        likes: data.edge_media_preview_like?.count || data.like_count || 0,
+        comments: data.edge_media_to_comment?.count || data.comment_count || 0,
+        views: data.video_view_count || data.play_count || 0,
+        username: data.owner?.username || data.user?.username || '',
+        user_full_name: data.owner?.full_name || data.user?.full_name || '',
         images: images,
         raw: data
       };
