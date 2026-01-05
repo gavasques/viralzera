@@ -305,7 +305,14 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
           </DialogTitle>
         </DialogHeader>
 
-        {!kit && !isGenerating && (
+        {isLoadingVersions && (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+            <p className="text-slate-500 text-sm">Carregando...</p>
+          </div>
+        )}
+
+        {!kit && !isGenerating && !isLoadingVersions && (
           <div className="flex flex-col items-center justify-center py-8 gap-6">
             <div className="bg-red-50 p-4 rounded-full">
               <Sparkles className="w-10 h-10 text-red-500" />
