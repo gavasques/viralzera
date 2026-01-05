@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2, Instagram, Search, Image as ImageIcon, Eye, Heart, MessageCircle, FileText, Sparkles, Maximize2, ZoomIn, ZoomOut, Video, Mic } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function InstagramImporter({ onImport, postTypeFormat }) {
+  const queryClient = useQueryClient();
   const [instagramUrl, setInstagramUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExtractingText, setIsExtractingText] = useState(false);
@@ -23,6 +24,20 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
   const [videoTranscription, setVideoTranscription] = useState('');
   const [viewImage, setViewImage] = useState(null);
   const [imageZoom, setImageZoom] = useState(1);
+  const [base44Ready, setBase44Ready] = useState(false);
+
+  // Aguardar o SDK estar pronto
+  useEffect(() => {
+    const checkReady = async () => {
+      if (base44 && base44.functions && typeof base44.functions.invoke === 'function') {
+        setBase44Ready(true);
+      } else {
+        // Tentar novamente após um delay
+        setTimeout(checkReady, 100);
+      }
+    };
+    checkReady();
+  }, []);
 
   const { data: postTypeConfig } = useQuery({
     queryKey: ['postTypeConfig'],
@@ -31,7 +46,8 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       const configs = await base44.entities.PostTypeConfig.filter({ created_by: user.email });
       return configs[0] || null;
     },
-    staleTime: 60000
+    staleTime: 60000,
+    enabled: base44Ready
   });
 
   const handleFetchPost = async () => {
@@ -40,28 +56,20 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       return;
     }
 
+    if (!base44Ready || !base44?.functions?.invoke) {
+      toast.error('Aguarde, carregando SDK...');
+      return;
+    }
+
     setIsLoading(true);
     setPostData(null);
     setExtractedTexts([]);
 
     try {
-      let response;
-      
-      // Tentar base44.functions.invoke primeiro, senão usar fetch direto
-      if (base44.functions?.invoke) {
-        response = await base44.functions.invoke('instagramScraper', {
-          action: 'getPostDetails',
-          url: instagramUrl
-        });
-      } else {
-        // Fallback: chamar função diretamente via fetch
-        const funcResponse = await fetch('/api/functions/instagramScraper', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'getPostDetails', url: instagramUrl })
-        });
-        response = { data: await funcResponse.json() };
-      }
+      const response = await base44.functions.invoke('instagramScraper', {
+        action: 'getPostDetails',
+        url: instagramUrl
+      });
 
       if (response.data?.error) {
         toast.error(response.data.error);
@@ -98,20 +106,10 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       }
 
       // Extract text using Gemini vision
-      let response;
-      if (base44.functions?.invoke) {
-        response = await base44.functions.invoke('instagramScraper', {
-          action: 'extractTextFromImages',
-          imageUrls
-        });
-      } else {
-        const funcResponse = await fetch('/api/functions/instagramScraper', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'extractTextFromImages', imageUrls })
-        });
-        response = { data: await funcResponse.json() };
-      }
+      const response = await base44.functions.invoke('instagramScraper', {
+        action: 'extractTextFromImages',
+        imageUrls
+      });
 
       if (response.data.error) {
         toast.error(response.data.error);
