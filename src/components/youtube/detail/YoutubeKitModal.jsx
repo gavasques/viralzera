@@ -29,12 +29,38 @@ import {
   FileCode
 } from "lucide-react";
 
-export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scriptTitle }) {
+export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scriptTitle, scriptId }) {
   const { selectedFocusId } = useSelectedFocus();
+  const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [kit, setKit] = useState(null);
   const [copiedItem, setCopiedItem] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [selectedVersionId, setSelectedVersionId] = useState(null);
+
+  // Buscar versões salvas do kit
+  const { data: kitVersions = [] } = useQuery({
+    queryKey: ['youtube-kit-versions', scriptId],
+    queryFn: () => base44.entities.YoutubeKitVersion.filter(
+      { script_id: scriptId },
+      '-created_date'
+    ),
+    enabled: open && !!scriptId
+  });
+
+  // Carregar última versão ao abrir
+  useEffect(() => {
+    if (open && kitVersions.length > 0 && !kit && !selectedVersionId) {
+      const latestVersion = kitVersions[0];
+      setKit({
+        titulos: latestVersion.titulos || [],
+        ideias_thumbnail: latestVersion.ideias_thumbnail || [],
+        descricao_completa: latestVersion.descricao_completa || '',
+        tags_seo: latestVersion.tags_seo || []
+      });
+      setSelectedVersionId(latestVersion.id);
+    }
+  }, [open, kitVersions, kit, selectedVersionId]);
 
   // Buscar templates de descrição
   const { data: templates = [] } = useQuery({
