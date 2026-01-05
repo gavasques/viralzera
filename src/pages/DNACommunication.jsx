@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { 
   Dna, Plus, Video, Music, Youtube, FileText, Upload, 
   Loader2, Play, CheckCircle, AlertCircle, Sparkles, 
-  Trash2, Eye, ChevronRight, Settings
+  Trash2, Eye, ChevronRight, Settings, EyeOff
 } from "lucide-react";
 
 import DNAContentCard from '@/components/dna/DNAContentCard';
@@ -45,6 +45,7 @@ export default function DNACommunication() {
   const [profileTitle, setProfileTitle] = useState('');
   const [viewingProfile, setViewingProfile] = useState(null);
   const [processingId, setProcessingId] = useState(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const handleTranscribe = async (contentId) => {
     setProcessingId(contentId);
@@ -79,6 +80,16 @@ export default function DNACommunication() {
       toast.error('Erro na análise: ' + error.message);
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const toggleProfileActive = async (profile) => {
+    try {
+      const newStatus = profile.is_active === false ? true : false;
+      await profileCRUD.save(profile.id, { ...profile, is_active: newStatus });
+      toast.success(newStatus ? "Perfil ativado!" : "Perfil inativado!");
+    } catch (error) {
+      toast.error("Erro ao alterar status");
     }
   };
 
@@ -143,6 +154,14 @@ export default function DNACommunication() {
         icon={Dna}
         actions={
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowInactive(!showInactive)}
+              className={showInactive ? "bg-slate-100 border-slate-300" : ""}
+            >
+              {showInactive ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+              {showInactive ? "Ocultar Inativos" : "Mostrar Inativos"}
+            </Button>
             <Button variant="outline" onClick={() => setShowAddContent(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Conteúdo
@@ -204,12 +223,13 @@ export default function DNACommunication() {
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profiles.map(profile => (
+              {profiles.filter(p => showInactive || p.is_active !== false).map(profile => (
                 <DNAProfileCard
                   key={profile.id}
                   profile={profile}
                   onView={() => setViewingProfile(profile)}
                   onDelete={() => profileCRUD.remove(profile.id)}
+                  onToggleActive={() => toggleProfileActive(profile)}
                 />
               ))}
             </div>

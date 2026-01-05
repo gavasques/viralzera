@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dna, Eye, Trash2, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Dna, Eye, Trash2, Loader2, CheckCircle, AlertCircle, Power, EyeOff } from "lucide-react";
 import { format } from 'date-fns';
 
 const statusConfig = {
@@ -12,13 +12,13 @@ const statusConfig = {
   error: { label: 'Erro', color: 'bg-red-100 text-red-700', icon: AlertCircle }
 };
 
-export default function DNAProfileCard({ profile, onView, onDelete }) {
+export default function DNAProfileCard({ profile, onView, onDelete, onToggleActive }) {
   const status = statusConfig[profile.status] || statusConfig.pending;
   const StatusIcon = status.icon;
   const signature = profile.signature;
 
   return (
-    <Card className="group hover:shadow-md transition-all">
+    <Card className={`group hover:shadow-md transition-all ${profile.is_active === false ? 'opacity-75 border-slate-300 bg-slate-50' : ''}`}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -67,9 +67,18 @@ export default function DNAProfileCard({ profile, onView, onDelete }) {
           <Button
             variant="outline"
             size="sm"
+            onClick={onToggleActive}
+            className={`flex-1 ${profile.is_active === false ? 'text-green-600 hover:text-green-700 hover:bg-green-50' : 'text-slate-600 hover:text-slate-700'}`}
+          >
+            <Power className="w-4 h-4 mr-2" />
+            {profile.is_active === false ? "Ativar" : "Inativar"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onView}
             disabled={profile.status !== 'completed'}
-            className="flex-1"
+            className="flex-[2]"
           >
             <Eye className="w-4 h-4 mr-1" />
             Ver DNA
@@ -83,6 +92,12 @@ export default function DNAProfileCard({ profile, onView, onDelete }) {
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+        {profile.is_active === false && (
+          <div className="mt-3 -mx-5 -mb-5 px-5 py-2 bg-slate-200 border-t border-slate-300 flex items-center justify-center text-xs font-medium text-slate-500">
+            <EyeOff className="w-3 h-3 mr-1.5" />
+            Perfil Inativo
+          </div>
+        )}
       </CardContent>
     </Card>
   );
