@@ -45,23 +45,10 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
     setExtractedTexts([]);
 
     try {
-      let response;
-      
-      // Tentar base44.functions.invoke primeiro, senão usar fetch direto
-      if (base44.functions?.invoke) {
-        response = await base44.functions.invoke('instagramScraper', {
-          action: 'getPostDetails',
-          url: instagramUrl
-        });
-      } else {
-        // Fallback: chamar função diretamente via fetch
-        const funcResponse = await fetch('/api/functions/instagramScraper', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'getPostDetails', url: instagramUrl })
-        });
-        response = { data: await funcResponse.json() };
-      }
+      const response = await base44.functions.invoke('instagramScraper', {
+        action: 'getPostDetails',
+        url: instagramUrl
+      });
 
       if (response.data?.error) {
         toast.error(response.data.error);
@@ -98,20 +85,10 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
       }
 
       // Extract text using Gemini vision
-      let response;
-      if (base44.functions?.invoke) {
-        response = await base44.functions.invoke('instagramScraper', {
-          action: 'extractTextFromImages',
-          imageUrls
-        });
-      } else {
-        const funcResponse = await fetch('/api/functions/instagramScraper', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'extractTextFromImages', imageUrls })
-        });
-        response = { data: await funcResponse.json() };
-      }
+      const response = await base44.functions.invoke('instagramScraper', {
+        action: 'extractTextFromImages',
+        imageUrls
+      });
 
       if (response.data.error) {
         toast.error(response.data.error);
@@ -157,20 +134,10 @@ export default function InstagramImporter({ onImport, postTypeFormat }) {
         return;
       }
 
-      let response;
-      if (base44.functions?.invoke) {
-        response = await base44.functions.invoke('instagramScraper', {
-          action: 'transcribeVideo',
-          videoUrl
-        });
-      } else {
-        const funcResponse = await fetch('/api/functions/instagramScraper', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'transcribeVideo', videoUrl })
-        });
-        response = { data: await funcResponse.json() };
-      }
+      const response = await base44.functions.invoke('instagramScraper', {
+        action: 'transcribeVideo',
+        videoUrl
+      });
 
       if (response.data.error) {
         toast.error(response.data.error);
