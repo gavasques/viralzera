@@ -378,6 +378,7 @@ export default function YoutubeScriptDetail() {
         onOpenChange={setShowKitModal}
         scriptContent={content}
         scriptTitle={title}
+        scriptId={scriptId}
       />
 
       <ScriptHistoryDrawer
