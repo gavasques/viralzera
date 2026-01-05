@@ -163,7 +163,7 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="text-2xl font-bold text-white mb-4 text-center"
+            className="text-xl font-semibold text-slate-800 mb-4 text-center"
           >
             {currentStep?.label}
           </motion.h2>
@@ -182,15 +182,15 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
                 initial={{ scale: 0.8, opacity: 0.5 }}
                 animate={{ 
                   scale: isCurrent ? 1.1 : 1,
-                  opacity: isCurrent || isCompleted ? 1 : 0.4
+                  opacity: isCurrent || isCompleted ? 1 : 0.3
                 }}
                 className={`
                   w-9 h-9 rounded-full flex items-center justify-center transition-all
                   ${isCompleted 
                     ? 'bg-emerald-500' 
                     : isCurrent 
-                      ? 'bg-pink-500 ring-2 ring-pink-300 ring-offset-2 ring-offset-slate-900' 
-                      : 'bg-slate-700'
+                      ? 'bg-pink-500 ring-2 ring-pink-200 ring-offset-2 ring-offset-white' 
+                      : 'bg-slate-200'
                   }
                 `}
               >
@@ -208,27 +208,27 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
 
         {/* Subtitle */}
         <motion.p 
-          className="text-slate-400 text-sm text-center"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          className="text-slate-500 text-sm text-center"
+          animate={{ opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 3, repeat: Infinity }}
         >
           Múltiplas IAs trabalhando em paralelo para você...
         </motion.p>
 
         {/* Loading Bar */}
-        <div className="w-full max-w-xs mt-6 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+        <div className="w-full max-w-xs mt-6 h-1.5 bg-slate-200 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-pink-500 to-pink-400 rounded-full"
             initial={{ width: '0%' }}
             animate={{ 
               width: `${((currentStepIndex + 1) / GENERATION_STEPS.length) * 100}%` 
             }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </div>
 
         {/* Models Info */}
-        <div className="mt-8 flex items-center gap-2 text-slate-500 text-xs">
+        <div className="mt-8 flex items-center gap-2 text-slate-400 text-xs">
           <Bot className="w-4 h-4" />
           <span>Aguarde enquanto os agentes processam seu conteúdo</span>
         </div>
