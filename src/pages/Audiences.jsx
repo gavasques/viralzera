@@ -382,12 +382,12 @@ export default function Audiences() {
                           </Button>
                         </div>
                         </div>
+                        </CollapsibleTrigger>
                         {group.is_active === false && (
                         <div className="bg-slate-200 px-4 py-1 text-xs text-slate-500 font-medium flex items-center justify-center border-t border-slate-300">
                            <EyeOff className="w-3 h-3 mr-1.5" /> Grupo Inativo
                         </div>
                         )}
-                        </CollapsibleTrigger>
                         <CollapsibleContent>
                       <CardContent className="p-4 space-y-3">
                         {groupAudiences.length === 0 ? (
