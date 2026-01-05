@@ -151,6 +151,7 @@ export default function PostTypes() {
 
   const handleOpenExampleModal = useCallback((type, example = null, index = null) => {
     setEditingType(type);
+    setOriginalEditingType(type);
     if (example) {
       setExampleForm({ 
         content: typeof example === 'string' ? example : example.content, 
@@ -161,6 +162,7 @@ export default function PostTypes() {
     } else {
       setExampleForm({ content: "", comment: "", source_type: "third_party" });
       setEditingExampleIndex(null);
+      setOriginalEditingType(null);
     }
     setIsExampleModalOpen(true);
   }, []);
