@@ -25,6 +25,7 @@ export default function PostTypes() {
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [isExampleModalOpen, setIsExampleModalOpen] = useState(false);
   const [editingType, setEditingType] = useState(null);
+  const [originalEditingType, setOriginalEditingType] = useState(null);
   const [editingExampleIndex, setEditingExampleIndex] = useState(null);
   const [exampleForm, setExampleForm] = useState({ content: "", comment: "", source_type: "third_party" });
   const [showInstagramImporter, setShowInstagramImporter] = useState(false);
