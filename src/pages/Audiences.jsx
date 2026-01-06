@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Users, Plus, Pencil, Trash2, Sparkles, ChevronDown, ChevronRight, FolderOpen, Loader2, Eye, Settings, Brain, Keyboard, Power, EyeOff } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Sparkles, ChevronDown, ChevronRight, FolderOpen, Loader2, Eye, Settings, Brain, Keyboard, Power, EyeOff, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -196,6 +196,23 @@ export default function Audiences() {
     }
   };
 
+  const toggleAudienceDefault = async (audience) => {
+    try {
+      if (audience.is_default) {
+        await save(audience.id, { ...audience, is_default: false });
+        toast.success("Público padrão removido!");
+      } else {
+        const others = audiences.filter(a => a.id !== audience.id && a.is_default);
+        await Promise.all(others.map(a => save(a.id, { ...a, is_default: false })));
+        
+        await save(audience.id, { ...audience, is_default: true });
+        toast.success("Público definido como padrão!");
+      }
+    } catch (error) {
+      toast.error("Erro ao definir padrão");
+    }
+  };
+
   const toggleGroupActive = async (group) => {
     try {
       const newStatus = group.is_active === false ? true : false;
@@ -247,12 +264,26 @@ export default function Audiences() {
             <Badge className={`${FUNNEL_COLORS[audience.funnel_stage]} text-xs`}>
               {audience.funnel_stage}
             </Badge>
+            {audience.is_default && (
+              <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-xs gap-1 ml-1">
+                <Star className="w-3 h-3 fill-amber-700" /> Padrão
+              </Badge>
+            )}
           </div>
           {audience.description && (
             <p className="text-slate-600 text-sm line-clamp-2">{audience.description}</p>
           )}
         </div>
         <div className="flex gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`h-8 w-8 ${audience.is_default ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 hover:text-amber-500'}`}
+            onClick={() => toggleAudienceDefault(audience)}
+            title={audience.is_default ? "Remover Padrão" : "Definir como Padrão"}
+          >
+            <Star className={`w-3.5 h-3.5 ${audience.is_default ? "fill-amber-500" : ""}`} />
+          </Button>
           <Button 
             variant="ghost" 
             size="icon" 
