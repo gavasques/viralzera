@@ -4,6 +4,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FileText, PenLine } from "lucide-react";
+import ReactQuill from 'react-quill';
+
+const modules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['clean']
+  ],
+};
 
 function PostFormContent({ 
   form, 
@@ -49,12 +59,16 @@ function PostFormContent({
         </div>
         
         {isEditingContent ? (
-          <Textarea
-            placeholder="Cole aqui o script gerado ou escreva o conteúdo da postagem..."
-            value={form.content}
-            onChange={(e) => updateForm('content', e.target.value)}
-            className="flex-1 min-h-[400px] font-mono text-sm resize-none p-6 focus-visible:ring-0 border-slate-200 bg-white rounded-xl shadow-sm"
-          />
+          <div className="flex-1 flex flex-col min-h-[400px] bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden [&_.quill]:flex-1 [&_.quill]:flex [&_.quill]:flex-col [&_.ql-container]:flex-1 [&_.ql-container]:overflow-y-auto [&_.ql-container]:font-sans [&_.ql-container]:text-base [&_.ql-editor]:h-full [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-slate-200 [&_.ql-toolbar]:bg-slate-50 [&_.ql-container]:border-none">
+            <ReactQuill
+              theme="snow"
+              value={form.content}
+              onChange={(value) => updateForm('content', value)}
+              modules={modules}
+              className="flex-1 flex flex-col"
+              placeholder="Escreva o conteúdo da postagem..."
+            />
+          </div>
         ) : (
           <div className="flex-1 min-h-[400px] p-8 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-sm">
             {form.content ? (
