@@ -1,7 +1,8 @@
-import React, { memo } from 'react';
-import { Search, X } from "lucide-react";
+import React, { memo, useState } from 'react';
+import { Search, X, Check, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -9,22 +10,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { COLUMNS, PLATFORMS } from "./constants";
 
 function PostFilters({ 
   filters, 
   setFilters, 
   postTypes = [], 
-  audiences = [],
   onClear,
   hasActiveFilters
 }) {
+  const [openPostType, setOpenPostType] = useState(false);
+
   const updateFilter = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
+  const selectedPostType = postTypes.find(pt => pt.id === filters.post_type_id);
+
   return (
-    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6">
+    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6 space-y-4">
+      {/* Top Row: Search & Dropdowns */}
       <div className="flex flex-col md:flex-row gap-4">
         {/* Search */}
         <div className="relative flex-1">
@@ -37,86 +56,120 @@ function PostFilters({
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          <Select 
-            value={filters.status} 
-            onValueChange={(v) => updateFilter('status', v)}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos Status</SelectItem>
-              {COLUMNS.map((col) => (
-                <SelectItem key={col.id} value={col.id}>
-                  {col.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Status Filter */}
+        <Select 
+          value={filters.status} 
+          onValueChange={(v) => updateFilter('status', v)}
+        >
+          <SelectTrigger className="w-full md:w-[160px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Status</SelectItem>
+            {COLUMNS.map((col) => (
+              <SelectItem key={col.id} value={col.id}>
+                {col.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <Select 
-            value={filters.post_type_id} 
-            onValueChange={(v) => updateFilter('post_type_id', v)}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Tipo de Post" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos Tipos</SelectItem>
-              {postTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select 
-            value={filters.platform} 
-            onValueChange={(v) => updateFilter('platform', v)}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Plataforma" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas Plat.</SelectItem>
-              {PLATFORMS.map((p) => (
-                <SelectItem key={p} value={p}>{p}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select 
-            value={filters.audience_id} 
-            onValueChange={(v) => updateFilter('audience_id', v)}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Público Alvo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos Públicos</SelectItem>
-              {audiences.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {hasActiveFilters && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={onClear}
-              className="text-slate-400 hover:text-red-500"
-              title="Limpar filtros"
+        {/* Post Type Filter (Searchable) */}
+        <Popover open={openPostType} onOpenChange={setOpenPostType}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={openPostType}
+              className="w-full md:w-[220px] justify-between"
             >
-              <X className="w-4 h-4" />
+              {selectedPostType ? selectedPostType.title : (filters.post_type_id === 'all' ? "Todos Tipos" : "Selecione tipo...")}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
-          )}
-        </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-[220px] p-0">
+            <Command>
+              <CommandInput placeholder="Buscar tipo..." />
+              <CommandList>
+                <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem
+                    value="Todos Tipos"
+                    onSelect={() => {
+                      updateFilter('post_type_id', 'all');
+                      setOpenPostType(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        filters.post_type_id === "all" ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    Todos Tipos
+                  </CommandItem>
+                  {postTypes.map((type) => (
+                    <CommandItem
+                      key={type.id}
+                      value={type.title}
+                      onSelect={() => {
+                        updateFilter('post_type_id', type.id);
+                        setOpenPostType(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          filters.post_type_id === type.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {type.title}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {hasActiveFilters && (
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={onClear}
+            className="text-slate-400 hover:text-red-500 shrink-0"
+            title="Limpar filtros"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Bottom Row: Platforms */}
+      <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-slate-50">
+        <span className="text-xs font-medium text-slate-500 mr-2 uppercase tracking-wider">Plataforma:</span>
+        <Button
+          variant={filters.platform === 'all' ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => updateFilter('platform', 'all')}
+          className={cn("text-xs h-7", filters.platform === 'all' && "bg-slate-200 text-slate-800")}
+        >
+          Todas
+        </Button>
+        {PLATFORMS.map((p) => (
+          <Button
+            key={p}
+            variant={filters.platform === p ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => updateFilter('platform', p)}
+            className={cn(
+              "text-xs h-7", 
+              filters.platform === p && "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+            )}
+          >
+            {p}
+          </Button>
+        ))}
       </div>
     </div>
   );
