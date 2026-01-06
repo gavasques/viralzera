@@ -171,9 +171,9 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
       content: content,
       status: 'idea',
       priority: 'low',
-      post_type_id: postTypeId || null,
-      platform: platform || null,
-      notes: notes || null
+      post_type_id: postTypeId,
+      platform: platform,
+      notes: notes
     });
   };
 
@@ -511,7 +511,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-
+            {/* Modal moved to top level */}
 
             <Button
               variant="outline"
