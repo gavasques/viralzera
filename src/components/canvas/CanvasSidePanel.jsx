@@ -272,6 +272,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
         initialContent={editedContent}
         onConfirm={handleConfirmKanbanCard}
         isPending={sendToKanbanMutation.isPending}
+        focusId={selectedFocusId}
       />
 
       {isListView ? (
