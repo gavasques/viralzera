@@ -188,27 +188,15 @@ export default function PostManagement() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+      <div className="mb-4">
         <PostFilters
           filters={filters}
           setFilters={setFilters}
           postTypes={postTypes}
           onClear={clearFilters}
           hasActiveFilters={hasActiveFilters}
-          className="flex-1"
+          className="w-full"
         />
-        
-        <div className="flex items-center ml-auto">
-             <Button
-                variant={filters.show_completed ? "secondary" : "outline"}
-                size="sm"
-                onClick={() => setFilters(prev => ({ ...prev, show_completed: !prev.show_completed }))}
-                className="gap-2 border-dashed"
-             >
-                {filters.show_completed ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                {filters.show_completed ? "Ocultar Concluídos" : "Ver Concluídos"}
-             </Button>
-        </div>
       </div>
 
       {/* Kanban Board */}

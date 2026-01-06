@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { Search, X, Check, ChevronsUpDown } from "lucide-react";
+import { Search, X, Check, ChevronsUpDown, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -132,6 +132,19 @@ function PostFilters({
             </Command>
           </PopoverContent>
         </Popover>
+
+        {/* Show/Hide Completed Button */}
+        <Button
+          variant={filters.show_completed ? "secondary" : "outline"}
+          onClick={() => updateFilter('show_completed', !filters.show_completed)}
+          className={cn(
+            "gap-2 border-dashed shrink-0", 
+            filters.show_completed ? "bg-slate-100 border-slate-200" : "text-slate-500 border-slate-200"
+          )}
+        >
+          {filters.show_completed ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          {filters.show_completed ? "Ocultar Concluídos" : "Ver Concluídos"}
+        </Button>
 
         {hasActiveFilters && (
           <Button 
