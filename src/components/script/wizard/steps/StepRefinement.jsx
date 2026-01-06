@@ -186,27 +186,41 @@ export function StepRefinement({ focusId, value, onChange }) {
 
       {/* Theme Selection Section */}
       <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label className="text-base font-semibold text-slate-900 flex items-center gap-2">
-              <Tags className="w-4 h-4 text-indigo-600" />
-              Tema Específico
-            </Label>
+        <div 
+          className="flex justify-between items-center cursor-pointer group"
+          onClick={() => setThemesExpanded(!themesExpanded)}
+        >
+          <Label className="text-base font-semibold text-slate-900 flex items-center gap-2 cursor-pointer">
+            <Tags className="w-4 h-4 text-indigo-600" />
+            Tema Específico
+            {selectedTheme && (
+              <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                1 selecionado
+              </span>
+            )}
+          </Label>
+          <div className="flex items-center gap-1">
             {selectedTheme && (
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => onChange({ ...value, themeId: '' })}
+                onClick={(e) => { e.stopPropagation(); onChange({ ...value, themeId: '' }); }}
                 className="text-xs text-slate-500 h-6 px-2"
               >
                 <X className="w-3 h-3 mr-1" /> Limpar
               </Button>
             )}
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-400 group-hover:text-slate-600">
+              {themesExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
           </div>
-          <p className="text-sm text-slate-500">
-            Selecione um tema da matriz para direcionar o conteúdo.
-          </p>
         </div>
+
+        {themesExpanded && (
+          <>
+            <p className="text-sm text-slate-500">
+              Selecione um tema da matriz para direcionar o conteúdo.
+            </p>
 
         {isLoadingThemes ? (
           <Skeleton className="h-12 w-full" />
