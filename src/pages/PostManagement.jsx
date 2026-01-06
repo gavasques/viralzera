@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, Eye, EyeOff, Video, Scissors } from "lucide-react";
+import { Plus, Calendar, Eye, EyeOff, Video, Scissors, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import CanvasToggleButton from "@/components/canvas/CanvasToggleButton";
 import PostFilters from "@/components/posts/PostFilters";
@@ -33,7 +33,7 @@ export default function PostManagement() {
   const [editingColumn, setEditingColumn] = useState(null);
 
   // Data
-  const { data: posts = [], isLoading } = usePosts(selectedFocusId);
+  const { data: posts = [], isLoading, refetch: refetchPosts, isRefetching } = usePosts(selectedFocusId);
   const { data: postTypes = [] } = usePostTypes(selectedFocusId);
   const { data: columnsData = [], isLoading: isLoadingColumns } = useKanbanColumns(selectedFocusId);
   
@@ -185,6 +185,16 @@ export default function PostManagement() {
           <p className="text-slate-500 text-sm">Organize seu fluxo de criação de conteúdo</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => refetchPosts()}
+            className="text-slate-500 hover:text-slate-700"
+            disabled={isRefetching}
+            title="Atualizar dados"
+          >
+            <RefreshCcw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
+          </Button>
           <CanvasToggleButton />
           <Button 
             onClick={() => handleAddNew('idea')} 
