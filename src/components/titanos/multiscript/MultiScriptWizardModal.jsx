@@ -84,7 +84,8 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
         selectedModels: [], // Array of model IDs
         // Step 5: Refinamento
         selectedMaterials: [],
-        userNotes: ''
+        userNotes: '',
+        themeId: ''
     });
 
     // Reset form when opening
@@ -99,7 +100,8 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 audienceId: '',
                 selectedModels: [],
                 selectedMaterials: [],
-                userNotes: ''
+                userNotes: '',
+                themeId: ''
             });
             setIsGenerating(false);
             setGenerationStatus('');
@@ -153,17 +155,38 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
             }
 
             // 2. Fetch all required data
-            const [postType, persona, audience, materials, approvedModels] = await Promise.all([
+            const [postType, persona, audience, materials, approvedModels, theme, allThemes] = await Promise.all([
                 formData.postTypeId ? base44.entities.PostType.get(formData.postTypeId) : null,
                 formData.personaId ? base44.entities.Persona.get(formData.personaId) : null,
                 formData.audienceId ? base44.entities.Audience.get(formData.audienceId) : null,
                 formData.selectedMaterials.length > 0 
                     ? base44.entities.Material.filter({ id: { $in: formData.selectedMaterials } }) 
                     : [],
-                base44.entities.ApprovedModel.filter({ is_active: true })
+                base44.entities.ApprovedModel.filter({ is_active: true }),
+                formData.themeId ? base44.entities.Theme.get(formData.themeId) : null,
+                formData.themeId ? base44.entities.Theme.filter({ focus_id: selectedFocusId }) : []
             ]);
 
             setGenerationStatus('Construindo prompt...');
+
+            // Build theme with hierarchy
+            let themeData = theme?.data || theme;
+            let themeHierarchy = null;
+            if (themeData && allThemes.length > 0) {
+                const themeMap = {};
+                allThemes.forEach(t => { themeMap[t.id] = t; });
+                
+                let path = [themeData.title];
+                let current = themeData;
+                while (current?.parent_id) {
+                    const parent = themeMap[current.parent_id];
+                    if (parent) {
+                        path.unshift(parent.title);
+                        current = parent;
+                    } else break;
+                }
+                themeHierarchy = path.join(' > ');
+            }
 
             // 3. Build raw prompt with collected data
             const rawPrompt = buildPrompt({
@@ -172,7 +195,9 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 audience: audience?.data || audience,
                 materials: Array.isArray(materials) ? materials : (materials?.data || []),
                 includeExamples: formData.includeExamples,
-                userNotes: formData.userNotes
+                userNotes: formData.userNotes,
+                theme: themeData,
+                themeHierarchy
             });
 
             // 4. Refine prompt via Webhook OR Refiner Agent
@@ -192,7 +217,9 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                         audience: audience?.data || audience,
                         materials: Array.isArray(materials) ? materials : (materials?.data || []),
                         userNotes: formData.userNotes,
-                        includeExamples: formData.includeExamples
+                        includeExamples: formData.includeExamples,
+                        theme: themeData,
+                        themeHierarchy
                     };
                     
                     // Save payload for log
@@ -566,7 +593,7 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
 }
 
 // Prompt Builder (similar to ScriptWizardModal but adapted)
-function buildPrompt({ postType, persona, audience, materials, includeExamples, userNotes }) {
+function buildPrompt({ postType, persona, audience, materials, includeExamples, userNotes, theme, themeHierarchy }) {
     let prompt = `Preciso que você crie um script magnético com base nas informações abaixo.\n\n`;
     
     // Post Type Info
@@ -622,6 +649,16 @@ function buildPrompt({ postType, persona, audience, materials, includeExamples, 
         materials.forEach((mat) => {
             prompt += `--- ${mat.title} ---\n${mat.content}\n\n`;
         });
+    }
+
+    // Theme
+    if (theme) {
+        prompt += `\n🏷️ **TEMA DO CONTEÚDO:**\n`;
+        if (themeHierarchy) {
+            prompt += `- Hierarquia: ${themeHierarchy}\n`;
+        }
+        prompt += `- Tema Específico: ${theme.title}\n`;
+        if (theme.description) prompt += `- Descrição: ${theme.description}\n`;
     }
 
     // User Notes
