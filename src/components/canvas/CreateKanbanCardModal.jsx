@@ -4,89 +4,55 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
-export default function CreateKanbanCardModal({ isOpen, onClose, focusId, initialContent = "" }) {
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState(initialContent);
-    const queryClient = useQueryClient();
+export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, initialContent, onConfirm, isPending }) {
+    const [title, setTitle] = useState(initialTitle || "");
+    const [content, setContent] = useState(initialContent || "");
 
     useEffect(() => {
         if (isOpen) {
-            setContent(initialContent);
-            setTitle("");
+            setTitle(initialTitle || "");
+            setContent(initialContent || "");
         }
-    }, [isOpen, initialContent]);
+    }, [isOpen, initialTitle, initialContent]);
 
-    const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.Post.create(data),
-        onSuccess: () => {
-            toast.success("Card criado no Kanban!");
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-            onClose();
-            setTitle("");
-            setContent(""); 
-        },
-        onError: () => toast.error("Erro ao criar card")
-    });
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!title.trim()) {
-            toast.error("O título é obrigatório");
-            return;
-        }
-        if (!focusId) {
-            toast.error("Nenhum foco selecionado");
-            return;
-        }
-
-        createMutation.mutate({
-            focus_id: focusId,
-            title: title,
-            content: content,
-            status: 'idea'
-        });
+    const handleSubmit = () => {
+        onConfirm({ title, content });
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>Criar Card no Kanban</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 py-2">
+                <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Título</Label>
-                        <Input 
-                            id="title" 
-                            value={title} 
+                        <Input
+                            id="title"
+                            value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Ex: Ideia de post sobre..."
-                            autoFocus
+                            placeholder="Título do card..."
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="content">Conteúdo</Label>
-                        <Textarea 
-                            id="content" 
-                            value={content} 
+                        <Textarea
+                            id="content"
+                            value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            placeholder="Descreva sua ideia..."
-                            className="min-h-[150px]"
+                            placeholder="Conteúdo do card..."
+                            className="h-[300px] resize-none"
                         />
                     </div>
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-                        <Button type="submit" disabled={createMutation.isPending} className="bg-indigo-600 hover:bg-indigo-700">
-                            {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Criar Card
-                        </Button>
-                    </DialogFooter>
-                </form>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={isPending || !title.trim()} className="bg-indigo-600 hover:bg-indigo-700">
+                        {isPending ? "Criando..." : "Criar Card"}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

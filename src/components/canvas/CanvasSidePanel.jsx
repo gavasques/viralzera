@@ -142,6 +142,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
     mutationFn: (data) => base44.entities.Post.create(data),
     onSuccess: () => {
       toast.success("Enviado para o Kanban (Ideias)!");
+      setIsKanbanModalOpen(false);
     },
     onError: () => toast.error("Erro ao enviar para o Kanban")
   });
@@ -155,6 +156,19 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
       focus_id: selectedFocusId,
       title: editedTitle,
       content: editedContent,
+      status: 'idea'
+    });
+  };
+
+  const handleConfirmKanbanCard = ({ title, content }) => {
+    if (!selectedFocusId) {
+      toast.error("Selecione um foco primeiro");
+      return;
+    }
+    sendToKanbanMutation.mutate({
+      focus_id: selectedFocusId,
+      title: title,
+      content: content,
       status: 'idea'
     });
   };
@@ -251,6 +265,15 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
       </div>
 
       {/* Content */}
+      <CreateKanbanCardModal 
+        isOpen={isKanbanModalOpen}
+        onClose={() => setIsKanbanModalOpen(false)}
+        initialTitle={editedTitle}
+        initialContent={editedContent}
+        onConfirm={handleConfirmKanbanCard}
+        isPending={sendToKanbanMutation.isPending}
+      />
+
       {isListView ? (
         // List View
         <div className="flex flex-col h-full">
