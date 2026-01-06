@@ -65,15 +65,15 @@ function PostFormContent({
               value={form.content}
               onChange={(value) => updateForm('content', value)}
               modules={modules}
-              className="h-full [&_.ql-container]:border-none [&_.ql-editor]:min-h-[300px]"
+              className="h-full [&_.ql-container]:border-none [&_.ql-editor]:min-h-[300px] [&_.ql-editor]:text-base"
               placeholder="Escreva o conteúdo da postagem..."
             />
           </div>
         ) : (
-          <div className="flex-1 min-h-[300px] p-6 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex-1 min-h-[300px] p-6 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-sm text-base">
             {form.content ? (
               <div 
-                className="prose prose-sm max-w-none [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through"
+                className="prose prose-base max-w-none [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through"
                 dangerouslySetInnerHTML={{ __html: form.content }}
               />
             ) : (
