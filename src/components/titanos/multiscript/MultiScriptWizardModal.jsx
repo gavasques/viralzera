@@ -304,6 +304,8 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
             // formData.selectedModels contém recordIds (IDs únicos do ApprovedModel)
             const promptLog = {
                 rawPrompt: rawPrompt,
+                webhookPayload: webhookPayloadForLog,
+                webhookResponse: webhookResponseForLog,
                 refinedPrompt: prompt !== rawPrompt ? prompt : null,
                 finalPrompt: prompt,
                 refinerModel: refinerConfig?.model_name || refinerConfig?.model || null,
