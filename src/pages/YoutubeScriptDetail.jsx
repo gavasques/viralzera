@@ -38,6 +38,8 @@ export default function YoutubeScriptDetail() {
   // Local state for editing
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [status, setStatus] = useState('Rascunho');
+  const [categoria, setCategoria] = useState('Genérico');
   const [initialData, setInitialData] = useState(null);
   const [notesVisible, setNotesVisible] = useState(false);
   
@@ -71,9 +73,13 @@ export default function YoutubeScriptDetail() {
     if (script && !initialData) {
       setTitle(script.title || '');
       setContent(script.corpo || '');
+      setStatus(script.status || 'Rascunho');
+      setCategoria(script.categoria || 'Genérico');
       setInitialData({
         title: script.title || '',
-        corpo: script.corpo || ''
+        corpo: script.corpo || '',
+        status: script.status || 'Rascunho',
+        categoria: script.categoria || 'Genérico'
       });
     }
   }, [script, initialData]);
@@ -81,8 +87,11 @@ export default function YoutubeScriptDetail() {
   // Check if there are unsaved changes
   const hasChanges = useMemo(() => {
     if (!initialData) return false;
-    return title !== initialData.title || content !== initialData.corpo;
-  }, [title, content, initialData]);
+    return title !== initialData.title || 
+           content !== initialData.corpo || 
+           status !== initialData.status || 
+           categoria !== initialData.categoria;
+  }, [title, content, status, categoria, initialData]);
 
   // Warn before leaving page with unsaved changes (browser close/refresh)
   useEffect(() => {
@@ -153,7 +162,9 @@ export default function YoutubeScriptDetail() {
       // 1. Update Script
       await base44.entities.YoutubeScript.update(scriptId, {
         title,
-        corpo: content
+        corpo: content,
+        status,
+        categoria
       });
 
       // 2. Create Version
@@ -174,7 +185,9 @@ export default function YoutubeScriptDetail() {
       queryClient.invalidateQueries({ queryKey: ['youtube-scripts'] });
       setInitialData({
         title,
-        corpo: content
+        corpo: content,
+        status,
+        categoria
       });
       if (!variables?.isAutoSave) {
         toast.success('Roteiro salvo com sucesso!');
@@ -342,8 +355,11 @@ export default function YoutubeScriptDetail() {
       <YoutubeScriptHeader
         title={title}
         videoType={script?.video_type}
-        status={script?.status}
+        status={status}
+        categoria={categoria}
         onTitleChange={setTitle}
+        onStatusChange={setStatus}
+        onCategoriaChange={setCategoria}
         onSave={handleSave}
         isSaving={saveMutation.isPending}
         hasChanges={hasChanges}
