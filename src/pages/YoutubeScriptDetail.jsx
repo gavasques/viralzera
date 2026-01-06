@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { Loader2, AlertTriangle, Save, Layout } from "lucide-react";
+import { Loader2, AlertTriangle, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptCh
 import YoutubeKitModal from "@/components/youtube/detail/YoutubeKitModal";
 import ScriptHistoryDrawer from "@/components/youtube/history/ScriptHistoryDrawer";
 import ScriptNotesPanel from "@/components/youtube/detail/ScriptNotesPanel";
+import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 
 export default function YoutubeScriptDetail() {
   const navigate = useNavigate();
@@ -51,6 +52,8 @@ export default function YoutubeScriptDetail() {
   const pendingNavigation = useRef(null);
 
   // Fetch script data
+  const { selectedFocusId } = useSelectedFocus();
+
   const { data: script, isLoading, error } = useQuery({
     queryKey: ['youtube-script', scriptId],
     queryFn: () => base44.entities.YoutubeScript.get(scriptId),
@@ -143,36 +146,6 @@ export default function YoutubeScriptDetail() {
       pendingNavigation.current = null;
     }
   };
-
-  // Send to Kanban Mutation
-  const sendToKanbanMutation = useMutation({
-    mutationFn: async () => {
-      if (!script?.focus_id) throw new Error("Script sem Foco vinculado");
-
-      // 1. Find Post Type "Youtube Vídeo Longo"
-      const postTypes = await base44.entities.PostType.filter({
-        focus_id: script.focus_id,
-        title: "Youtube Vídeo Longo"
-      });
-
-      // 2. Create Post
-      await base44.entities.Post.create({
-        focus_id: script.focus_id,
-        title: title,
-        content: content,
-        status: 'review',
-        platform: 'YouTube',
-        priority: 'medium',
-        post_type_id: postTypes?.[0]?.id || null
-      });
-    },
-    onSuccess: () => {
-      toast.success('Enviado para o Kanban (Coluna Revisão)!');
-    },
-    onError: (error) => {
-      toast.error('Erro ao enviar: ' + error.message);
-    }
-  });
 
   // Save mutation (supports manual and auto save)
   const saveMutation = useMutation({
@@ -281,6 +254,51 @@ export default function YoutubeScriptDetail() {
     queryClient.invalidateQueries({ queryKey: ['script-versions', scriptId] });
   };
 
+  const sendToKanbanMutation = useMutation({
+    mutationFn: async () => {
+      // 1. Find PostType "Youtube Vídeo Longo"
+      // Try to find specifically for this focus first
+      let postTypes = await base44.entities.PostType.filter({ title: 'Youtube Vídeo Longo', focus_id: selectedFocusId });
+      let postTypeId = postTypes?.[0]?.id;
+
+      // Fallback: try finding any post type with this name (maybe default one)
+      if (!postTypeId) {
+         const allPostTypes = await base44.entities.PostType.filter({ title: 'Youtube Vídeo Longo' });
+         postTypeId = allPostTypes?.[0]?.id;
+      }
+
+      if (!postTypeId) {
+        throw new Error("Tipo de postagem 'Youtube Vídeo Longo' não encontrado. Crie este tipo de postagem primeiro.");
+      }
+
+      // 2. Create Post
+      return base44.entities.Post.create({
+        focus_id: selectedFocusId,
+        title: title || 'Sem título',
+        content: content,
+        status: 'review', // Status = Revisão
+        post_type_id: postTypeId,
+        platform: 'YouTube',
+        priority: 'medium',
+        notes: `Criado a partir do roteiro: ${window.location.origin}${window.location.pathname}?id=${scriptId}`
+      });
+    },
+    onSuccess: () => {
+      toast.success('Enviado para o Kanban com sucesso!');
+    },
+    onError: (error) => {
+      toast.error('Erro ao enviar para Kanban: ' + error.message);
+    }
+  });
+
+  const handleSendToKanban = () => {
+      if (!selectedFocusId) {
+          toast.error("Selecione um foco antes de enviar.");
+          return;
+      }
+      sendToKanbanMutation.mutate();
+  };
+
   // Redirect if no ID
   if (!scriptId) {
     navigate(createPageUrl('YoutubeScripts'));
@@ -327,7 +345,7 @@ export default function YoutubeScriptDetail() {
         onGenerateKit={() => setShowKitModal(true)}
         onNavigateBack={handleNavigateBack}
         onHistoryOpen={() => setHistoryOpen(true)}
-        onSendToKanban={() => sendToKanbanMutation.mutate()}
+        onSendToKanban={handleSendToKanban}
         isSendingToKanban={sendToKanbanMutation.isPending}
       />
 
