@@ -1,36 +1,83 @@
 import React, { memo, useCallback } from 'react';
-import { DragDropContext } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import KanbanColumn from "./KanbanColumn";
-import { COLUMNS } from "./constants";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 function KanbanBoard({ 
+  columns,
   getPostsByStatus, 
   postTypes,
-  onDragEnd, 
+  onDragEnd,
+  onColumnDragEnd,
   onAddNew, 
-  onEditPost 
+  onEditPost,
+  onAddColumn,
+  onDeleteColumn,
+  onRenameColumn
 }) {
   const handleDragEnd = useCallback((result) => {
     if (!result.destination) return;
     
-    const { draggableId, destination } = result;
-    onDragEnd(draggableId, destination.droppableId);
-  }, [onDragEnd]);
+    const { source, destination, type } = result;
+
+    if (type === 'COLUMN') {
+      if (source.index !== destination.index) {
+        onColumnDragEnd(source.index, destination.index);
+      }
+      return;
+    }
+
+    // Card drag
+    onDragEnd(result.draggableId, destination.droppableId);
+  }, [onDragEnd, onColumnDragEnd]);
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex-1 flex gap-4 overflow-x-auto pb-4">
-        {COLUMNS.map(column => (
-          <KanbanColumn
-            key={column.id}
-            column={column}
-            posts={getPostsByStatus(column.id)}
-            postTypes={postTypes}
-            onAddNew={onAddNew}
-            onEditPost={onEditPost}
-          />
-        ))}
-      </div>
+      <Droppable droppableId="board" type="COLUMN" direction="horizontal">
+        {(provided) => (
+          <div 
+            ref={provided.innerRef} 
+            {...provided.droppableProps}
+            className="flex-1 flex gap-4 overflow-x-auto pb-4 min-h-[500px]"
+          >
+            {columns.map((column, index) => (
+              <Draggable key={column.id || column.slug} draggableId={column.id || column.slug} index={index}>
+                {(dragProvided) => (
+                  <div
+                    ref={dragProvided.innerRef}
+                    {...dragProvided.draggableProps}
+                    {...dragProvided.dragHandleProps}
+                  >
+                    <KanbanColumn
+                      column={column}
+                      posts={getPostsByStatus(column.id || column.slug)}
+                      postTypes={postTypes}
+                      onAddNew={onAddNew}
+                      onEditPost={onEditPost}
+                      onDelete={onDeleteColumn}
+                      onRename={onRenameColumn}
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+            
+            {/* Add Column Button */}
+            <div className="min-w-[280px]">
+              <Button 
+                variant="outline" 
+                className="w-full h-[50px] border-dashed border-2 bg-transparent hover:bg-slate-50 text-slate-500 hover:text-slate-700"
+                onClick={onAddColumn}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Adicionar Coluna
+              </Button>
+            </div>
+          </div>
+        )}
+      </Droppable>
     </DragDropContext>
   );
 }
