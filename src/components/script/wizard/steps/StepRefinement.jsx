@@ -136,7 +136,7 @@ export function StepRefinement({ focusId, value, onChange }) {
         <p className="text-slate-500">Enriqueça seu conteúdo com materiais de apoio e temas específicos.</p>
       </div>
 
-      <Accordion type="multiple" defaultValue={["materials", "theme", "notes"]} className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={["notes"]} className="w-full space-y-4">
         
         {/* Materials Section */}
         <AccordionItem value="materials" className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
