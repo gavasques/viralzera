@@ -10,7 +10,6 @@ import PostCardModal from "@/components/posts/PostCardModal";
 import ColumnFormModal from "@/components/posts/ColumnFormModal";
 import { 
   usePosts, 
-  useAudiences, 
   usePostTypes, 
   useUpdatePostStatus, 
   useKanbanColumns,
@@ -35,7 +34,6 @@ export default function PostManagement() {
 
   // Data
   const { data: posts = [], isLoading } = usePosts(selectedFocusId);
-  const { data: audiences = [] } = useAudiences(selectedFocusId);
   const { data: postTypes = [] } = usePostTypes(selectedFocusId);
   const { data: columnsData = [], isLoading: isLoadingColumns } = useKanbanColumns(selectedFocusId);
   
@@ -195,7 +193,6 @@ export default function PostManagement() {
           filters={filters}
           setFilters={setFilters}
           postTypes={postTypes}
-          audiences={audiences}
           onClear={clearFilters}
           hasActiveFilters={hasActiveFilters}
         />
