@@ -333,6 +333,7 @@ export function StepRefinement({ focusId, value, onChange }) {
               )}
             </div>
           </div>
+          </>
         )}
       </div>
 
