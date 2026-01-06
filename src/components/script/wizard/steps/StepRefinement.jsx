@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Library, StickyNote, Tags, ChevronRight, Search, X, Check } from "lucide-react";
+import { Library, StickyNote, Tags, ChevronRight, Search, X, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function StepRefinement({ focusId, value, onChange }) {
