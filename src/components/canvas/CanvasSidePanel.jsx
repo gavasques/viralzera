@@ -20,13 +20,24 @@ import {
   Clock,
   Sparkles,
   ArrowUpRight,
-  Search
+  Search,
+  PlusSquare,
+  FilePlus
 } from "lucide-react";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReactMarkdown from "react-markdown";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import CreateKanbanCardModal from "./CreateKanbanCardModal";
 
 export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
   const queryClient = useQueryClient();
@@ -40,6 +51,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
   const { selectedFocusId } = useSelectedFocus();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isKanbanModalOpen, setIsKanbanModalOpen] = useState(false);
   const ITEMS_PER_PAGE = 10;
 
   const createMutation = useMutation({
@@ -447,14 +459,37 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
 
           {/* Footer Actions */}
           <div className="p-6 border-t border-slate-100 flex items-center gap-3 bg-white">
-            <Button
-              variant="outline"
-              onClick={handleSendToKanban}
-              className="h-10 w-10 p-0 rounded-lg hover:bg-slate-50 hover:text-indigo-600 transition-colors"
-              title="Enviar para o Kanban"
-            >
-              <ArrowUpRight className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-10 w-10 p-0 rounded-lg hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                  title="Ações do Kanban"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Kanban</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSendToKanban} className="cursor-pointer">
+                  <ArrowUpRight className="w-4 h-4 mr-2" />
+                  Enviar Nota Completa
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsKanbanModalOpen(true)} className="cursor-pointer">
+                  <PlusSquare className="w-4 h-4 mr-2" />
+                  Criar Card Personalizado
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <CreateKanbanCardModal 
+              isOpen={isKanbanModalOpen}
+              onClose={() => setIsKanbanModalOpen(false)}
+              focusId={selectedFocusId}
+              initialContent="" // Can pass selection here later if needed
+            />
+
             <Button
               variant="outline"
               onClick={handleCopy}
