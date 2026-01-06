@@ -14,8 +14,7 @@ import { STATUS_OPTIONS, PLATFORMS, PRIORITY_OPTIONS } from "../constants";
 function PostFormSettings({ 
   form, 
   updateForm, 
-  postTypes = [], 
-  audiences = [] 
+  postTypes = [] 
 }) {
   return (
     <div className="space-y-4">
@@ -75,35 +74,19 @@ function PostFormSettings({
         </div>
       </div>
 
-      {/* Priority & Audience */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Prioridade</Label>
-          <Select value={form.priority} onValueChange={(v) => updateForm('priority', v)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PRIORITY_OPTIONS.map(p => (
-                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Público-Alvo</Label>
-          <Select value={form.audience_id} onValueChange={(v) => updateForm('audience_id', v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione..." />
-            </SelectTrigger>
-            <SelectContent>
-              {audiences.map(a => (
-                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Priority */}
+      <div className="space-y-2">
+        <Label>Prioridade</Label>
+        <Select value={form.priority} onValueChange={(v) => updateForm('priority', v)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PRIORITY_OPTIONS.map(p => (
+              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Scheduled Date */}

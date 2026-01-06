@@ -17,7 +17,6 @@ export function usePostFilters(posts = []) {
       if (filters.status !== 'all' && post.status !== filters.status) return false;
       if (filters.post_type_id !== 'all' && post.post_type_id !== filters.post_type_id) return false;
       if (filters.platform !== 'all' && post.platform !== filters.platform) return false;
-      if (filters.audience_id !== 'all' && post.audience_id !== filters.audience_id) return false;
       
       if (!filters.show_completed && post.is_completed) return false;
 
@@ -38,7 +37,6 @@ export function usePostFilters(posts = []) {
       filters.status !== 'all' ||
       filters.post_type_id !== 'all' ||
       filters.platform !== 'all' ||
-      filters.audience_id !== 'all' ||
       filters.show_completed;
   }, [filters]);
 

@@ -35,7 +35,6 @@ export const DEFAULT_FILTERS = {
   status: "all",
   post_type_id: "all",
   platform: "all",
-  audience_id: "all",
   show_completed: false
 };
 
@@ -44,7 +43,6 @@ export const DEFAULT_POST_FORM = {
   content: '',
   status: 'idea',
   post_type_id: '',
-  audience_id: '',
   platform: '',
   priority: 'medium',
   scheduled_date: null,

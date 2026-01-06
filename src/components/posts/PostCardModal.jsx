@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import PostFormContent from "./modal/PostFormContent";
 import PostFormSettings from "./modal/PostFormSettings";
-import { useAudiences, useSavePost, useDeletePost } from "./hooks/usePostsData";
+import { useSavePost, useDeletePost } from "./hooks/usePostsData";
 import { STATUS_OPTIONS, DEFAULT_POST_FORM } from "./constants";
 
 export default function PostCardModal({ open, onOpenChange, post, postTypes, onSaved }) {
@@ -18,8 +18,6 @@ export default function PostCardModal({ open, onOpenChange, post, postTypes, onS
   const [isEditingContent, setIsEditingContent] = useState(!post?.id);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [form, setForm] = useState(DEFAULT_POST_FORM);
-
-  const { data: audiences = [] } = useAudiences(selectedFocusId);
 
   const saveMutation = useSavePost(selectedFocusId, onSaved);
   const deleteMutation = useDeletePost(selectedFocusId, onSaved);
@@ -31,7 +29,6 @@ export default function PostCardModal({ open, onOpenChange, post, postTypes, onS
         content: post.content || '',
         status: post.status || 'idea',
         post_type_id: post.post_type_id || '',
-        audience_id: post.audience_id || '',
         platform: post.platform || '',
         priority: post.priority || 'medium',
         scheduled_date: post.scheduled_date ? new Date(post.scheduled_date) : null,
@@ -117,7 +114,6 @@ export default function PostCardModal({ open, onOpenChange, post, postTypes, onS
                   form={form}
                   updateForm={updateForm}
                   postTypes={postTypes}
-                  audiences={audiences}
                 />
               </TabsContent>
             </div>
