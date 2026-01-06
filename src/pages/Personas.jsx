@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { User, Plus, Pencil, Trash2, Sparkles, Eye, Mic, Settings, Brain, Keyboard, ChevronRight, Power, EyeOff } from "lucide-react";
+import { User, Plus, Pencil, Trash2, Sparkles, Eye, Mic, Settings, Brain, Keyboard, ChevronRight, Power, EyeOff, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -70,6 +70,25 @@ export default function Personas() {
       toast.success(newStatus ? "Persona ativada!" : "Persona inativada!");
     } catch (error) {
       toast.error("Erro ao alterar status");
+    }
+  };
+
+  const togglePersonaDefault = async (persona) => {
+    try {
+      if (persona.is_default) {
+        // Toggle off
+        await save(persona.id, { ...persona, is_default: false });
+        toast.success("Persona padrão removida!");
+      } else {
+        // Toggle on - unset others first
+        const others = personas.filter(p => p.id !== persona.id && p.is_default);
+        await Promise.all(others.map(p => save(p.id, { ...p, is_default: false })));
+        
+        await save(persona.id, { ...persona, is_default: true });
+        toast.success("Persona definida como padrão!");
+      }
+    } catch (error) {
+      toast.error("Erro ao definir padrão");
     }
   };
 
@@ -414,12 +433,26 @@ export default function Personas() {
                         {isStructured && (
                           <Badge className="bg-indigo-100 text-indigo-700 text-xs">IA</Badge>
                         )}
+                        {persona.is_default && (
+                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-xs gap-1">
+                            <Star className="w-3 h-3 fill-amber-700" /> Padrão
+                          </Badge>
+                        )}
                       </div>
                       {persona.who_am_i && (
                         <p className="text-slate-600 text-sm mb-4 line-clamp-2">{persona.who_am_i}</p>
                       )}
                     </div>
                     <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`h-8 w-8 ${persona.is_default ? 'text-amber-500 hover:text-amber-600' : 'text-slate-300 hover:text-amber-500'}`}
+                        onClick={() => togglePersonaDefault(persona)}
+                        title={persona.is_default ? "Remover Padrão" : "Definir como Padrão"}
+                      >
+                        <Star className={`w-4 h-4 ${persona.is_default ? "fill-amber-500" : ""}`} />
+                      </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
