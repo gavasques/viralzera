@@ -207,8 +207,41 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                     
                     // Try to parse as JSON first, otherwise use raw text
                     try {
-                        const webhookJson = JSON.parse(webhookText);
-                        prompt = webhookJson.prompt || webhookJson.refinedPrompt || webhookJson.output || webhookText;
+                        let webhookJson = JSON.parse(webhookText);
+                        
+                        // Handle array response (e.g., from n8n)
+                        if (Array.isArray(webhookJson) && webhookJson.length > 0) {
+                            webhookJson = webhookJson[0];
+                        }
+                        
+                        // Extract the prompt text - handle nested "text" field with JSON string
+                        if (webhookJson.text && typeof webhookJson.text === 'string') {
+                            try {
+                                const nestedJson = JSON.parse(webhookJson.text);
+                                // Build prompt from prompts array if exists
+                                if (nestedJson.prompts && Array.isArray(nestedJson.prompts)) {
+                                    prompt = nestedJson.prompts.map(p => 
+                                        `### ${p.name || 'PROMPT'}\n${p.prompt}`
+                                    ).join('\n\n---\n\n');
+                                    
+                                    // Add content plan if exists
+                                    if (nestedJson.contentPlan) {
+                                        prompt += `\n\n### PLANO DE CONTEÚDO\n${JSON.stringify(nestedJson.contentPlan, null, 2)}`;
+                                    }
+                                    
+                                    // Add constraints if exists
+                                    if (nestedJson.hardConstraints && Array.isArray(nestedJson.hardConstraints)) {
+                                        prompt += `\n\n### RESTRIÇÕES\n${nestedJson.hardConstraints.map(c => `- ${c}`).join('\n')}`;
+                                    }
+                                } else {
+                                    prompt = webhookJson.text;
+                                }
+                            } catch {
+                                prompt = webhookJson.text;
+                            }
+                        } else {
+                            prompt = webhookJson.prompt || webhookJson.refinedPrompt || webhookJson.output || webhookText;
+                        }
                     } catch {
                         prompt = webhookText;
                     }
