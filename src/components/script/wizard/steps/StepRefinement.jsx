@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Label } from "@/components/ui/label";
@@ -6,63 +6,95 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Library, StickyNote, Tags, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Library, StickyNote, Tags, ChevronRight, Search, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WizardCombobox } from "../WizardCombobox";
 
 export function StepRefinement({ focusId, value, onChange }) {
+  const [level1Filter, setLevel1Filter] = useState('');
+  const [level2Filter, setLevel2Filter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const { data: materials, isLoading } = useQuery({
     queryKey: ['materials', focusId],
     queryFn: () => base44.entities.Material.filter({ focus_id: focusId }),
     enabled: !!focusId
   });
 
-  // Fetch themes (level 3 only - micro themes)
-  const { data: themes = [], isLoading: isLoadingThemes } = useQuery({
-    queryKey: ['themes', focusId, 'level3'],
-    queryFn: () => base44.entities.Theme.filter({ focus_id: focusId, level: 3 }),
-    enabled: !!focusId
-  });
-
-  // Fetch parent themes (level 1 and 2) for hierarchy display
-  const { data: allThemes = [] } = useQuery({
+  // Fetch all themes
+  const { data: allThemes = [], isLoading: isLoadingThemes } = useQuery({
     queryKey: ['themes', focusId, 'all'],
     queryFn: () => base44.entities.Theme.filter({ focus_id: focusId }),
     enabled: !!focusId
   });
 
-  // Build theme options with hierarchy path
-  const themeOptions = useMemo(() => {
-    if (!themes.length) return [];
+  // Separate themes by level
+  const { level1Themes, level2Themes, level3Themes, themeMap } = useMemo(() => {
+    const map = {};
+    const l1 = [];
+    const l2 = [];
+    const l3 = [];
     
-    const themeMap = {};
-    allThemes.forEach(t => { themeMap[t.id] = t; });
-    
-    return themes.map(theme => {
-      // Build hierarchy path
-      let path = [];
-      let current = theme;
-      while (current?.parent_id) {
-        const parent = themeMap[current.parent_id];
-        if (parent) {
-          path.unshift(parent.title);
-          current = parent;
-        } else break;
-      }
-      
-      return {
-        value: theme.id,
-        label: theme.title,
-        path: path.join(' > '),
-        original: theme
-      };
-    }).sort((a, b) => {
-      // Sort by path then title
-      const pathCompare = a.path.localeCompare(b.path);
-      if (pathCompare !== 0) return pathCompare;
-      return a.label.localeCompare(b.label);
+    allThemes.forEach(t => {
+      map[t.id] = t;
+      if (t.level === 1) l1.push(t);
+      else if (t.level === 2) l2.push(t);
+      else if (t.level === 3) l3.push(t);
     });
-  }, [themes, allThemes]);
+    
+    return { 
+      level1Themes: l1.sort((a, b) => a.title.localeCompare(b.title)), 
+      level2Themes: l2.sort((a, b) => a.title.localeCompare(b.title)), 
+      level3Themes: l3.sort((a, b) => a.title.localeCompare(b.title)), 
+      themeMap: map 
+    };
+  }, [allThemes]);
+
+  // Filter level 2 based on level 1
+  const filteredLevel2 = useMemo(() => {
+    if (!level1Filter) return level2Themes;
+    return level2Themes.filter(t => t.parent_id === level1Filter);
+  }, [level2Themes, level1Filter]);
+
+  // Filter level 3 based on filters and search
+  const filteredLevel3 = useMemo(() => {
+    let filtered = level3Themes;
+    
+    // Filter by level 2
+    if (level2Filter) {
+      filtered = filtered.filter(t => t.parent_id === level2Filter);
+    } else if (level1Filter) {
+      // If only level 1 is selected, show level 3 themes whose parent (level 2) has level 1 as parent
+      const level2Ids = level2Themes.filter(t => t.parent_id === level1Filter).map(t => t.id);
+      filtered = filtered.filter(t => level2Ids.includes(t.parent_id));
+    }
+    
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(t => t.title.toLowerCase().includes(query));
+    }
+    
+    return filtered;
+  }, [level3Themes, level2Themes, level1Filter, level2Filter, searchQuery]);
+
+  // Build hierarchy path for a theme
+  const getHierarchyPath = (theme) => {
+    let path = [];
+    let current = theme;
+    while (current?.parent_id) {
+      const parent = themeMap[current.parent_id];
+      if (parent) {
+        path.unshift(parent.title);
+        current = parent;
+      } else break;
+    }
+    return path.join(' > ');
+  };
+
+  const selectedTheme = value.themeId ? themeMap[value.themeId] : null;
 
   const toggleMaterial = (id) => {
     const current = value.selectedMaterials || [];
