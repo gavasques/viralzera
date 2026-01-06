@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Type, AlignLeft, Layout, Monitor, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,29 +55,58 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                         "sm:rounded-lg md:w-full sm:max-w-[700px] max-h-[90vh] overflow-y-auto custom-scrollbar"
                     )}
                 >
-                    <div className="flex flex-col space-y-1.5 text-center sm:text-left">
-                        <DialogPrimitive.Title className="text-lg font-semibold leading-none tracking-tight">
+                    <div className="flex flex-col space-y-1.5 text-center sm:text-left border-b pb-4">
+                        <DialogPrimitive.Title className="text-xl font-bold leading-none tracking-tight text-slate-900">
                             Criar Card no Kanban
                         </DialogPrimitive.Title>
+                        <p className="text-sm text-slate-500">
+                            Preencha os detalhes para transformar esta ideia em um card.
+                        </p>
                     </div>
 
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-5 py-5">
                         <div className="space-y-2">
-                            <Label htmlFor="title">Título</Label>
+                            <Label htmlFor="title" className="flex items-center gap-2 text-slate-700 font-medium">
+                                <Type className="w-4 h-4 text-indigo-500" />
+                                Título
+                            </Label>
                             <Input
                                 id="title"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Título do card..."
+                                className="h-11 border-slate-200 focus-visible:ring-indigo-500 bg-slate-50/50 focus:bg-white transition-colors"
                                 autoFocus
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="content" className="flex items-center gap-2 text-slate-700 font-medium">
+                                    <AlignLeft className="w-4 h-4 text-indigo-500" />
+                                    Conteúdo
+                                </Label>
+                                <span className={cn("text-xs font-medium", content.length > 2200 ? "text-red-500" : "text-slate-400")}>
+                                    {content.length.toLocaleString()} caracteres
+                                </span>
+                            </div>
+                            <Textarea
+                                id="content"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                placeholder="Conteúdo do card..."
+                                className="min-h-[200px] resize-none border-slate-200 focus-visible:ring-indigo-500 bg-slate-50/50 focus:bg-white transition-colors leading-relaxed"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-2">
-                                <Label>Tipo de Postagem</Label>
+                                <Label className="flex items-center gap-2 text-slate-700 font-medium">
+                                    <Layout className="w-4 h-4 text-indigo-500" />
+                                    Tipo de Postagem
+                                </Label>
                                 <Select value={postTypeId} onValueChange={setPostTypeId}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/50 focus:ring-indigo-500 focus:bg-white">
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -90,9 +119,12 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Plataforma</Label>
+                                <Label className="flex items-center gap-2 text-slate-700 font-medium">
+                                    <Monitor className="w-4 h-4 text-indigo-500" />
+                                    Plataforma
+                                </Label>
                                 <Select value={platform} onValueChange={setPlatform}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-11 border-slate-200 bg-slate-50/50 focus:ring-indigo-500 focus:bg-white">
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -107,24 +139,16 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="content">Conteúdo</Label>
-                            <Textarea
-                                id="content"
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder="Conteúdo do card..."
-                                className="h-[200px] resize-none"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="notes">Observações</Label>
+                            <Label htmlFor="notes" className="flex items-center gap-2 text-slate-700 font-medium">
+                                <StickyNote className="w-4 h-4 text-indigo-500" />
+                                Observações
+                            </Label>
                             <Textarea
                                 id="notes"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Observações adicionais..."
-                                className="h-[80px] resize-none"
+                                placeholder="Instruções para a equipe, referências, links..."
+                                className="min-h-[80px] resize-none border-slate-200 focus-visible:ring-indigo-500 bg-slate-50/50 focus:bg-white transition-colors"
                             />
                         </div>
                     </div>
