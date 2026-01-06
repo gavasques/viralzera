@@ -199,15 +199,15 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                         payload: webhookPayload
                     });
                     
-                    if (!webhookResponse.ok) {
-                        throw new Error(`Webhook error: ${webhookResponse.status}`);
+                    if (webhookResponse.data?.error) {
+                        throw new Error(webhookResponse.data.error);
                     }
                     
-                    const webhookText = await webhookResponse.text();
+                    const webhookData = webhookResponse.data?.data;
                     
-                    // Try to parse as JSON first, otherwise use raw text
+                    // Process webhook response
                     try {
-                        let webhookJson = JSON.parse(webhookText);
+                        let webhookJson = typeof webhookData === 'string' ? JSON.parse(webhookData) : webhookData;
                         
                         // Handle array response (e.g., from n8n)
                         if (Array.isArray(webhookJson) && webhookJson.length > 0) {
