@@ -35,7 +35,8 @@ export const DEFAULT_FILTERS = {
   status: "all",
   post_type_id: "all",
   platform: "all",
-  audience_id: "all"
+  audience_id: "all",
+  show_completed: false
 };
 
 export const DEFAULT_POST_FORM = {
