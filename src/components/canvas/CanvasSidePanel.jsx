@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CreateKanbanCardModal from "./CreateKanbanCardModal";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
   const queryClient = useQueryClient();
@@ -52,6 +53,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isKanbanModalOpen, setIsKanbanModalOpen] = useState(false);
+  const [canvasToDelete, setCanvasToDelete] = useState(null);
   const ITEMS_PER_PAGE = 10;
 
   const createMutation = useMutation({
@@ -280,6 +282,21 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
         focusId={selectedFocusId}
       />
 
+      <ConfirmDialog
+        open={!!canvasToDelete}
+        onOpenChange={(open) => !open && setCanvasToDelete(null)}
+        title="Excluir nota"
+        description={`Tem certeza que deseja excluir a nota "${canvasToDelete?.title}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        variant="destructive"
+        onConfirm={() => {
+          if (canvasToDelete) {
+            deleteMutation.mutate(canvasToDelete.id);
+            setCanvasToDelete(null);
+          }
+        }}
+      />
+
       {isListView ? (
         // List View
         <div className="flex flex-col h-full">
@@ -319,7 +336,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
                   <div
                     key={canvas.id}
                     onClick={() => selectCanvas(canvas)}
-                    className="p-3 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 cursor-pointer transition-all group"
+                    className="p-3 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 cursor-pointer transition-all group relative"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -368,6 +385,19 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
                       <Clock className="w-3 h-3" />
                       {format(new Date(canvas.created_date), "dd MMM, HH:mm", { locale: ptBR })}
                     </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute bottom-2 right-2 h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCanvasToDelete(canvas);
+                      }}
+                      title="Excluir nota"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 ))
               )}
