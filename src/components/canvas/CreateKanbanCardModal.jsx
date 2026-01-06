@@ -5,21 +5,63 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 
-export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, initialContent, onConfirm, isPending }) {
+export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, initialContent, onConfirm, isPending, focusId }) {
     const [title, setTitle] = useState(initialTitle || "");
     const [content, setContent] = useState(initialContent || "");
+    const [postTypeId, setPostTypeId] = useState("");
+    const [platform, setPlatform] = useState("");
+    const [notes, setNotes] = useState("");
+
+    // Fetch Post Types
+    const { data: postTypes = [] } = useQuery({
+        queryKey: ['postTypes', focusId],
+        queryFn: () => base44.entities.PostType.filter({ focus_id: focusId, is_active: true }),
+        enabled: !!focusId && isOpen
+    });
 
     useEffect(() => {
         if (isOpen) {
             setTitle(initialTitle || "");
             setContent(initialContent || "");
+            setPostTypeId("");
+            setPlatform("");
+            setNotes("");
         }
     }, [isOpen, initialTitle, initialContent]);
 
+    // Auto-select platform when post type changes
+    useEffect(() => {
+        if (postTypeId && postTypes.length > 0) {
+            const selectedType = postTypes.find(t => t.id === postTypeId);
+            if (selectedType?.channel) {
+                // Map PostType channel to Post platform if needed
+                let mappedPlatform = selectedType.channel;
+                if (mappedPlatform === 'Youtube') mappedPlatform = 'YouTube';
+                if (mappedPlatform === 'X') mappedPlatform = 'Twitter';
+                
+                // Only set if it matches one of the valid Post platforms
+                // Valid: ['Instagram', 'TikTok', 'Twitter', 'LinkedIn', 'YouTube']
+                const validPlatforms = ['Instagram', 'TikTok', 'Twitter', 'LinkedIn', 'YouTube'];
+                if (validPlatforms.includes(mappedPlatform)) {
+                    setPlatform(mappedPlatform);
+                }
+            }
+        }
+    }, [postTypeId, postTypes]);
+
     const handleSubmit = () => {
-        onConfirm({ title, content });
+        onConfirm({ 
+            title, 
+            content,
+            postTypeId,
+            platform,
+            notes
+        });
     };
 
     return (
@@ -64,7 +106,49 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 placeholder="Conteúdo do card..."
-                                className="h-[300px] resize-none"
+                                className="h-[150px] resize-none"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Tipo de Postagem</Label>
+                                <Select value={postTypeId} onValueChange={setPostTypeId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {postTypes.map(type => (
+                                            <SelectItem key={type.id} value={type.id}>{type.title}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Plataforma</Label>
+                                <Select value={platform} onValueChange={setPlatform}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Instagram">Instagram</SelectItem>
+                                        <SelectItem value="TikTok">TikTok</SelectItem>
+                                        <SelectItem value="Twitter">Twitter (X)</SelectItem>
+                                        <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                                        <SelectItem value="YouTube">YouTube</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="notes">Observações</Label>
+                            <Textarea
+                                id="notes"
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="Instruções para a equipe, referências..."
+                                className="h-[80px] resize-none"
                             />
                         </div>
                     </div>

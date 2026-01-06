@@ -160,7 +160,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
     });
   };
 
-  const handleConfirmKanbanCard = ({ title, content }) => {
+  const handleConfirmKanbanCard = ({ title, content, postTypeId, platform, notes }) => {
     if (!selectedFocusId) {
       toast.error("Selecione um foco primeiro");
       return;
@@ -169,7 +169,11 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
       focus_id: selectedFocusId,
       title: title,
       content: content,
-      status: 'idea'
+      status: 'idea',
+      priority: 'low',
+      post_type_id: postTypeId || null,
+      platform: platform || null,
+      notes: notes || null
     });
   };
 
@@ -507,7 +511,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Modal moved to top level */}
+
 
             <Button
               variant="outline"
