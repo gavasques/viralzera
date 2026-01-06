@@ -59,13 +59,13 @@ function PostFormContent({
         </div>
         
         {isEditingContent ? (
-          <div className="flex-1 flex flex-col min-h-[300px] bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden [&_.quill]:h-full [&_.quill]:flex [&_.quill]:flex-col [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-slate-200 [&_.ql-toolbar]:bg-slate-50 [&_.ql-toolbar]:shrink-0 [&_.ql-container]:flex-1 [&_.ql-container]:overflow-hidden [&_.ql-container]:border-none [&_.ql-container]:font-sans [&_.ql-container]:text-base [&_.ql-editor]:h-full [&_.ql-editor]:overflow-y-auto">
+          <div className="flex-1 flex flex-col min-h-[300px] bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <ReactQuill
               theme="snow"
               value={form.content}
               onChange={(value) => updateForm('content', value)}
               modules={modules}
-              className="flex-1 flex flex-col"
+              className="h-full [&_.ql-container]:border-none [&_.ql-editor]:min-h-[300px]"
               placeholder="Escreva o conteúdo da postagem..."
             />
           </div>
