@@ -506,12 +506,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <CreateKanbanCardModal 
-              isOpen={isKanbanModalOpen}
-              onClose={() => setIsKanbanModalOpen(false)}
-              focusId={selectedFocusId}
-              initialContent="" // Can pass selection here later if needed
-            />
+            {/* Modal moved to top level */}
 
             <Button
               variant="outline"
