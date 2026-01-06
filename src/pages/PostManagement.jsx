@@ -236,6 +236,14 @@ export default function PostManagement() {
         postTypes={postTypes}
         onSaved={handleModalClose}
       />
+      
+      <ColumnFormModal
+        isOpen={columnModalOpen}
+        onClose={() => setColumnModalOpen(false)}
+        onConfirm={handleColumnModalConfirm}
+        initialTitle={editingColumn?.title || ""}
+        mode={columnModalMode}
+      />
     </div>
   );
 }
