@@ -47,7 +47,7 @@ function PostFilters({
       {/* Top Row: Search & Dropdowns */}
       <div className="flex flex-col md:flex-row gap-4">
         {/* Search */}
-        <div className="relative flex-1">
+        <div className="relative w-full md:w-[400px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Buscar por título ou conteúdo..."
