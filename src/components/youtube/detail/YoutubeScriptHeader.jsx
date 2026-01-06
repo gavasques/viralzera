@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Sparkles, Package, History } from "lucide-react";
+import { ArrowLeft, Sparkles, Package, History, ArrowUpRight } from "lucide-react";
 
 export default function YoutubeScriptHeader({ 
   title, 
@@ -9,7 +9,9 @@ export default function YoutubeScriptHeader({
   onSuggestTitles,
   onGenerateKit,
   onHistoryOpen,
-  onNavigateBack
+  onNavigateBack,
+  onSendToKanban,
+  isSendingToKanban
 }) {
   return (
     <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-8 py-3">
@@ -59,6 +61,17 @@ export default function YoutubeScriptHeader({
           </Button>
           
           <div className="h-4 w-px bg-slate-200 mx-1" />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSendToKanban}
+            disabled={isSendingToKanban}
+            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200 h-9 gap-2 shadow-sm"
+          >
+             <ArrowUpRight className="w-4 h-4" />
+             <span className="font-medium">Enviar para Kanban</span>
+          </Button>
 
           <Button
             variant="outline"
