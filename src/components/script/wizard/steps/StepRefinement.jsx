@@ -222,117 +222,118 @@ export function StepRefinement({ focusId, value, onChange }) {
               Selecione um tema da matriz para direcionar o conteúdo.
             </p>
 
-        {isLoadingThemes ? (
-          <Skeleton className="h-12 w-full" />
-        ) : (
-          <div className="space-y-3">
-            {/* Selected Theme Display */}
-            {selectedTheme && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-indigo-600" />
-                  <div>
-                    <span className="text-[10px] text-indigo-500">{getHierarchyPath(selectedTheme)}</span>
-                    <p className="font-medium text-indigo-900">{selectedTheme.title}</p>
+            {isLoadingThemes ? (
+              <Skeleton className="h-12 w-full" />
+            ) : (
+              <div className="space-y-3">
+                {/* Selected Theme Display */}
+                {selectedTheme && (
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-indigo-600" />
+                      <div>
+                        <span className="text-[10px] text-indigo-500">{getHierarchyPath(selectedTheme)}</span>
+                        <p className="font-medium text-indigo-900">{selectedTheme.title}</p>
+                      </div>
+                    </div>
                   </div>
+                )}
+
+                {/* Filters Row */}
+                <div className="flex gap-2 flex-wrap">
+                  {/* Level 1 Filter */}
+                  <select
+                    value={level1Filter}
+                    onChange={(e) => {
+                      setLevel1Filter(e.target.value);
+                      setLevel2Filter('');
+                    }}
+                    className="h-9 px-3 rounded-md border border-slate-200 bg-white text-sm flex-1 min-w-[140px]"
+                  >
+                    <option value="">Todos Macro Temas</option>
+                    {level1Themes.map(t => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+
+                  {/* Level 2 Filter */}
+                  <select
+                    value={level2Filter}
+                    onChange={(e) => setLevel2Filter(e.target.value)}
+                    className="h-9 px-3 rounded-md border border-slate-200 bg-white text-sm flex-1 min-w-[140px]"
+                    disabled={filteredLevel2.length === 0}
+                  >
+                    <option value="">Todos Subtemas</option>
+                    {filteredLevel2.map(t => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    placeholder="Buscar tema específico..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 bg-white"
+                  />
+                </div>
+
+                {/* Theme List */}
+                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                  {filteredLevel3.length === 0 ? (
+                    <div className="p-6 text-center flex flex-col items-center justify-center gap-2">
+                      <Tags className="w-6 h-6 text-slate-200" />
+                      <p className="text-sm text-slate-500">Nenhum tema encontrado.</p>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[180px]">
+                      <div className="p-1 space-y-1">
+                        {filteredLevel3.map(theme => {
+                          const isSelected = value.themeId === theme.id;
+                          const path = getHierarchyPath(theme);
+                          
+                          return (
+                            <div
+                              key={theme.id}
+                              onClick={() => onChange({ ...value, themeId: theme.id })}
+                              className={cn(
+                                "flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors border",
+                                isSelected 
+                                  ? "bg-indigo-50 border-indigo-200" 
+                                  : "bg-white border-transparent hover:bg-slate-50"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0",
+                                isSelected ? "border-indigo-600 bg-indigo-600" : "border-slate-300"
+                              )}>
+                                {isSelected && <Check className="w-3 h-3 text-white" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                {path && (
+                                  <p className="text-[10px] text-slate-400 truncate mb-0.5">
+                                    {path}
+                                  </p>
+                                )}
+                                <p className={cn(
+                                  "text-sm font-medium truncate",
+                                  isSelected ? "text-indigo-900" : "text-slate-700"
+                                )}>
+                                  {theme.title}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  )}
                 </div>
               </div>
             )}
-
-            {/* Filters Row */}
-            <div className="flex gap-2 flex-wrap">
-              {/* Level 1 Filter */}
-              <select
-                value={level1Filter}
-                onChange={(e) => {
-                  setLevel1Filter(e.target.value);
-                  setLevel2Filter('');
-                }}
-                className="h-9 px-3 rounded-md border border-slate-200 bg-white text-sm flex-1 min-w-[140px]"
-              >
-                <option value="">Todos Macro Temas</option>
-                {level1Themes.map(t => (
-                  <option key={t.id} value={t.id}>{t.title}</option>
-                ))}
-              </select>
-
-              {/* Level 2 Filter */}
-              <select
-                value={level2Filter}
-                onChange={(e) => setLevel2Filter(e.target.value)}
-                className="h-9 px-3 rounded-md border border-slate-200 bg-white text-sm flex-1 min-w-[140px]"
-                disabled={filteredLevel2.length === 0}
-              >
-                <option value="">Todos Subtemas</option>
-                {filteredLevel2.map(t => (
-                  <option key={t.id} value={t.id}>{t.title}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Buscar tema específico..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-white"
-              />
-            </div>
-
-            {/* Theme List */}
-            <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
-              {filteredLevel3.length === 0 ? (
-                <div className="p-6 text-center flex flex-col items-center justify-center gap-2">
-                  <Tags className="w-6 h-6 text-slate-200" />
-                  <p className="text-sm text-slate-500">Nenhum tema encontrado.</p>
-                </div>
-              ) : (
-                <ScrollArea className="h-[180px]">
-                  <div className="p-1 space-y-1">
-                    {filteredLevel3.map(theme => {
-                      const isSelected = value.themeId === theme.id;
-                      const path = getHierarchyPath(theme);
-                      
-                      return (
-                        <div
-                          key={theme.id}
-                          onClick={() => onChange({ ...value, themeId: theme.id })}
-                          className={cn(
-                            "flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors border",
-                            isSelected 
-                              ? "bg-indigo-50 border-indigo-200" 
-                              : "bg-white border-transparent hover:bg-slate-50"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0",
-                            isSelected ? "border-indigo-600 bg-indigo-600" : "border-slate-300"
-                          )}>
-                            {isSelected && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            {path && (
-                              <p className="text-[10px] text-slate-400 truncate mb-0.5">
-                                {path}
-                              </p>
-                            )}
-                            <p className={cn(
-                              "text-sm font-medium truncate",
-                              isSelected ? "text-indigo-900" : "text-slate-700"
-                            )}>
-                              {theme.title}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              )}
-            </div>
-          </div>
           </>
         )}
       </div>
