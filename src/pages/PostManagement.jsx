@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, Eye, EyeOff } from "lucide-react";
+import { Plus, Calendar, Eye, EyeOff, Video, Scissors } from "lucide-react";
 import { toast } from "sonner";
 import CanvasToggleButton from "@/components/canvas/CanvasToggleButton";
 import PostFilters from "@/components/posts/PostFilters";
@@ -61,9 +61,18 @@ export default function PostManagement() {
       .map(col => {
         // Find matching default column to get icon/colors if available (fallback)
         const defaultCol = COLUMNS.find(c => c.id === col.slug) || {};
+        
+        let icon = defaultCol.icon;
+        if (!icon) {
+          const titleLower = col.title?.toLowerCase() || '';
+          if (titleLower.includes('gravar')) icon = Video;
+          else if (titleLower.includes('edição') || titleLower.includes('edicao')) icon = Scissors;
+        }
+
         return {
           ...defaultCol, // defaults
           ...col,        // override with DB data
+          icon: icon || col.icon, // use calculated icon or existing one
           id: col.id,    // ensure DB ID is used
           slug: col.slug || col.id // slug for status mapping
         };
