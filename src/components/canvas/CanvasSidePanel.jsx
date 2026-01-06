@@ -198,22 +198,26 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed right-0 top-0 h-full w-[420px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
+    <div className="fixed right-0 top-0 h-full w-full sm:w-[500px] bg-white/95 backdrop-blur-sm border-l border-slate-200 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
       {/* Header */}
-      <div className="h-14 border-b border-slate-100 flex items-center justify-between px-4 shrink-0 bg-gradient-to-r from-indigo-50 to-white">
-        <div className="flex items-center gap-2">
+      <div className="h-16 border-b border-slate-100 flex items-center justify-between px-6 shrink-0 bg-white/50 backdrop-blur-md">
+        <div className="flex items-center gap-3">
           {!isListView && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsListView(true)}
-              className="h-8 w-8"
+              className="h-8 w-8 -ml-2 text-slate-500 hover:text-slate-900"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
           )}
-          <FileText className="w-4 h-4 text-indigo-600" />
-          <span className="font-semibold text-slate-800">Canvas</span>
+          <div className="flex items-center gap-2">
+             <div className="bg-indigo-50 p-1.5 rounded-lg">
+                <FileText className="w-4 h-4 text-indigo-600" />
+             </div>
+             <span className="font-semibold text-slate-900">Canvas</span>
+          </div>
         </div>
         <div className="flex items-center gap-1">
           {isListView && (
@@ -222,13 +226,13 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
               size="icon" 
               onClick={() => createMutation.mutate()} 
               disabled={createMutation.isPending}
-              className="h-8 w-8 text-indigo-600 hover:bg-indigo-50"
+              className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
               title="Nova Nota"
             >
               <Plus className="w-4 h-4" />
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -404,35 +408,35 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
             </div>
           </div>
 
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 px-6 py-4">
             {isEditing ? (
               <Textarea
                 value={editedContent}
                 onChange={(e) => handleContentChange(e.target.value)}
                 placeholder="Seu conteúdo aqui..."
-                className="min-h-[400px] border-0 shadow-none resize-none focus-visible:ring-0 text-sm leading-relaxed font-mono"
+                className="min-h-[400px] border-0 shadow-none resize-none focus-visible:ring-0 text-base leading-relaxed text-slate-700"
                 autoFocus
               />
             ) : (
               <div 
-                className="prose prose-sm prose-slate max-w-none min-h-[400px]"
+                className="prose prose-slate max-w-none min-h-[400px]"
               >
                 <ReactMarkdown
                   components={{
-                    h1: ({node, ...props}) => <h1 className="text-xl font-bold mt-4 mb-2 text-slate-900" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-4 mb-2 text-slate-900" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-base font-bold mt-3 mb-2 text-slate-800" {...props} />,
-                    p: ({node, ...props}) => <p className="mb-3 text-slate-700 leading-relaxed" {...props} />,
+                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mt-6 mb-4 text-slate-900 tracking-tight" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mt-6 mb-3 text-slate-900 tracking-tight" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2 text-slate-800" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-4 text-slate-600 leading-7" {...props} />,
                     strong: ({node, ...props}) => <strong className="font-semibold text-slate-900" {...props} />,
-                    em: ({node, ...props}) => <em className="italic" {...props} />,
-                    ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
-                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
-                    li: ({node, ...props}) => <li className="text-slate-700" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-indigo-300 pl-4 my-3 italic text-slate-600 bg-slate-50 py-2 rounded-r" {...props} />,
+                    em: ({node, ...props}) => <em className="italic text-slate-800" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-2 text-slate-600" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-2 text-slate-600" {...props} />,
+                    li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-indigo-400 pl-4 my-6 italic text-slate-600 bg-slate-50 py-4 rounded-r-lg" {...props} />,
                     code: ({node, inline, ...props}) => inline 
-                      ? <code className="bg-slate-100 px-1.5 py-0.5 rounded text-sm font-mono text-indigo-700" {...props} />
-                      : <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-sm"><code {...props} /></pre>,
-                    hr: ({node, ...props}) => <hr className="my-4 border-slate-200" {...props} />,
+                      ? <code className="bg-slate-100 px-1.5 py-0.5 rounded text-sm font-medium text-pink-600" {...props} />
+                      : <pre className="bg-slate-900 text-slate-100 p-4 rounded-xl overflow-x-auto text-sm my-4 shadow-sm"><code {...props} /></pre>,
+                    hr: ({node, ...props}) => <hr className="my-8 border-slate-100" {...props} />,
                   }}
                 >
                   {editedContent || "*Clique para editar...*"}
@@ -442,11 +446,11 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
           </ScrollArea>
 
           {/* Footer Actions */}
-          <div className="p-4 border-t border-slate-100 flex items-center gap-2 bg-slate-50/50">
+          <div className="p-6 border-t border-slate-100 flex items-center gap-3 bg-white">
             <Button
               variant="outline"
               onClick={handleSendToKanban}
-              className="gap-2"
+              className="h-10 w-10 p-0 rounded-lg hover:bg-slate-50 hover:text-indigo-600 transition-colors"
               title="Enviar para o Kanban"
             >
               <ArrowUpRight className="w-4 h-4" />
@@ -454,21 +458,21 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
             <Button
               variant="outline"
               onClick={handleCopy}
-              className="gap-2"
+              className="h-10 gap-2 px-4 rounded-lg hover:bg-slate-50 transition-colors"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
               {copied ? "Copiado!" : "Copiar"}
             </Button>
             {isEditing ? (
               <>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => {
                     setEditedContent(selectedCanvas?.content || "");
                     setIsEditing(false);
                     setHasChanges(false);
                   }}
-                  className="flex-1"
+                  className="flex-1 h-10 rounded-lg"
                 >
                   Cancelar
                 </Button>
@@ -478,7 +482,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
                     setIsEditing(false);
                   }}
                   disabled={!hasChanges || saveMutation.isPending}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  className="flex-1 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm hover:shadow transition-all"
                 >
                   {saveMutation.isPending ? "Salvando..." : "Salvar"}
                 </Button>
@@ -487,7 +491,7 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
               <Button
                 variant="outline"
                 onClick={() => setIsEditing(true)}
-                className="flex-1"
+                className="flex-1 h-10 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Editar
               </Button>
