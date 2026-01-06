@@ -84,11 +84,21 @@ export default function PromptLogModal({ open, onOpenChange, logData }) {
                 <ScrollArea className="max-h-[65vh] p-6 pt-4">
                     <div className="space-y-6">
                         {/* Flow indicator */}
-                        <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-400">
+                        <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-400 flex-wrap">
                             <Badge variant="outline" className="bg-blue-50">Input</Badge>
                             <ArrowRight className="w-3 h-3" />
-                            <Badge variant="outline" className="bg-purple-50">Refinador</Badge>
-                            <ArrowRight className="w-3 h-3" />
+                            {logData.webhookPayload && (
+                                <>
+                                    <Badge variant="outline" className="bg-amber-50">Webhook</Badge>
+                                    <ArrowRight className="w-3 h-3" />
+                                </>
+                            )}
+                            {!logData.webhookResponse && logData.refinedPrompt && (
+                                <>
+                                    <Badge variant="outline" className="bg-purple-50">Refinador IA</Badge>
+                                    <ArrowRight className="w-3 h-3" />
+                                </>
+                            )}
                             <Badge variant="outline" className="bg-green-50">IAs</Badge>
                         </div>
 
