@@ -156,7 +156,8 @@ export default function CanvasSidePanel({ isOpen, onClose, initialCanvasId }) {
       focus_id: selectedFocusId,
       title: editedTitle,
       content: editedContent,
-      status: 'idea'
+      status: 'idea',
+      priority: 'low'
     });
   };
 
