@@ -70,15 +70,18 @@ function PostFormContent({
             />
           </div>
         ) : (
-          <div className="flex-1 flex flex-col min-h-[300px] bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden [&_.quill]:h-full [&_.quill]:flex [&_.quill]:flex-col [&_.ql-container]:flex-1 [&_.ql-container]:overflow-hidden [&_.ql-container]:border-none [&_.ql-container]:font-sans [&_.ql-container]:text-base [&_.ql-editor]:h-full [&_.ql-editor]:overflow-y-auto">
-            <ReactQuill
-              value={form.content}
-              readOnly={true}
-              theme="snow"
-              modules={{ toolbar: false }}
-              className="flex-1 flex flex-col"
-              placeholder="Nenhum conteúdo ainda."
-            />
+          <div className="flex-1 min-h-[300px] p-6 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+            {form.content ? (
+              <div 
+                className="prose prose-sm max-w-none [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through"
+                dangerouslySetInnerHTML={{ __html: form.content }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-slate-400 italic">
+                <p>Nenhum conteúdo ainda.</p>
+                <p className="text-sm mt-1">Clique em "Editar Conteúdo" para começar.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
