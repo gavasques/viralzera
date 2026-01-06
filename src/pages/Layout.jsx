@@ -159,6 +159,7 @@ export default function Layout({ children }) {
             items: [
               { name: 'Multi Chat', icon: Sparkles, page: 'TitanosRouter' },
               { name: 'Canvas', icon: FileText, page: 'Canvas' },
+              { name: 'Tipos de Postagem', icon: Layers, page: 'PostTypes' },
             ]
           },
           {
@@ -168,7 +169,6 @@ export default function Layout({ children }) {
               { name: 'Tendências', icon: TrendingUp, page: 'Trends' },
               { name: 'Matriz de Temas', icon: FolderTree, page: 'ThemeMatrix' },
               { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
-              { name: 'Tipos de Postagem', icon: Layers, page: 'PostTypes' },
             ]
           },
           {
