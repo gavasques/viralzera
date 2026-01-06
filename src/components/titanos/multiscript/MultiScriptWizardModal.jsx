@@ -243,7 +243,7 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                             prompt = webhookJson.prompt || webhookJson.refinedPrompt || webhookJson.output || webhookText;
                         }
                     } catch {
-                        prompt = webhookText;
+                        prompt = typeof webhookData === 'string' ? webhookData : JSON.stringify(webhookData);
                     }
                     
                     if (prompt && prompt.trim()) {
