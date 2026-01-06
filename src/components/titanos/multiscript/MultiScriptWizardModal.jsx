@@ -198,19 +198,17 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                     // Save payload for log
                     webhookPayloadForLog = webhookPayload;
                     
-                    // Call webhook directly
-                    const webhookResponse = await fetch(refinerConfig.webhook_url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(webhookPayload)
+                    // Call webhook via backend function to avoid CORS
+                    const webhookResponse = await base44.functions.invoke('refinerWebhook', {
+                        webhookUrl: refinerConfig.webhook_url,
+                        payload: webhookPayload
                     });
                     
-                    if (!webhookResponse.ok) {
-                        throw new Error(`Webhook error: ${webhookResponse.status}`);
+                    if (webhookResponse.data?.error) {
+                        throw new Error(webhookResponse.data.error);
                     }
                     
-                    const webhookText = await webhookResponse.text();
-                    const webhookData = webhookText ? JSON.parse(webhookText) : null;
+                    const webhookData = webhookResponse.data?.data;
                     
                     // Save raw response for log
                     webhookResponseForLog = webhookData;
