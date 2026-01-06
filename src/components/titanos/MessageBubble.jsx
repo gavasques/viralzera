@@ -1,5 +1,5 @@
 import React from 'react';
-import { Copy, Check, User, Bot, FileText, ScrollText, SquareKanban } from 'lucide-react';
+import { Copy, Check, User, Bot, FileText, ScrollText } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCanvas } from '@/components/canvas/CanvasProvider';
 import ReactMarkdown from 'react-markdown';
@@ -113,7 +113,7 @@ export default function MessageBubble({ role, content, metrics, modelName, chatT
                                 className={`p-1 rounded-full transition-colors ${sentToCanvas ? 'bg-green-100 text-green-600' : 'hover:bg-indigo-50 text-slate-400 hover:text-indigo-600'}`}
                                 title={sentToCanvas ? "Enviado!" : "Enviar ao Canvas"}
                             >
-                                {sentToCanvas ? <Check className="w-3 h-3" /> : <SquareKanban className="w-3 h-3" />}
+                                {sentToCanvas ? <Check className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
                             </button>
                             <button 
                                 onClick={handleCopy}
