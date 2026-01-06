@@ -42,7 +42,7 @@ function KanbanBoard({
           <div 
             ref={provided.innerRef} 
             {...provided.droppableProps}
-            className="flex-1 flex gap-4 overflow-x-auto pb-4 min-h-[500px]"
+            className="flex-1 flex gap-4 overflow-x-auto pb-4 min-h-[500px] w-full"
           >
             {columns.map((column, index) => (
               <Draggable key={column.id} draggableId={column.id} index={index}>

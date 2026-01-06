@@ -165,9 +165,9 @@ export default function PostManagement() {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
+    <div className="h-[calc(100vh-120px)] flex flex-col w-full max-w-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Calendar className="w-6 h-6 text-pink-600" />
@@ -188,7 +188,7 @@ export default function PostManagement() {
       </div>
 
       {/* Filters */}
-      <div className="mb-4">
+      <div className="mb-4 shrink-0">
         <PostFilters
           filters={filters}
           setFilters={setFilters}
