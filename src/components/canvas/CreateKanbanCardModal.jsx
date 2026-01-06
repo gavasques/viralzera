@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, initialContent, onConfirm, isPending, focusId }) {
     const [title, setTitle] = useState(initialTitle || "");
@@ -17,11 +17,10 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
     const [platform, setPlatform] = useState("");
     const [notes, setNotes] = useState("");
 
-    // Fetch Post Types
     const { data: postTypes = [] } = useQuery({
-        queryKey: ['postTypes', focusId],
-        queryFn: () => base44.entities.PostType.filter({ focus_id: focusId, is_active: true }),
-        enabled: !!focusId && isOpen
+        queryKey: ['post-types', focusId],
+        queryFn: () => base44.entities.PostType.filter({ focus_id: focusId }),
+        enabled: !!focusId
     });
 
     useEffect(() => {
@@ -34,34 +33,8 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
         }
     }, [isOpen, initialTitle, initialContent]);
 
-    // Auto-select platform when post type changes
-    useEffect(() => {
-        if (postTypeId && postTypes.length > 0) {
-            const selectedType = postTypes.find(t => t.id === postTypeId);
-            if (selectedType?.channel) {
-                // Map PostType channel to Post platform if needed
-                let mappedPlatform = selectedType.channel;
-                if (mappedPlatform === 'Youtube') mappedPlatform = 'YouTube';
-                if (mappedPlatform === 'X') mappedPlatform = 'Twitter';
-                
-                // Only set if it matches one of the valid Post platforms
-                // Valid: ['Instagram', 'TikTok', 'Twitter', 'LinkedIn', 'YouTube']
-                const validPlatforms = ['Instagram', 'TikTok', 'Twitter', 'LinkedIn', 'YouTube'];
-                if (validPlatforms.includes(mappedPlatform)) {
-                    setPlatform(mappedPlatform);
-                }
-            }
-        }
-    }, [postTypeId, postTypes]);
-
     const handleSubmit = () => {
-        onConfirm({ 
-            title, 
-            content,
-            postTypeId,
-            platform,
-            notes
-        });
+        onConfirm({ title, content, postTypeId, platform, notes });
     };
 
     return (
@@ -79,7 +52,7 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
                         "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
                         "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
-                        "sm:rounded-lg md:w-full sm:max-w-[600px]"
+                        "sm:rounded-lg md:w-full sm:max-w-[700px] max-h-[90vh] overflow-y-auto custom-scrollbar"
                     )}
                 >
                     <div className="flex flex-col space-y-1.5 text-center sm:text-left">
@@ -99,16 +72,6 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                                 autoFocus
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="content">Conteúdo</Label>
-                            <Textarea
-                                id="content"
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder="Conteúdo do card..."
-                                className="h-[150px] resize-none"
-                            />
-                        </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -119,7 +82,9 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                                     </SelectTrigger>
                                     <SelectContent>
                                         {postTypes.map(type => (
-                                            <SelectItem key={type.id} value={type.id}>{type.title}</SelectItem>
+                                            <SelectItem key={type.id} value={type.id}>
+                                                {type.title}
+                                            </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -133,12 +98,23 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                                     <SelectContent>
                                         <SelectItem value="Instagram">Instagram</SelectItem>
                                         <SelectItem value="TikTok">TikTok</SelectItem>
-                                        <SelectItem value="Twitter">Twitter (X)</SelectItem>
-                                        <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                                         <SelectItem value="YouTube">YouTube</SelectItem>
+                                        <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                                        <SelectItem value="Twitter">Twitter</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="content">Conteúdo</Label>
+                            <Textarea
+                                id="content"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                placeholder="Conteúdo do card..."
+                                className="h-[200px] resize-none"
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -147,7 +123,7 @@ export default function CreateKanbanCardModal({ isOpen, onClose, initialTitle, i
                                 id="notes"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Instruções para a equipe, referências..."
+                                placeholder="Observações adicionais..."
                                 className="h-[80px] resize-none"
                             />
                         </div>
