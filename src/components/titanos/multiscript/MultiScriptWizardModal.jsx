@@ -193,10 +193,10 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                         includeExamples: formData.includeExamples
                     };
                     
-                    const webhookResponse = await fetch(refinerConfig.webhook_url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(webhookPayload)
+                    // Call via backend function to avoid CORS
+                    const webhookResponse = await base44.functions.invoke('refinerWebhook', {
+                        webhookUrl: refinerConfig.webhook_url,
+                        payload: webhookPayload
                     });
                     
                     if (!webhookResponse.ok) {
