@@ -177,6 +177,8 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
 
             // 4. Refine prompt via Webhook OR Refiner Agent
             let prompt = rawPrompt;
+            let webhookPayloadForLog = null;
+            let webhookResponseForLog = null;
             
             // Priority 1: Use webhook if configured
             if (refinerConfig?.webhook_url) {
@@ -193,6 +195,9 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                         includeExamples: formData.includeExamples
                     };
                     
+                    // Save payload for log
+                    webhookPayloadForLog = webhookPayload;
+                    
                     // Call via backend function to avoid CORS
                     const webhookResponse = await base44.functions.invoke('refinerWebhook', {
                         webhookUrl: refinerConfig.webhook_url,
@@ -204,6 +209,9 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                     }
                     
                     const webhookData = webhookResponse.data?.data;
+                    
+                    // Save raw response for log
+                    webhookResponseForLog = webhookData;
                     
                     // Process webhook response
                     try {
