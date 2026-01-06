@@ -34,6 +34,36 @@ export function StepContext({ focusId, value, onChange }) {
     refetchOnWindowFocus: false
   });
 
+  // Auto-select defaults
+  React.useEffect(() => {
+    if (isLoadingPersonas || isLoadingAudiences) return;
+
+    let updates = {};
+    let hasUpdates = false;
+
+    // Auto-select Persona
+    if (!value.personaId && personas.length > 0) {
+      const defaultPersona = personas.find(p => p.is_default && p.is_active !== false);
+      if (defaultPersona) {
+        updates.personaId = defaultPersona.id;
+        hasUpdates = true;
+      }
+    }
+
+    // Auto-select Audience
+    if (!value.audienceId && audiences.length > 0) {
+      const defaultAudience = audiences.find(a => a.is_default && a.is_active !== false);
+      if (defaultAudience) {
+        updates.audienceId = defaultAudience.id;
+        hasUpdates = true;
+      }
+    }
+
+    if (hasUpdates) {
+      onChange({ ...value, ...updates });
+    }
+  }, [isLoadingPersonas, isLoadingAudiences, personas, audiences, value.personaId, value.audienceId]);
+
   // Prepare Options (without "none" options)
   const personaOptions = personas
     ?.filter(p => p.is_active !== false)
