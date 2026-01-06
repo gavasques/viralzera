@@ -271,7 +271,12 @@ export default function YoutubeScriptDetail() {
         throw new Error("Tipo de postagem 'Youtube Vídeo Longo' não encontrado. Crie este tipo de postagem primeiro.");
       }
 
-      // 2. Create Post
+      // 2. Update script status to "Finalizado"
+      await base44.entities.YoutubeScript.update(scriptId, {
+        status: 'Finalizado'
+      });
+
+      // 3. Create Post
       return base44.entities.Post.create({
         focus_id: selectedFocusId,
         title: title || 'Sem título',
@@ -284,7 +289,9 @@ export default function YoutubeScriptDetail() {
       });
     },
     onSuccess: () => {
-      toast.success('Enviado para o Kanban com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['youtube-script', scriptId] });
+      queryClient.invalidateQueries({ queryKey: ['youtube-scripts'] });
+      toast.success('Enviado para o Kanban e status alterado para Finalizado!');
     },
     onError: (error) => {
       toast.error('Erro ao enviar para Kanban: ' + error.message);

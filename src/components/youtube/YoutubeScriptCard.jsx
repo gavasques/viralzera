@@ -18,8 +18,28 @@ import { ptBR } from "date-fns/locale";
 
 const STATUS_COLORS = {
   "Rascunho": "bg-slate-100 text-slate-700",
-  "Finalizado": "bg-green-100 text-green-700",
-  "Publicado": "bg-blue-100 text-blue-700"
+  "Roteiro Pronto": "bg-blue-100 text-blue-700",
+  "Finalizado": "bg-green-100 text-green-700"
+};
+
+const CATEGORIA_COLORS = {
+  "Amazon": "bg-orange-100 text-orange-700",
+  "Importação": "bg-purple-100 text-purple-700",
+  "Ferramentas": "bg-cyan-100 text-cyan-700",
+  "Gestão": "bg-indigo-100 text-indigo-700",
+  "Dubai": "bg-amber-100 text-amber-700",
+  "Marketplaces": "bg-emerald-100 text-emerald-700",
+  "Economia": "bg-green-100 text-green-700",
+  "Genérico": "bg-slate-100 text-slate-700",
+  "Inteligência Artificial": "bg-violet-100 text-violet-700",
+  "Parcerias": "bg-pink-100 text-pink-700",
+  "Aulas": "bg-blue-100 text-blue-700",
+  "Política": "bg-red-100 text-red-700",
+  "Mercado Livre": "bg-yellow-100 text-yellow-700",
+  "Shopee": "bg-orange-100 text-orange-700",
+  "Tiktok Shop": "bg-fuchsia-100 text-fuchsia-700",
+  "Afiliados": "bg-teal-100 text-teal-700",
+  "Outros": "bg-gray-100 text-gray-700"
 };
 
 const VIDEO_TYPE_COLORS = {
@@ -77,10 +97,15 @@ export default function YoutubeScriptCard({ script, onClick, onDelete }) {
               <h3 className="font-semibold text-slate-900 truncate text-base">
                 {script.title || "Sem título"}
               </h3>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                 <Badge className={`text-[10px] px-1.5 py-0 h-5 ${VIDEO_TYPE_COLORS[script.video_type] || VIDEO_TYPE_COLORS["Outro"]}`}>
                   {script.video_type || "Outro"}
                 </Badge>
+                {script.categoria && (
+                  <Badge className={`text-[10px] px-1.5 py-0 h-5 ${CATEGORIA_COLORS[script.categoria] || CATEGORIA_COLORS["Outros"]}`}>
+                    {script.categoria}
+                  </Badge>
+                )}
                 <Badge className={`text-[10px] px-1.5 py-0 h-5 ${STATUS_COLORS[script.status] || STATUS_COLORS["Rascunho"]}`}>
                   {script.status || "Rascunho"}
                 </Badge>

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Youtube, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Youtube, Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
@@ -19,6 +21,11 @@ export default function YoutubeScripts() {
   const { selectedFocusId } = useSelectedFocus();
   const [showWizard, setShowWizard] = useState(false);
   const [dossierId, setDossierId] = useState(null);
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoriaFilter, setCategoriaFilter] = useState('all');
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -64,6 +71,20 @@ export default function YoutubeScripts() {
     navigate(createPageUrl(`YoutubeScriptDetail?id=${script.id}`));
   };
 
+  // Filter scripts
+  const filteredScripts = useMemo(() => {
+    return scripts.filter(script => {
+      const matchesSearch = !searchTerm || 
+        script.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        script.hook?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || script.status === statusFilter;
+      const matchesCategoria = categoriaFilter === 'all' || script.categoria === categoriaFilter;
+      
+      return matchesSearch && matchesStatus && matchesCategoria;
+    });
+  }, [scripts, searchTerm, statusFilter, categoriaFilter]);
+
   if (isLoading) {
     return <PageSkeleton />;
   }
@@ -84,7 +105,65 @@ export default function YoutubeScripts() {
         }
       />
 
-      {scripts.length === 0 ? (
+      {/* Filters */}
+      {scripts.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por título ou conteúdo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="Rascunho">Rascunho</SelectItem>
+                <SelectItem value="Roteiro Pronto">Roteiro Pronto</SelectItem>
+                <SelectItem value="Finalizado">Finalizado</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Categoria Filter */}
+            <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Categorias</SelectItem>
+                <SelectItem value="Amazon">Amazon</SelectItem>
+                <SelectItem value="Importação">Importação</SelectItem>
+                <SelectItem value="Ferramentas">Ferramentas</SelectItem>
+                <SelectItem value="Gestão">Gestão</SelectItem>
+                <SelectItem value="Dubai">Dubai</SelectItem>
+                <SelectItem value="Marketplaces">Marketplaces</SelectItem>
+                <SelectItem value="Economia">Economia</SelectItem>
+                <SelectItem value="Genérico">Genérico</SelectItem>
+                <SelectItem value="Inteligência Artificial">Inteligência Artificial</SelectItem>
+                <SelectItem value="Parcerias">Parcerias</SelectItem>
+                <SelectItem value="Aulas">Aulas</SelectItem>
+                <SelectItem value="Política">Política</SelectItem>
+                <SelectItem value="Mercado Livre">Mercado Livre</SelectItem>
+                <SelectItem value="Shopee">Shopee</SelectItem>
+                <SelectItem value="Tiktok Shop">Tiktok Shop</SelectItem>
+                <SelectItem value="Afiliados">Afiliados</SelectItem>
+                <SelectItem value="Outros">Outros</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {filteredScripts.length === 0 && scripts.length === 0 ? (
         <EmptyState 
           icon={Youtube}
           title="Nenhum roteiro criado ainda"
@@ -92,9 +171,13 @@ export default function YoutubeScripts() {
           actionLabel="Criar Primeiro Roteiro"
           onAction={handleNew}
         />
+      ) : filteredScripts.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
+          <p className="text-slate-500">Nenhum roteiro encontrado com os filtros aplicados.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {scripts.map((script) => (
+          {filteredScripts.map((script) => (
             <YoutubeScriptCard 
               key={script.id} 
               script={script} 
