@@ -3,7 +3,7 @@ import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Save, Trash2, FileText, Settings } from "lucide-react";
+import { Loader2, Save, Trash2, FileText, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
@@ -88,33 +88,45 @@ export default function PostCardModal({ open, onOpenChange, post, postTypes, onS
           </DialogHeader>
 
           <Tabs defaultValue="content" className="flex-1 overflow-hidden flex flex-col">
-            <TabsList className="mx-6 mt-4 grid grid-cols-2 w-fit">
-              <TabsTrigger value="content" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Conteúdo
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="gap-2">
-                <Settings className="w-4 h-4" />
-                Configurações
-              </TabsTrigger>
-            </TabsList>
+            <div className="px-6 pt-4 border-b border-slate-50">
+              <TabsList className="w-full justify-start h-auto bg-transparent p-0 gap-6">
+                <TabsTrigger 
+                  value="content" 
+                  className="gap-2 rounded-none border-b-2 border-transparent px-2 py-3 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none data-[state=active]:bg-transparent transition-all hover:text-indigo-500"
+                >
+                  <FileText className="w-4 h-4" />
+                  Roteiro & Conteúdo
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="details" 
+                  className="gap-2 rounded-none border-b-2 border-transparent px-2 py-3 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none data-[state=active]:bg-transparent transition-all hover:text-indigo-500"
+                >
+                  <LayoutList className="w-4 h-4" />
+                  Detalhes da Publicação
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <div className="flex-1 overflow-hidden flex flex-col px-6 pb-6">
-              <TabsContent value="content" className="mt-4 flex-1 flex flex-col min-h-0 data-[state=inactive]:hidden">
-                <PostFormContent 
-                  form={form}
-                  updateForm={updateForm}
-                  isEditingContent={isEditingContent}
-                  setIsEditingContent={setIsEditingContent}
-                />
+            <div className="flex-1 overflow-hidden flex flex-col px-6 pb-6 bg-slate-50/50">
+              <TabsContent value="content" className="mt-6 flex-1 flex flex-col min-h-0 data-[state=inactive]:hidden outline-none animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col overflow-hidden">
+                  <PostFormContent 
+                    form={form}
+                    updateForm={updateForm}
+                    isEditingContent={isEditingContent}
+                    setIsEditingContent={setIsEditingContent}
+                  />
+                </div>
               </TabsContent>
 
-              <TabsContent value="settings" className="mt-4">
-                <PostFormSettings 
-                  form={form}
-                  updateForm={updateForm}
-                  postTypes={postTypes}
-                />
+              <TabsContent value="details" className="mt-6 outline-none animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                  <PostFormSettings 
+                    form={form}
+                    updateForm={updateForm}
+                    postTypes={postTypes}
+                  />
+                </div>
               </TabsContent>
             </div>
           </Tabs>
