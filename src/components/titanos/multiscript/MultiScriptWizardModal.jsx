@@ -424,7 +424,12 @@ export default function MultiScriptWizardModal({ open, onOpenChange, onCreate })
                 toast.warning(`${failures.length} modelo(s) falharam`);
             }
 
-            setGenerationStatus('Concluído!');
+            // Show optimization animation step
+            setGenerationStatus('Otimizando seu conteúdo...');
+            
+            // Wait for animation to show
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
             toast.success('Multi Script gerado com sucesso!');
 
             // Invalida a lista de conversas para atualizar o sidebar

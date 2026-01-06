@@ -13,15 +13,16 @@ import {
 } from 'lucide-react';
 
 const GENERATION_STEPS = [
-  { id: 'collect', icon: Database, label: 'Coletando informações...', duration: 4000 },
-  { id: 'analyze', icon: Search, label: 'Analisando contexto e dados...', duration: 5000 },
-  { id: 'identify', icon: Brain, label: 'Identificando melhor estilo...', duration: 5000 },
-  { id: 'build', icon: FileText, label: 'Construindo prompt otimizado...', duration: 5000 },
-  { id: 'refine', icon: Wand2, label: 'Refinando com IA especialista...', duration: 6000 },
-  { id: 'send', icon: Bot, label: 'Enviando para os Agentes...', duration: 5000 },
-  { id: 'research', icon: Search, label: 'Agentes pesquisando...', duration: 8000 },
-  { id: 'thinking', icon: Brain, label: 'Agentes analisando e criando...', duration: 10000 },
-  { id: 'writing', icon: Sparkles, label: 'Escrevendo scripts magnéticos...', duration: 12000 },
+  { id: 'collect', icon: Database, label: 'Coletando informações...', duration: 8000 },
+  { id: 'analyze', icon: Search, label: 'Analisando contexto e dados...', duration: 9000 },
+  { id: 'identify', icon: Brain, label: 'Identificando melhor estilo...', duration: 9000 },
+  { id: 'build', icon: FileText, label: 'Construindo prompt otimizado...', duration: 9000 },
+  { id: 'refine', icon: Wand2, label: 'Refinando com IA especialista...', duration: 10000 },
+  { id: 'send', icon: Bot, label: 'Enviando para os Agentes...', duration: 9000 },
+  { id: 'research', icon: Search, label: 'Agentes pesquisando...', duration: 12000 },
+  { id: 'thinking', icon: Brain, label: 'Agentes analisando e criando...', duration: 14000 },
+  { id: 'writing', icon: Sparkles, label: 'Escrevendo scripts magnéticos...', duration: 16000 },
+  { id: 'optimizing', icon: Sparkles, label: 'Otimizando seu conteúdo...', duration: 5000 },
 ];
 
 export default function GenerationLoadingScreen({ isGenerating, currentStatus }) {
@@ -56,6 +57,17 @@ export default function GenerationLoadingScreen({ isGenerating, currentStatus })
       setCompletedSteps([]);
     }
   }, [isGenerating]);
+
+  // Jump to optimizing step if status matches
+  useEffect(() => {
+    if (currentStatus === 'Otimizando seu conteúdo...') {
+      const optIndex = GENERATION_STEPS.findIndex(s => s.id === 'optimizing');
+      if (optIndex !== -1) {
+        setCurrentStepIndex(optIndex);
+        setCompletedSteps(GENERATION_STEPS.slice(0, optIndex).map(s => s.id));
+      }
+    }
+  }, [currentStatus]);
 
   if (!isGenerating) return null;
 
