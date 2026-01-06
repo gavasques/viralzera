@@ -69,14 +69,15 @@ function KanbanBoard({
             {provided.placeholder}
             
             {/* Add Column Button */}
-            <div className="min-w-[280px]">
+            <div className="pt-2">
               <Button 
-                variant="outline" 
-                className="w-full h-[50px] border-dashed border-2 bg-transparent hover:bg-slate-50 text-slate-500 hover:text-slate-700"
+                variant="ghost" 
+                size="icon"
+                className="h-10 w-10 rounded-full border border-dashed border-slate-300 text-slate-400 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-400 transition-colors"
                 onClick={onAddColumn}
+                title="Adicionar Nova Coluna"
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Adicionar Coluna
+                <Plus className="w-5 h-5" />
               </Button>
             </div>
           </div>
