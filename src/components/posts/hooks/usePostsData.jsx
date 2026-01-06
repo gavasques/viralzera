@@ -7,7 +7,72 @@ export const QUERY_KEYS = {
   posts: (focusId) => ['posts', focusId],
   audiences: (focusId) => ['audiences', focusId],
   postTypes: (focusId) => ['postTypes', focusId],
+  columns: (focusId) => ['kanbanColumns', focusId],
 };
+
+export function useKanbanColumns(focusId) {
+  return useQuery({
+    queryKey: QUERY_KEYS.columns(focusId),
+    queryFn: () => base44.entities.KanbanColumn.filter({ focus_id: focusId }),
+    enabled: !!focusId,
+    staleTime: 60000,
+  });
+}
+
+export function useInitializeColumns(focusId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const defaults = COLUMNS.map((col, index) => ({
+        focus_id: focusId,
+        title: col.title,
+        slug: col.id,
+        order: index,
+        color: col.color,
+        icon_name: col.icon?.displayName || 'Circle' // Simplified, assumes icons have names or map them
+      }));
+      // Using bulkCreate or sequential
+      for (const col of defaults) {
+        await base44.entities.KanbanColumn.create(col);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.columns(focusId) });
+    }
+  });
+}
+
+export function useCreateColumn(focusId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => base44.entities.KanbanColumn.create({ ...data, focus_id: focusId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.columns(focusId) });
+      toast.success('Coluna criada!');
+    }
+  });
+}
+
+export function useUpdateColumn(focusId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => base44.entities.KanbanColumn.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.columns(focusId) });
+    }
+  });
+}
+
+export function useDeleteColumn(focusId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => base44.entities.KanbanColumn.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.columns(focusId) });
+      toast.success('Coluna removida!');
+    }
+  });
+}
 
 export function usePosts(focusId) {
   return useQuery({
