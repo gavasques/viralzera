@@ -21,6 +21,7 @@ const INITIAL_FORM = {
   description: '',
   icon: 'FileText',
   prompt_template: '',
+  group: 'Youtube',
 };
 
 export default function ScriptTypeFormModal({ open, onOpenChange, scriptType }) {
@@ -38,6 +39,7 @@ export default function ScriptTypeFormModal({ open, onOpenChange, scriptType }) 
           description: scriptType.description || '',
           icon: scriptType.icon || 'FileText',
           prompt_template: scriptType.prompt_template || '',
+          group: scriptType.group || 'Youtube',
         });
       } else {
         setFormData(INITIAL_FORM);
