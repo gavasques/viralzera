@@ -16,6 +16,8 @@ export function StepRefinement({ focusId, value, onChange }) {
   const [level1Filter, setLevel1Filter] = useState('');
   const [level2Filter, setLevel2Filter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [materialsExpanded, setMaterialsExpanded] = useState(true);
+  const [themesExpanded, setThemesExpanded] = useState(true);
 
   const { data: materials, isLoading } = useQuery({
     queryKey: ['materials', focusId],
