@@ -31,7 +31,8 @@ function PostFilters({
   setFilters, 
   postTypes = [], 
   onClear,
-  hasActiveFilters
+  hasActiveFilters,
+  className
 }) {
   const [openPostType, setOpenPostType] = useState(false);
 
@@ -42,7 +43,7 @@ function PostFilters({
   const selectedPostType = postTypes.find(pt => pt.id === filters.post_type_id);
 
   return (
-    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-6 space-y-4">
+    <div className={cn("bg-white p-4 rounded-xl border border-slate-100 shadow-sm space-y-4", className)}>
       {/* Top Row: Search & Dropdowns */}
       <div className="flex flex-col md:flex-row gap-4">
         {/* Search */}

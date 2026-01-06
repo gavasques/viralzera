@@ -195,6 +195,7 @@ export default function PostManagement() {
           postTypes={postTypes}
           onClear={clearFilters}
           hasActiveFilters={hasActiveFilters}
+          className="flex-1"
         />
         
         <div className="flex items-center ml-auto">
