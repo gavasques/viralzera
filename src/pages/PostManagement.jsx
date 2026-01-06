@@ -7,6 +7,7 @@ import CanvasToggleButton from "@/components/canvas/CanvasToggleButton";
 import PostFilters from "@/components/posts/PostFilters";
 import KanbanBoard from "@/components/posts/KanbanBoard";
 import PostCardModal from "@/components/posts/PostCardModal";
+import ColumnFormModal from "@/components/posts/ColumnFormModal";
 import { 
   usePosts, 
   useAudiences, 
@@ -26,6 +27,11 @@ export default function PostManagement() {
   const { selectedFocusId } = useSelectedFocus();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  
+  // Column Modal State
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
+  const [columnModalMode, setColumnModalMode] = useState('create'); // 'create' or 'edit'
+  const [editingColumn, setEditingColumn] = useState(null);
 
   // Data
   const { data: posts = [], isLoading } = usePosts(selectedFocusId);
@@ -107,23 +113,32 @@ export default function PostManagement() {
   }, []);
 
   const handleAddColumn = useCallback(() => {
-    const title = prompt("Nome da nova coluna:");
-    if (!title) return;
-    
-    createColumn.mutate({
-      title,
-      order: columns.length,
-      slug: crypto.randomUUID(), // unique slug for new columns
-      color: 'bg-slate-500'
-    });
-  }, [createColumn, columns.length]);
+    setColumnModalMode('create');
+    setEditingColumn(null);
+    setColumnModalOpen(true);
+  }, []);
 
   const handleRenameColumn = useCallback((column) => {
-    const newTitle = prompt("Novo nome da coluna:", column.title);
-    if (newTitle && newTitle !== column.title) {
-      updateColumn.mutate({ id: column.id, data: { title: newTitle } });
+    setColumnModalMode('edit');
+    setEditingColumn(column);
+    setColumnModalOpen(true);
+  }, []);
+
+  const handleColumnModalConfirm = useCallback((title) => {
+    if (columnModalMode === 'create') {
+      createColumn.mutate({
+        title,
+        order: columns.length,
+        slug: crypto.randomUUID(),
+        color: 'bg-slate-500'
+      });
+    } else if (columnModalMode === 'edit' && editingColumn) {
+      if (title !== editingColumn.title) {
+        updateColumn.mutate({ id: editingColumn.id, data: { title } });
+      }
     }
-  }, [updateColumn]);
+    setColumnModalOpen(false);
+  }, [columnModalMode, editingColumn, createColumn, updateColumn, columns.length]);
 
   const handleDeleteColumn = useCallback((column) => {
     if (confirm(`Tem certeza que deseja excluir a coluna "${column.title}"?`)) {
