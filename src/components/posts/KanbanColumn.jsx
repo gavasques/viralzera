@@ -44,7 +44,7 @@ function KanbanColumn({
             variant="ghost" 
             size="icon" 
             className="h-7 w-7 text-slate-400 hover:text-slate-600"
-            onClick={() => onAddNew(column.id || column.slug)}
+            onClick={() => onAddNew(column.slug)}
           >
             <Plus className="w-4 h-4" />
           </Button>
@@ -71,7 +71,7 @@ function KanbanColumn({
       </div>
 
       {/* Droppable Content */}
-      <Droppable droppableId={column.id || column.slug}>
+      <Droppable droppableId={column.slug}>
         {(provided, snapshot) => (
           <div 
             className={`flex-1 p-2 overflow-y-auto min-h-[150px] transition-colors ${snapshot.isDraggingOver ? 'bg-slate-100/50' : ''}`}
