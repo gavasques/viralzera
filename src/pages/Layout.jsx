@@ -165,7 +165,7 @@ export default function Layout({ children }) {
           {
             label: 'Conteúdo',
             items: [
-              { name: 'Banco de Listas', icon: Library, page: 'MaterialBank' },
+              { name: 'Banco de Dados', icon: Library, page: 'MaterialBank' },
               { name: 'Tendências', icon: TrendingUp, page: 'Trends' },
               { name: 'Matriz de Temas', icon: FolderTree, page: 'ThemeMatrix' },
               { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
