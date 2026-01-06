@@ -45,7 +45,7 @@ function KanbanBoard({
             className="flex-1 flex gap-4 overflow-x-auto pb-4 min-h-[500px]"
           >
             {columns.map((column, index) => (
-              <Draggable key={column.id || column.slug} draggableId={column.id || column.slug} index={index}>
+              <Draggable key={column.id} draggableId={column.id} index={index}>
                 {(dragProvided) => (
                   <div
                     ref={dragProvided.innerRef}
@@ -54,7 +54,7 @@ function KanbanBoard({
                   >
                     <KanbanColumn
                       column={column}
-                      posts={getPostsByStatus(column.id || column.slug)}
+                      posts={getPostsByStatus(column.slug)}
                       postTypes={postTypes}
                       onAddNew={onAddNew}
                       onEditPost={onEditPost}
