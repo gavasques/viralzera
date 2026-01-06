@@ -4,6 +4,8 @@ import KanbanColumn from "./KanbanColumn";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 function KanbanBoard({ 
   columns,
   getPostsByStatus, 
@@ -14,7 +16,8 @@ function KanbanBoard({
   onEditPost,
   onAddColumn,
   onDeleteColumn,
-  onRenameColumn
+  onRenameColumn,
+  onToggleComplete
 }) {
   const handleDragEnd = useCallback((result) => {
     if (!result.destination) return;
@@ -57,6 +60,7 @@ function KanbanBoard({
                       onEditPost={onEditPost}
                       onDelete={onDeleteColumn}
                       onRename={onRenameColumn}
+                      onToggleComplete={onToggleComplete}
                     />
                   </div>
                 )}

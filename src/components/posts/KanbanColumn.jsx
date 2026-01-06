@@ -18,7 +18,8 @@ function KanbanColumn({
   onAddNew, 
   onEditPost,
   onDelete,
-  onRename
+  onRename,
+  onToggleComplete
 }) {
   const Icon = column.icon || Circle;
 
@@ -92,6 +93,7 @@ function KanbanColumn({
                       postTypes={postTypes}
                       isDragging={dragSnapshot.isDragging}
                       onClick={() => onEditPost(post)}
+                      onToggleComplete={onToggleComplete}
                     />
                   </div>
                 )}
