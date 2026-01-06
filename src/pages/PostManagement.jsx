@@ -1,13 +1,26 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 import CanvasToggleButton from "@/components/canvas/CanvasToggleButton";
 import PostFilters from "@/components/posts/PostFilters";
 import KanbanBoard from "@/components/posts/KanbanBoard";
 import PostCardModal from "@/components/posts/PostCardModal";
-import { usePosts, useAudiences, usePostTypes, useUpdatePostStatus } from "@/components/posts/hooks/usePostsData";
+import { 
+  usePosts, 
+  useAudiences, 
+  usePostTypes, 
+  useUpdatePostStatus, 
+  useKanbanColumns,
+  useInitializeColumns,
+  useCreateColumn,
+  useUpdateColumn,
+  useDeleteColumn,
+  useSavePost
+} from "@/components/posts/hooks/usePostsData";
 import { usePostFilters } from "@/components/posts/hooks/usePostFilters";
+import { COLUMNS } from "@/components/posts/constants";
 
 export default function PostManagement() {
   const { selectedFocusId } = useSelectedFocus();
@@ -18,10 +31,41 @@ export default function PostManagement() {
   const { data: posts = [], isLoading } = usePosts(selectedFocusId);
   const { data: audiences = [] } = useAudiences(selectedFocusId);
   const { data: postTypes = [] } = usePostTypes(selectedFocusId);
+  const { data: columnsData = [], isLoading: isLoadingColumns } = useKanbanColumns(selectedFocusId);
   
   // Mutations
   const updateStatus = useUpdatePostStatus(selectedFocusId);
+  const initColumns = useInitializeColumns(selectedFocusId);
+  const createColumn = useCreateColumn(selectedFocusId);
+  const updateColumn = useUpdateColumn(selectedFocusId);
+  const deleteColumn = useDeleteColumn(selectedFocusId);
+  const savePost = useSavePost(selectedFocusId);
   
+  // Initialize columns if empty
+  useEffect(() => {
+    if (selectedFocusId && !isLoadingColumns && columnsData.length === 0) {
+      initColumns.mutate();
+    }
+  }, [selectedFocusId, isLoadingColumns, columnsData.length]);
+
+  // Merge dynamic columns with icon components
+  const columns = useMemo(() => {
+    if (columnsData.length === 0) return COLUMNS; // Fallback while loading or init
+    
+    return columnsData
+      .sort((a, b) => a.order - b.order)
+      .map(col => {
+        // Find matching default column to get icon/colors if available (fallback)
+        const defaultCol = COLUMNS.find(c => c.id === col.slug) || {};
+        return {
+          ...defaultCol, // defaults
+          ...col,        // override with DB data
+          id: col.id,    // ensure DB ID is used
+          slug: col.slug || col.id // slug for status mapping
+        };
+      });
+  }, [columnsData]);
+
   // Filters
   const { 
     filters, 
@@ -33,8 +77,24 @@ export default function PostManagement() {
 
   // Handlers
   const handleDragEnd = useCallback((postId, newStatus) => {
+    // newStatus is the column ID or slug
+    // We need to pass the correct status string the post entity expects
+    // If our columns use slugs matching post status, just use newStatus
     updateStatus.mutate({ id: postId, status: newStatus });
   }, [updateStatus]);
+
+  const handleColumnDragEnd = useCallback((sourceIndex, destIndex) => {
+    const newColumns = [...columns];
+    const [removed] = newColumns.splice(sourceIndex, 1);
+    newColumns.splice(destIndex, 0, removed);
+
+    // Update orders
+    newColumns.forEach((col, index) => {
+      if (col.order !== index) {
+        updateColumn.mutate({ id: col.id, data: { order: index } });
+      }
+    });
+  }, [columns, updateColumn]);
 
   const handleAddNew = useCallback((status = 'idea') => {
     setEditingPost({ status });
@@ -45,6 +105,38 @@ export default function PostManagement() {
     setEditingPost(post);
     setModalOpen(true);
   }, []);
+
+  const handleAddColumn = useCallback(() => {
+    const title = prompt("Nome da nova coluna:");
+    if (!title) return;
+    
+    createColumn.mutate({
+      title,
+      order: columns.length,
+      slug: crypto.randomUUID(), // unique slug for new columns
+      color: 'bg-slate-500'
+    });
+  }, [createColumn, columns.length]);
+
+  const handleRenameColumn = useCallback((column) => {
+    const newTitle = prompt("Novo nome da coluna:", column.title);
+    if (newTitle && newTitle !== column.title) {
+      updateColumn.mutate({ id: column.id, data: { title: newTitle } });
+    }
+  }, [updateColumn]);
+
+  const handleDeleteColumn = useCallback((column) => {
+    if (confirm(`Tem certeza que deseja excluir a coluna "${column.title}"?`)) {
+      deleteColumn.mutate(column.id);
+    }
+  }, [deleteColumn]);
+
+  const handleToggleComplete = useCallback((post, isCompleted) => {
+    savePost.mutate({ 
+      id: post.id, 
+      data: { is_completed: isCompleted !== undefined ? isCompleted : !post.is_completed } 
+    });
+  }, [savePost]);
 
   const handleModalClose = useCallback(() => {
     setModalOpen(false);
@@ -83,22 +175,42 @@ export default function PostManagement() {
       </div>
 
       {/* Filters */}
-      <PostFilters
-        filters={filters}
-        setFilters={setFilters}
-        postTypes={postTypes}
-        audiences={audiences}
-        onClear={clearFilters}
-        hasActiveFilters={hasActiveFilters}
-      />
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <PostFilters
+          filters={filters}
+          setFilters={setFilters}
+          postTypes={postTypes}
+          audiences={audiences}
+          onClear={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
+        
+        <div className="flex items-center ml-auto">
+             <Button
+                variant={filters.show_completed ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setFilters(prev => ({ ...prev, show_completed: !prev.show_completed }))}
+                className="gap-2 border-dashed"
+             >
+                {filters.show_completed ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {filters.show_completed ? "Ocultar Concluídos" : "Ver Concluídos"}
+             </Button>
+        </div>
+      </div>
 
       {/* Kanban Board */}
       <KanbanBoard
+        columns={columns}
         getPostsByStatus={getPostsByStatus}
         postTypes={postTypes}
         onDragEnd={handleDragEnd}
+        onColumnDragEnd={handleColumnDragEnd}
         onAddNew={handleAddNew}
         onEditPost={handleEditPost}
+        onAddColumn={handleAddColumn}
+        onDeleteColumn={handleDeleteColumn}
+        onRenameColumn={handleRenameColumn}
+        onToggleComplete={handleToggleComplete}
       />
 
       {/* Modal */}
