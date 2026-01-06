@@ -109,7 +109,7 @@ export default function PostCardModal({ open, onOpenChange, post, postTypes, onS
 
             <div className="flex-1 overflow-hidden flex flex-col px-6 pb-6 bg-slate-50/50">
               <TabsContent value="content" className="mt-6 flex-1 flex flex-col min-h-0 data-[state=inactive]:hidden outline-none animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 flex flex-col overflow-hidden">
                   <PostFormContent 
                     form={form}
                     updateForm={updateForm}
