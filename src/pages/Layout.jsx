@@ -151,6 +151,7 @@ export default function Layout({ children }) {
               { name: 'Modelagem', icon: Layers, page: 'Modelagem' },
               { name: 'Dossiês', icon: FileText, page: 'ContentDossiers' },
               { name: 'Roteiros YouTube', icon: Youtube, page: 'YoutubeScripts' },
+              { name: 'Conteúdo Padrão', icon: Library, page: 'UserContent' },
             ]
           },
           {
@@ -164,7 +165,6 @@ export default function Layout({ children }) {
             label: 'Conteúdo',
             items: [
               { name: 'Banco de Listas', icon: Library, page: 'MaterialBank' },
-              { name: 'Conteúdo Padrão', icon: Library, page: 'UserContent' },
               { name: 'Tendências', icon: TrendingUp, page: 'Trends' },
               { name: 'Matriz de Temas', icon: FolderTree, page: 'ThemeMatrix' },
               { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
