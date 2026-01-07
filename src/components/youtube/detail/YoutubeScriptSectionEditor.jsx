@@ -60,13 +60,17 @@ const STATUS_COLORS = {
   Publicado: "bg-blue-100 text-blue-700",
 };
 
-// Basic Markdown to HTML converter
+// Basic Markdown to HTML converter - preserves existing HTML including note spans
 const markdownToHtml = (text) => {
   if (!text) return '';
   
-  // Check if it looks like HTML already (basic check)
-  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  // Check if it looks like HTML already (preserve it as-is to keep note spans)
+  if (/<[a-z][\s\S]*>/i.test(text)) {
+    console.log('Content is already HTML, preserving as-is');
+    return text;
+  }
 
+  console.log('Converting markdown to HTML');
   let html = text
     // Headers
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -241,26 +245,28 @@ export default function YoutubeScriptSectionEditor({
   // Handle note clicks
   useEffect(() => {
     const handleClick = (e) => {
+      console.log('Click detected, target:', e.target, 'classList:', e.target.classList);
+      
       const target = e.target;
       if (target.classList.contains('script-note-highlight')) {
         const noteId = target.getAttribute('data-note-id');
         
-        console.log('Note clicked, noteId:', noteId);
+        console.log('✅ Note clicked, noteId:', noteId);
         console.log('Available notes:', notes);
         
-        // Notify parent to highlight in sidebar
-        if (noteId && onNoteSelect) {
-          onNoteSelect(noteId);
-        }
-
-        // Show popover
-        const rect = target.getBoundingClientRect();
         // Find note data by data_id
         const noteData = notes.find(n => n.data_id === noteId);
-        
         console.log('Found note data:', noteData);
         
         if (noteData) {
+            // Notify parent to highlight in sidebar
+            if (noteId && onNoteSelect) {
+              console.log('Calling onNoteSelect with:', noteId);
+              onNoteSelect(noteId);
+            }
+
+            // Show popover
+            const rect = target.getBoundingClientRect();
             setViewingNote({
                 id: noteId,
                 data: noteData,
@@ -273,14 +279,17 @@ export default function YoutubeScriptSectionEditor({
             // Clear text selection if any, to avoid overlapping popovers
             setSelection(null);
         } else {
-            console.warn('Note not found for noteId:', noteId);
+            console.warn('❌ Note not found for noteId:', noteId, 'in notes:', notes);
         }
       }
     };
 
     const editorContainer = document.querySelector('.ql-editor');
     if (editorContainer) {
+      console.log('Adding click handler to editor');
       editorContainer.addEventListener('click', handleClick);
+    } else {
+      console.warn('Editor container not found');
     }
 
     return () => {
@@ -295,13 +304,16 @@ export default function YoutubeScriptSectionEditor({
       const editor = quillRef.current.getEditor();
       const noteId = crypto.randomUUID();
       
-      console.log('Creating note with ID:', noteId, 'for text:', selectedText);
+      console.log('🟡 Creating note with ID:', noteId, 'for text:', selectedText);
       
       // Apply format
       editor.formatText(selection.range.index, selection.range.length, 'note', noteId);
       
-      // Force content update to persist the HTML
+      // Get updated HTML and log it
       const newHtml = editor.root.innerHTML;
+      console.log('🟡 New HTML after formatting:', newHtml.substring(0, 500));
+      
+      // Force content update to persist the HTML
       onChange(sectionKey, newHtml);
       
       // Notify parent
@@ -379,8 +391,15 @@ export default function YoutubeScriptSectionEditor({
   // However, if the content comes as Markdown (from generator), we need to convert it.
   // If it comes as HTML (from previous save), we keep it.
   const displayContent = useMemo(() => {
-    return markdownToHtml(content);
+    const converted = markdownToHtml(content);
+    console.log('📄 Display content (first 300 chars):', converted?.substring(0, 300));
+    return converted;
   }, [content]);
+
+  // Debug: log notes when they change
+  useEffect(() => {
+    console.log('📝 Notes updated:', notes);
+  }, [notes]);
 
   // Strip HTML for char count
   const plainText = content?.replace(/<[^>]*>/g, '') || '';
