@@ -43,6 +43,11 @@ export default function YoutubeScriptDetail() {
   const [initialData, setInitialData] = useState(null);
   const [notesVisible, setNotesVisible] = useState(false);
   
+  // Notes linking state
+  const [pendingNote, setPendingNote] = useState(null);
+  const [activeNoteId, setActiveNoteId] = useState(null);
+  const [noteToHighlight, setNoteToHighlight] = useState(null);
+  
   // Drawers & Modals state
   const [refinerOpen, setRefinerOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -217,6 +222,23 @@ export default function YoutubeScriptDetail() {
   const handleSave = () => {
     saveMutation.mutate({ isAutoSave: false });
   };
+
+  const handleAddNote = useCallback((noteData) => {
+    setPendingNote(noteData);
+    setNotesVisible(true);
+  }, []);
+
+  const handleNoteCreated = useCallback((note) => {
+    if (pendingNote) {
+      setNoteToHighlight({ id: note.id, range: pendingNote.range });
+      setPendingNote(null);
+    }
+  }, [pendingNote]);
+
+  const handleCommentSelect = useCallback((noteId) => {
+    setActiveNoteId(noteId);
+    if (noteId && !notesVisible) setNotesVisible(true);
+  }, [notesVisible]);
 
   // Handle refiner drawer
   const handleOpenRefiner = () => {
@@ -394,14 +416,23 @@ export default function YoutubeScriptDetail() {
               // Notes & Actions props
               notesVisible={notesVisible}
               onToggleNotes={() => setNotesVisible(!notesVisible)}
+              onAddNote={handleAddNote}
+              onCommentSelect={handleCommentSelect}
+              noteToHighlight={noteToHighlight}
+              activeNoteId={activeNoteId}
             />
           </div>
         </div>
-        
+
         {/* Notes Panel */}
         <ScriptNotesPanel 
           scriptId={scriptId} 
           isOpen={notesVisible}
+          pendingNote={pendingNote}
+          onNoteCreated={handleNoteCreated}
+          activeNoteId={activeNoteId}
+          onNoteClick={setActiveNoteId}
+          onClosePending={() => setPendingNote(null)}
         />
       </div>
 
