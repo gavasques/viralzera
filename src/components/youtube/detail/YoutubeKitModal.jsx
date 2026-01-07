@@ -195,7 +195,6 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
 
       // Parse JSON da resposta
       const content = response.content;
-      console.log('Raw AI response:', content);
       
       // Tenta encontrar JSON na resposta - pega o JSON mais externo
       let jsonMatch = content.match(/```json\s*([\s\S]*?)```/);
@@ -208,11 +207,7 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
       }
       
       if (jsonStr) {
-        console.log('JSON string found:', jsonStr.substring(0, 500) + '...');
-        
         const parsedKit = JSON.parse(jsonStr);
-        console.log('Parsed kit keys:', Object.keys(parsedKit));
-        console.log('Full parsed kit:', parsedKit);
         
         // Normalizar nomes de propriedades (IA pode usar variações)
         let rawThumbnails = parsedKit.ideias_thumbnail || parsedKit.thumbnails || parsedKit.thumbnail_ideas || parsedKit.ideias_thumbnails || parsedKit.ideas_thumbnail || [];
