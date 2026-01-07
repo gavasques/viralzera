@@ -102,11 +102,19 @@ export default function ScriptNotesPanel({
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
-    createMutation.mutate({
+    
+    const noteData = {
       script_id: scriptId,
       note: newNote.trim(),
       color: selectedColor
-    });
+    };
+
+    if (pendingNote) {
+      noteData.data_id = pendingNote.id;
+      noteData.quote = pendingNote.quote;
+    }
+
+    createMutation.mutate(noteData);
   };
 
   const handleStartEdit = (note) => {
