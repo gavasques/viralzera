@@ -33,7 +33,8 @@ import {
   Copy, 
   Download, 
   StickyNote, 
-  EyeOff 
+  EyeOff,
+  Eraser
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
