@@ -479,9 +479,10 @@ export default function YoutubeScriptSectionEditor({
             .comment-highlight { background-color: #fef08a; border-bottom: 2px solid #eab308; cursor: pointer; transition: background-color 0.2s; }
             .comment-highlight:hover { background-color: #fde047; }
             .comment-highlight.active { background-color: #fcd34d; }
+            .hide-highlights .comment-highlight { background-color: transparent !important; border-bottom: none !important; cursor: text !important; }
             `}</style>
             
-            <div className="flex-1 flex flex-col min-h-0">
+            <div className={`flex-1 flex flex-col min-h-0 ${!notesVisible ? 'hide-highlights' : ''}`}>
                 <ReactQuill
                     ref={quillRef}
                     theme="snow"
