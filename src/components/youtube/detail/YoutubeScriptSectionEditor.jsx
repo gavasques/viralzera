@@ -168,6 +168,8 @@ export default function YoutubeScriptSectionEditor({
   activeNoteId, // Currently active note ID for highlighting
   scriptId // Required for fetching note details
 }) {
+  console.log('🟢 ScriptSectionEditor mounted, scriptId:', scriptId);
+  
   const quillRef = useRef(null);
   const queryClient = useQueryClient();
   const [selection, setSelection] = useState(null);
@@ -177,7 +179,12 @@ export default function YoutubeScriptSectionEditor({
   // Fetch notes to display content in popover (deduped with ScriptNotesPanel)
   const { data: notes = [] } = useQuery({
     queryKey: ['script-notes', scriptId],
-    queryFn: () => base44.entities.ScriptNote.filter({ script_id: scriptId }),
+    queryFn: async () => {
+      console.log('🔍 Fetching notes for script:', scriptId);
+      const result = await base44.entities.ScriptNote.filter({ script_id: scriptId });
+      console.log('🔍 Fetched notes:', result);
+      return result;
+    },
     enabled: !!scriptId
   });
 
