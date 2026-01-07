@@ -263,12 +263,19 @@ export default function YoutubeScriptSectionEditor({
         
         // Find note data by data_id
         console.log('🔎 Looking for noteId:', noteId);
-        console.log('🔎 Notes in array:', notes.map(n => ({ id: n.id, data_id: n.data_id, note: n.note })));
+        console.log('🔎 Notes in array:', notes.map(n => ({ id: n.id, data_id: n.data_id, quote: n.quote, note: n.note })));
         
         const noteData = notes.find(n => n.data_id === noteId);
-        console.log('Found note data:', noteData);
+        console.log('🔎 Found note by data_id:', noteData);
         
-        if (noteData) {
+        // If not found by data_id, try by id (for backwards compatibility)
+        const noteFallback = !noteData ? notes.find(n => n.id === noteId) : null;
+        console.log('🔎 Found note by id (fallback):', noteFallback);
+        
+        const finalNoteData = noteData || noteFallback;
+        console.log('🔎 Final note data:', finalNoteData);
+        
+        if (finalNoteData) {
             // Notify parent to highlight in sidebar
             if (noteId && onNoteSelect) {
               console.log('Calling onNoteSelect with:', noteId);
@@ -279,7 +286,7 @@ export default function YoutubeScriptSectionEditor({
             const rect = target.getBoundingClientRect();
             setViewingNote({
                 id: noteId,
-                data: noteData,
+                data: finalNoteData,
                 position: {
                     x: rect.left + (rect.width / 2),
                     y: rect.top,
