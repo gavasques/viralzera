@@ -4,18 +4,28 @@ import 'react-quill/dist/quill.snow.css';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-// Custom Blot for Notes
+// Custom Blot for Notes - supports color via data-note-color attribute
 const Inline = Quill.import('blots/inline');
 class NoteBlot extends Inline {
   static create(value) {
     let node = super.create();
     node.setAttribute('class', 'script-note-highlight');
-    node.setAttribute('data-note-id', value);
+    // value can be string (id only) or object {id, color}
+    if (typeof value === 'object') {
+      node.setAttribute('data-note-id', value.id);
+      node.setAttribute('data-note-color', value.color || 'yellow');
+    } else {
+      node.setAttribute('data-note-id', value);
+      node.setAttribute('data-note-color', 'yellow');
+    }
     return node;
   }
 
   static formats(node) {
-    return node.getAttribute('data-note-id');
+    return {
+      id: node.getAttribute('data-note-id'),
+      color: node.getAttribute('data-note-color') || 'yellow'
+    };
   }
 }
 NoteBlot.blotName = 'note';
