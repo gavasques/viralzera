@@ -151,6 +151,13 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
     }
   };
 
+  const handleAddNote = () => {
+    if (onAddNote) {
+      onAddNote(selectedText);
+      onClose();
+    }
+  };
+
   const handleDiscard = () => {
     setGeneratedText(null);
     setIsReviewing(false);
