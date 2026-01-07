@@ -1,6 +1,25 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import ReactQuill from 'react-quill';
+import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+
+// Custom Blot for Notes
+const Inline = Quill.import('blots/inline');
+class NoteBlot extends Inline {
+  static create(value) {
+    let node = super.create();
+    node.setAttribute('class', 'script-note-highlight');
+    node.setAttribute('data-note-id', value);
+    return node;
+  }
+
+  static formats(node) {
+    return node.getAttribute('data-note-id');
+  }
+}
+NoteBlot.blotName = 'note';
+NoteBlot.tagName = 'span';
+NoteBlot.className = 'script-note-highlight';
+Quill.register(NoteBlot);
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -18,25 +37,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
-import Quill from 'quill';
-
-const Inline = Quill.import('blots/inline');
-
-class CommentBlot extends Inline {
-  static create(value) {
-    let node = super.create();
-    node.setAttribute('data-comment-id', value);
-    node.classList.add('comment-highlight');
-    return node;
-  }
-
-  static formats(node) {
-    return node.getAttribute('data-comment-id');
-  }
-}
-CommentBlot.blotName = 'comment';
-CommentBlot.tagName = 'span';
-Quill.register(CommentBlot);
 
 const VIDEO_TYPE_COLORS = {
   tutorial: "bg-blue-100 text-blue-700",
@@ -155,45 +155,10 @@ export default function YoutubeScriptSectionEditor({
   hasChanges,
   onChatToggle,
   notesVisible,
-  onToggleNotes,
-  onAddNote,
-  onCommentSelect,
-  noteToHighlight,
-  activeNoteId
+  onToggleNotes
 }) {
   const quillRef = useRef(null);
   const [selection, setSelection] = useState(null);
-
-  // Scroll to active note and highlight
-  useEffect(() => {
-    if (activeNoteId && quillRef.current) {
-      const editor = quillRef.current.getEditor();
-      const root = editor.root;
-      // Remove active class from all
-      const allComments = root.querySelectorAll('.comment-highlight.active');
-      allComments.forEach(el => el.classList.remove('active'));
-
-      // Find target
-      const target = root.querySelector(`.comment-highlight[data-comment-id="${activeNoteId}"]`);
-      if (target) {
-        target.classList.add('active');
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [activeNoteId]);
-
-  // Apply comment highlight when noteToHighlight changes
-  useEffect(() => {
-    if (noteToHighlight && quillRef.current) {
-      const { id, range } = noteToHighlight;
-      const editor = quillRef.current.getEditor();
-      if (range && range.length > 0) {
-        editor.formatText(range.index, range.length, 'comment', id);
-        // Clear selection to remove blue highlight and show yellow
-        editor.setSelection(null);
-      }
-    }
-  }, [noteToHighlight]);
 
   // Handle selection change
   const handleSelectionChange = (range, source, editorProxy) => {
@@ -204,25 +169,7 @@ export default function YoutubeScriptSectionEditor({
         
         if (!text.trim()) {
            setSelection(null);
-           
-           // Check if we clicked on a comment (cursor placement)
-           if (range.length === 0 && onCommentSelect) {
-             const quill = quillRef.current.getEditor();
-             const formats = quill.getFormat(range.index);
-             if (formats.comment) {
-               onCommentSelect(formats.comment);
-             } else {
-               onCommentSelect(null);
-             }
-           }
            return;
-        }
-
-        // Check if selection overlaps with existing comment
-        const quill = quillRef.current.getEditor();
-        const formats = quill.getFormat(range.index, range.length);
-        if (formats.comment && onCommentSelect) {
-             onCommentSelect(formats.comment);
         }
 
         // Get bounds using real Quill instance to ensure access to container
@@ -476,13 +423,9 @@ export default function YoutubeScriptSectionEditor({
             .ql-editor h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #334155; }
             .ql-editor p { margin-bottom: 0.75rem; }
             .ql-editor blockquote { border-left: 4px solid #e2e8f0; padding-left: 1rem; color: #64748b; font-style: italic; }
-            .comment-highlight { background-color: #fef08a; border-bottom: 2px solid #eab308; cursor: pointer; transition: background-color 0.2s; }
-            .comment-highlight:hover { background-color: #fde047; }
-            .comment-highlight.active { background-color: #fcd34d; }
-            .hide-highlights .comment-highlight { background-color: transparent !important; border-bottom: none !important; cursor: text !important; }
             `}</style>
             
-            <div className={`flex-1 flex flex-col min-h-0 ${!notesVisible ? 'hide-highlights' : ''}`}>
+            <div className="flex-1 flex flex-col min-h-0">
                 <ReactQuill
                     ref={quillRef}
                     theme="snow"
@@ -510,7 +453,6 @@ export default function YoutubeScriptSectionEditor({
             onClose={() => setSelection(null)}
             onReplaceText={handleReplaceText}
             onInsertBelow={handleInsertBelow}
-            onAddNote={() => onAddNote?.({ text: selection.text, range: selection.range })}
             fullContent={content}
             scriptTitle={scriptTitle}
             />
