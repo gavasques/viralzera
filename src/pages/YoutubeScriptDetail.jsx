@@ -239,6 +239,18 @@ export default function YoutubeScriptDetail() {
     toast.success('Conteúdo inserido');
   };
 
+  // Handle Note Creation from Editor
+  const handleAddNote = (noteId, quote) => {
+    setPendingNote({ id: noteId, quote });
+    setNotesVisible(true);
+    // Remove pending after a while or handle in panel
+  };
+
+  const handleNoteSelect = (noteId) => {
+    setActiveNoteId(noteId);
+    setNotesVisible(true);
+  };
+
   // Handle restore version
   const handleRestoreVersion = async (version) => {
     // 1. Save current state as backup
