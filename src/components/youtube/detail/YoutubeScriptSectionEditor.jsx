@@ -18,6 +18,25 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
+import Quill from 'quill';
+
+const Inline = Quill.import('blots/inline');
+
+class CommentBlot extends Inline {
+  static create(value) {
+    let node = super.create();
+    node.setAttribute('data-comment-id', value);
+    node.classList.add('comment-highlight');
+    return node;
+  }
+
+  static formats(node) {
+    return node.getAttribute('data-comment-id');
+  }
+}
+CommentBlot.blotName = 'comment';
+CommentBlot.tagName = 'span';
+Quill.register(CommentBlot);
 
 const VIDEO_TYPE_COLORS = {
   tutorial: "bg-blue-100 text-blue-700",
@@ -136,10 +155,26 @@ export default function YoutubeScriptSectionEditor({
   hasChanges,
   onChatToggle,
   notesVisible,
-  onToggleNotes
+  onToggleNotes,
+  onAddNote,
+  onCommentSelect,
+  noteToHighlight
 }) {
   const quillRef = useRef(null);
   const [selection, setSelection] = useState(null);
+
+  // Apply comment highlight when noteToHighlight changes
+  useEffect(() => {
+    if (noteToHighlight && quillRef.current) {
+      const { id, range } = noteToHighlight;
+      const editor = quillRef.current.getEditor();
+      if (range && range.length > 0) {
+        editor.formatText(range.index, range.length, 'comment', id);
+        // Clear selection to remove blue highlight and show yellow
+        editor.setSelection(null);
+      }
+    }
+  }, [noteToHighlight]);
 
   // Handle selection change
   const handleSelectionChange = (range, source, editorProxy) => {
@@ -150,7 +185,25 @@ export default function YoutubeScriptSectionEditor({
         
         if (!text.trim()) {
            setSelection(null);
+           
+           // Check if we clicked on a comment (cursor placement)
+           if (range.length === 0 && onCommentSelect) {
+             const quill = quillRef.current.getEditor();
+             const formats = quill.getFormat(range.index);
+             if (formats.comment) {
+               onCommentSelect(formats.comment);
+             } else {
+               onCommentSelect(null);
+             }
+           }
            return;
+        }
+
+        // Check if selection overlaps with existing comment
+        const quill = quillRef.current.getEditor();
+        const formats = quill.getFormat(range.index, range.length);
+        if (formats.comment && onCommentSelect) {
+             onCommentSelect(formats.comment);
         }
 
         // Get bounds using real Quill instance to ensure access to container
@@ -404,6 +457,9 @@ export default function YoutubeScriptSectionEditor({
             .ql-editor h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #334155; }
             .ql-editor p { margin-bottom: 0.75rem; }
             .ql-editor blockquote { border-left: 4px solid #e2e8f0; padding-left: 1rem; color: #64748b; font-style: italic; }
+            .comment-highlight { background-color: #fef08a; border-bottom: 2px solid #eab308; cursor: pointer; transition: background-color 0.2s; }
+            .comment-highlight:hover { background-color: #fde047; }
+            .comment-highlight.active { background-color: #fcd34d; }
             `}</style>
             
             <div className="flex-1 flex flex-col min-h-0">
@@ -434,6 +490,7 @@ export default function YoutubeScriptSectionEditor({
             onClose={() => setSelection(null)}
             onReplaceText={handleReplaceText}
             onInsertBelow={handleInsertBelow}
+            onAddNote={() => onAddNote?.({ text: selection.text, range: selection.range })}
             fullContent={content}
             scriptTitle={scriptTitle}
             />
