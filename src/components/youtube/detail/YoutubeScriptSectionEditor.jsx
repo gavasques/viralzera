@@ -361,15 +361,15 @@ export default function YoutubeScriptSectionEditor({
     };
   }, [onNoteSelect, notes]);
 
-  const handleAddNoteInternal = (selectedText) => {
+  const handleAddNoteInternal = (selectedText, color = 'yellow') => {
     if (quillRef.current && selection) {
       const editor = quillRef.current.getEditor();
       const noteId = crypto.randomUUID();
       
-      console.log('🟡 Creating note with ID:', noteId, 'for text:', selectedText);
+      console.log('🟡 Creating note with ID:', noteId, 'color:', color, 'for text:', selectedText);
       
-      // Apply format
-      editor.formatText(selection.range.index, selection.range.length, 'note', noteId);
+      // Apply format with color
+      editor.formatText(selection.range.index, selection.range.length, 'note', { id: noteId, color });
       
       // Get updated HTML and log it
       const newHtml = editor.root.innerHTML;
@@ -380,7 +380,7 @@ export default function YoutubeScriptSectionEditor({
       
       // Notify parent
       if (onAddNote) {
-        onAddNote(noteId, selectedText);
+        onAddNote(noteId, selectedText, color);
       }
       
       setSelection(null);
