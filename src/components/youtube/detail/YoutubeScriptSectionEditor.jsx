@@ -389,13 +389,14 @@ export default function YoutubeScriptSectionEditor({
   const handleAddNoteInternal = (selectedText, color = 'yellow') => {
     console.log('🟡 handleAddNoteInternal called:', { selectedText: selectedText?.substring(0, 30), color });
     
-    // Use ref as fallback if state selection was lost
-    const currentSelection = selection || selectionRef.current;
+    // Use ref as primary source since state might have been cleared
+    const currentSelection = selectionRef.current || selection;
     
     console.log('🟡 Current selection state:', selection ? 'exists' : 'null');
     console.log('🟡 Selection ref:', selectionRef.current ? 'exists' : 'null');
+    console.log('🟡 Using currentSelection:', currentSelection ? 'exists' : 'null');
     
-    if (quillRef.current && currentSelection) {
+    if (quillRef.current && currentSelection && currentSelection.range) {
       const editor = quillRef.current.getEditor();
       const noteId = crypto.randomUUID();
       
@@ -419,7 +420,8 @@ export default function YoutubeScriptSectionEditor({
       setSelection(null);
       selectionRef.current = null;
     } else {
-      console.error('🔴 No selection available for adding note. quillRef:', !!quillRef.current, 'currentSelection:', !!currentSelection);
+      console.error('🔴 No selection available for adding note. quillRef:', !!quillRef.current, 'currentSelection:', !!currentSelection, 'range:', currentSelection?.range);
+      toast.error('Selecione um texto antes de adicionar uma nota');
     }
   };
 
