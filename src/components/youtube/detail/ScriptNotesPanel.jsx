@@ -45,7 +45,8 @@ export default function ScriptNotesPanel({
   isOpen, 
   pendingNote, 
   onNoteCreated,
-  activeNoteId 
+  activeNoteId,
+  onUpdateHighlightColor // callback to update highlight color in editor
 }) {
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState('');
