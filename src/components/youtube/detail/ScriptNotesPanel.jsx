@@ -155,10 +155,15 @@ export default function ScriptNotesPanel({
         
         {/* Add new note */}
         <div className="space-y-2">
+          {pendingNote && (
+            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-500 italic mb-2 border-l-2 border-l-amber-400">
+              "{(pendingNote.quote.length > 50 ? pendingNote.quote.substring(0, 50) + '...' : pendingNote.quote)}"
+            </div>
+          )}
           <Textarea
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
-            placeholder="Adicionar uma nota..."
+            placeholder={pendingNote ? "Escreva a nota sobre o trecho selecionado..." : "Adicionar uma nota..."}
             className="min-h-[60px] text-sm resize-none"
           />
           <div className="flex items-center justify-between">
