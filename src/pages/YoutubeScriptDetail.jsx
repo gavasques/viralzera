@@ -421,6 +421,9 @@ export default function YoutubeScriptDetail() {
         <ScriptNotesPanel 
           scriptId={scriptId} 
           isOpen={notesVisible}
+          pendingNote={pendingNote}
+          onNoteCreated={() => setPendingNote(null)}
+          activeNoteId={activeNoteId}
         />
       </div>
 
