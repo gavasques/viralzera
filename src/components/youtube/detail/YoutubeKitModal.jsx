@@ -47,30 +47,20 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [selectedVersionId, setSelectedVersionId] = useState(null);
 
-  // Debug log
-  console.log('YoutubeKitModal props:', { scriptId, open });
-
   // Buscar versões salvas do kit
   const { data: kitVersions = [], isLoading: isLoadingVersions, refetch: refetchVersions } = useQuery({
     queryKey: ['youtube-kit-versions', scriptId],
-    queryFn: async () => {
-      console.log('Fetching kit versions for scriptId:', scriptId);
-      const result = await base44.entities.YoutubeKitVersion.filter(
-        { script_id: scriptId },
-        '-created_date'
-      );
-      console.log('Kit versions fetched:', result);
-      return result;
-    },
+    queryFn: () => base44.entities.YoutubeKitVersion.filter(
+      { script_id: scriptId },
+      '-created_date'
+    ),
     enabled: open && !!scriptId
   });
 
   // Carregar última versão ao abrir (apenas se já terminou de buscar e tem versões)
   useEffect(() => {
-    console.log('Version load effect:', { open, isLoadingVersions, kitVersionsLength: kitVersions.length, kit, selectedVersionId });
     if (open && !isLoadingVersions && kitVersions.length > 0 && !kit && !selectedVersionId) {
       const latestVersion = kitVersions[0];
-      console.log('Loading latest version:', latestVersion);
       setKit({
         titulos: latestVersion.titulos || [],
         ideias_thumbnail: latestVersion.ideias_thumbnail || [],
