@@ -423,8 +423,18 @@ export default function YoutubeScriptSectionEditor({
     }
   };
 
+  // Track if we should ignore next selection clear (e.g., when clicking note button)
+  const ignoreNextSelectionClear = useRef(false);
+
   // Handle selection change
   const handleSelectionChange = (range, source, editorProxy) => {
+    // If we should ignore clearing, reset flag and skip
+    if (ignoreNextSelectionClear.current && (!range || range.length === 0)) {
+      console.log('🔵 Ignoring selection clear');
+      ignoreNextSelectionClear.current = false;
+      return;
+    }
+
     // Only update if we have a valid range (ignore blur/null range to keep popover open)
     if (range) {
       if (range.length > 0) {
@@ -442,7 +452,7 @@ export default function YoutubeScriptSectionEditor({
           const editorContainer = quill.container;
           const editorRect = editorContainer.getBoundingClientRect();
           
-          setSelection({
+          const newSelection = {
             range,
             text,
             position: {
@@ -450,7 +460,10 @@ export default function YoutubeScriptSectionEditor({
               y: editorRect.top + bounds.top,
               bottom: editorRect.top + bounds.bottom
             }
-          });
+          };
+          
+          setSelection(newSelection);
+          selectionRef.current = newSelection; // Also update ref immediately
         } catch (e) {
           console.error("Error getting bounds:", e);
         }
