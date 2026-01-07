@@ -251,6 +251,26 @@ export default function YoutubeScriptDetail() {
     setNotesVisible(true);
   };
 
+  // Handle note deletion - remove highlight from content HTML
+  const handleDeleteNoteHighlight = (dataId) => {
+    if (!dataId) return;
+    
+    // Create a temporary DOM element to manipulate the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    
+    // Find and remove the highlight span
+    const highlightSpan = tempDiv.querySelector(`.script-note-highlight[data-note-id="${dataId}"]`);
+    if (highlightSpan) {
+      // Replace the span with its text content
+      const textNode = document.createTextNode(highlightSpan.textContent);
+      highlightSpan.parentNode.replaceChild(textNode, highlightSpan);
+      
+      // Update content state
+      setContent(tempDiv.innerHTML);
+    }
+  };
+
   // Handle restore version
   const handleRestoreVersion = async (version) => {
     // 1. Save current state as backup
