@@ -198,10 +198,38 @@ export default function YoutubeScriptSectionEditor({
     enabled: !!scriptId
   });
 
+  // Function to remove highlight from editor by data_id
+  const removeHighlightFromEditor = (dataId) => {
+    if (!quillRef.current) return;
+    
+    const editor = quillRef.current.getEditor();
+    const root = editor.root;
+    
+    // Find the highlight span with this data-note-id
+    const highlightSpan = root.querySelector(`.script-note-highlight[data-note-id="${dataId}"]`);
+    
+    if (highlightSpan) {
+      // Replace the span with its text content
+      const textContent = highlightSpan.textContent;
+      const textNode = document.createTextNode(textContent);
+      highlightSpan.parentNode.replaceChild(textNode, highlightSpan);
+      
+      // Update the content in parent
+      const newHtml = editor.root.innerHTML;
+      onChange(sectionKey, newHtml);
+    }
+  };
+
   // Delete note mutation
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.ScriptNote.delete(id),
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
+      // Find the note to get its data_id before invalidating
+      const deletedNote = notes.find(n => n.id === deletedId);
+      if (deletedNote?.data_id) {
+        removeHighlightFromEditor(deletedNote.data_id);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
       setViewingNote(null);
       toast.success('Nota removida');
