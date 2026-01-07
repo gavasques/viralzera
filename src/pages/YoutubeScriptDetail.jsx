@@ -410,6 +410,9 @@ export default function YoutubeScriptDetail() {
               // Notes & Actions props
               notesVisible={notesVisible}
               onToggleNotes={() => setNotesVisible(!notesVisible)}
+              onAddNote={handleAddNote}
+              onNoteSelect={handleNoteSelect}
+              activeNoteId={activeNoteId}
             />
           </div>
         </div>
