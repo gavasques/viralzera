@@ -64,6 +64,18 @@ export default function ScriptNotesPanel({
     }
   }, [pendingNote]);
 
+  // Scroll to active note
+  React.useEffect(() => {
+    if (activeNoteId) {
+      setTimeout(() => {
+        const element = document.getElementById(`note-${activeNoteId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  }, [activeNoteId]);
+
   // Fetch notes
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['script-notes', scriptId],
