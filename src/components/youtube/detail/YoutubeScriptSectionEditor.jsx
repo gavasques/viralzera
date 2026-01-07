@@ -375,15 +375,28 @@ export default function YoutubeScriptSectionEditor({
     };
   }, [onNoteSelect, notes, notesVisible]);
 
+  // Store selection ref to persist it even when state changes
+  const selectionRef = useRef(null);
+  
+  // Update ref whenever selection changes
+  useEffect(() => {
+    if (selection) {
+      selectionRef.current = selection;
+    }
+  }, [selection]);
+
   const handleAddNoteInternal = (selectedText, color = 'yellow') => {
-    if (quillRef.current && selection) {
+    // Use ref as fallback if state selection was lost
+    const currentSelection = selection || selectionRef.current;
+    
+    if (quillRef.current && currentSelection) {
       const editor = quillRef.current.getEditor();
       const noteId = crypto.randomUUID();
       
       console.log('🟡 Creating note with ID:', noteId, 'color:', color, 'for text:', selectedText);
       
       // Apply format with color
-      editor.formatText(selection.range.index, selection.range.length, 'note', { id: noteId, color });
+      editor.formatText(currentSelection.range.index, currentSelection.range.length, 'note', { id: noteId, color });
       
       // Get updated HTML and log it
       const newHtml = editor.root.innerHTML;
@@ -398,6 +411,9 @@ export default function YoutubeScriptSectionEditor({
       }
       
       setSelection(null);
+      selectionRef.current = null;
+    } else {
+      console.error('🔴 No selection available for adding note');
     }
   };
 
