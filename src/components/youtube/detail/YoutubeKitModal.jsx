@@ -178,10 +178,6 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         userMessage += `\n\n---\n\nNenhum template selecionado. Gere a descrição livremente, otimizada para SEO do YouTube.`;
       }
       
-      console.log('System prompt:', systemPrompt);
-      console.log('User message:', userMessage);
-      console.log('Template content:', templateContent);
-
       const response = await sendMessage({
         model: config.model,
         messages: [
