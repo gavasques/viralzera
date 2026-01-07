@@ -240,12 +240,10 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
             : [];
         }
         
-        console.log('Final normalized kit:', normalizedKit);
         setKit(normalizedKit);
         
         // Salvar versão no banco
         if (scriptId) {
-          console.log('Saving kit version for scriptId:', scriptId);
           try {
             const savedVersion = await base44.entities.YoutubeKitVersion.create({
               script_id: scriptId,
@@ -255,11 +253,10 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
               tags_seo: normalizedKit.tags_seo,
               template_id: selectedTemplateId !== 'none' ? selectedTemplateId : null
             });
-            console.log('Kit version saved:', savedVersion);
             setSelectedVersionId(savedVersion.id);
             queryClient.invalidateQueries({ queryKey: ['youtube-kit-versions', scriptId] });
           } catch (saveError) {
-            console.error('Error saving kit version:', saveError);
+            // Silently fail - kit was still generated successfully
           }
         }
         
