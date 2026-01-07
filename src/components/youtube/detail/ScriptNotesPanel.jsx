@@ -111,8 +111,15 @@ export default function ScriptNotesPanel({
 
   // Delete note
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ScriptNote.delete(id),
-    onSuccess: () => {
+    mutationFn: async (note) => {
+      await base44.entities.ScriptNote.delete(note.id);
+      return note; // Return the note so we can access data_id in onSuccess
+    },
+    onSuccess: (deletedNote) => {
+      // Notify parent to remove highlight from editor
+      if (deletedNote?.data_id && onDeleteNote) {
+        onDeleteNote(deletedNote.data_id);
+      }
       queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
       toast.success('Nota removida');
     }
