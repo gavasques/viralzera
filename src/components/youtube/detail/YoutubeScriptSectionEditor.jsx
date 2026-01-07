@@ -546,6 +546,7 @@ export default function YoutubeScriptSectionEditor({
             onClose={() => setSelection(null)}
             onReplaceText={handleReplaceText}
             onInsertBelow={handleInsertBelow}
+            onAddNote={handleAddNoteInternal}
             fullContent={content}
             scriptTitle={scriptTitle}
             />
