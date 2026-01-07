@@ -445,6 +445,7 @@ export default function YoutubeScriptDetail() {
           pendingNote={pendingNote}
           onNoteCreated={() => setPendingNote(null)}
           activeNoteId={activeNoteId}
+          onDeleteNote={handleDeleteNoteHighlight}
         />
       </div>
 
