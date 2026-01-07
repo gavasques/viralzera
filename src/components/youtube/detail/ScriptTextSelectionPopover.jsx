@@ -313,6 +313,16 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
             <Wand2 className="w-3.5 h-3.5" />
             Pedir algo específico...
           </button>
+          
+          <div className="w-px h-5 bg-slate-200 mx-1" />
+          
+          <button
+            onClick={handleAddNote}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-50 rounded-md transition-colors whitespace-nowrap"
+          >
+            <StickyNote className="w-3.5 h-3.5" />
+            Adicionar Nota
+          </button>
         </div>
       )}
     </div>,
