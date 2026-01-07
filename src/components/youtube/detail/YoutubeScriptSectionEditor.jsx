@@ -155,10 +155,103 @@ export default function YoutubeScriptSectionEditor({
   hasChanges,
   onChatToggle,
   notesVisible,
-  onToggleNotes
+  onToggleNotes,
+  onAddNote, // Function to notify parent about new note creation
+  onNoteSelect, // Function to notify parent about note selection
+  activeNoteId // Currently active note ID for highlighting
 }) {
   const quillRef = useRef(null);
   const [selection, setSelection] = useState(null);
+  const editorRef = useRef(null);
+
+  // Custom styles for notes
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .script-note-highlight {
+        background-color: #fef08a; /* yellow-200 */
+        cursor: pointer;
+        border-bottom: 2px solid #eab308; /* yellow-500 */
+        transition: background-color 0.2s;
+      }
+      .script-note-highlight:hover {
+        background-color: #fde047; /* yellow-300 */
+      }
+      .script-note-highlight[data-active="true"] {
+        background-color: #fcd34d; /* yellow-400 */
+        border-bottom-color: #ca8a04; /* yellow-600 */
+      }
+      /* Hide notes when toggled off */
+      .hide-notes .script-note-highlight {
+        background-color: transparent !important;
+        border-bottom: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  // Update active status of notes
+  useEffect(() => {
+    if (!quillRef.current) return;
+    const editor = quillRef.current.getEditor();
+    const root = editor.root;
+    
+    // Reset all
+    const notes = root.querySelectorAll('.script-note-highlight');
+    notes.forEach(node => node.removeAttribute('data-active'));
+
+    // Set active
+    if (activeNoteId) {
+      const activeNode = root.querySelector(`.script-note-highlight[data-note-id="${activeNoteId}"]`);
+      if (activeNode) {
+        activeNode.setAttribute('data-active', 'true');
+        // Optional: Scroll to view?
+        // activeNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [activeNoteId, content]);
+
+  // Handle note clicks
+  useEffect(() => {
+    const handleClick = (e) => {
+      const target = e.target;
+      if (target.classList.contains('script-note-highlight')) {
+        const noteId = target.getAttribute('data-note-id');
+        if (noteId && onNoteSelect) {
+          onNoteSelect(noteId);
+        }
+      }
+    };
+
+    const editorContainer = document.querySelector('.ql-editor');
+    if (editorContainer) {
+      editorContainer.addEventListener('click', handleClick);
+    }
+
+    return () => {
+      if (editorContainer) {
+        editorContainer.removeEventListener('click', handleClick);
+      }
+    };
+  }, [onNoteSelect]);
+
+  const handleAddNoteInternal = (selectedText) => {
+    if (quillRef.current && selection) {
+      const editor = quillRef.current.getEditor();
+      const noteId = crypto.randomUUID();
+      
+      // Apply format
+      editor.formatText(selection.range.index, selection.range.length, 'note', noteId);
+      
+      // Notify parent
+      if (onAddNote) {
+        onAddNote(noteId, selectedText);
+      }
+      
+      setSelection(null);
+    }
+  };
 
   // Handle selection change
   const handleSelectionChange = (range, source, editorProxy) => {
