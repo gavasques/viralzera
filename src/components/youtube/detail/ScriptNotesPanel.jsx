@@ -46,7 +46,7 @@ export default function ScriptNotesPanel({
   pendingNote, 
   onNoteCreated,
   activeNoteId,
-  onUpdateHighlightColor // callback to update highlight color in editor
+  onDeleteNote // callback to remove highlight from editor when note is deleted
 }) {
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState('');
