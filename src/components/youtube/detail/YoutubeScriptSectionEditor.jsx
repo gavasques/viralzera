@@ -211,22 +211,57 @@ export default function YoutubeScriptSectionEditor({
     }
   });
 
-  // Custom styles for notes
+  // Custom styles for notes with color support
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
       .script-note-highlight {
-        background-color: #fef08a; /* yellow-200 */
         cursor: pointer;
-        border-bottom: 2px solid #eab308; /* yellow-500 */
         transition: background-color 0.2s;
       }
-      .script-note-highlight:hover {
-        background-color: #fde047; /* yellow-300 */
+      /* Yellow (default) */
+      .script-note-highlight[data-note-color="yellow"] {
+        background-color: #fef08a;
+        border-bottom: 2px solid #eab308;
       }
+      .script-note-highlight[data-note-color="yellow"]:hover {
+        background-color: #fde047;
+      }
+      /* Blue */
+      .script-note-highlight[data-note-color="blue"] {
+        background-color: #bfdbfe;
+        border-bottom: 2px solid #3b82f6;
+      }
+      .script-note-highlight[data-note-color="blue"]:hover {
+        background-color: #93c5fd;
+      }
+      /* Green */
+      .script-note-highlight[data-note-color="green"] {
+        background-color: #bbf7d0;
+        border-bottom: 2px solid #22c55e;
+      }
+      .script-note-highlight[data-note-color="green"]:hover {
+        background-color: #86efac;
+      }
+      /* Red */
+      .script-note-highlight[data-note-color="red"] {
+        background-color: #fecaca;
+        border-bottom: 2px solid #ef4444;
+      }
+      .script-note-highlight[data-note-color="red"]:hover {
+        background-color: #fca5a5;
+      }
+      /* Purple */
+      .script-note-highlight[data-note-color="purple"] {
+        background-color: #e9d5ff;
+        border-bottom: 2px solid #a855f7;
+      }
+      .script-note-highlight[data-note-color="purple"]:hover {
+        background-color: #d8b4fe;
+      }
+      /* Active state */
       .script-note-highlight[data-active="true"] {
-        background-color: #fcd34d; /* yellow-400 */
-        border-bottom-color: #ca8a04; /* yellow-600 */
+        filter: brightness(0.9);
       }
       /* Hide notes when toggled off */
       .hide-notes .script-note-highlight {
