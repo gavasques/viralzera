@@ -160,7 +160,7 @@ export default function ScriptNotesPanel({
 
   const confirmDelete = () => {
     if (noteToDelete) {
-      deleteMutation.mutate(noteToDelete.id);
+      deleteMutation.mutate(noteToDelete); // Pass entire note object
     }
     setDeleteDialogOpen(false);
     setNoteToDelete(null);
