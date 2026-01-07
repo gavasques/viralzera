@@ -59,17 +59,20 @@ export default function ScriptTextSelectionPopover({
     }
   }, [showCustomInput]);
 
-  // Close on click outside
+  // Close on click outside - but NOT when clicking color picker
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        onClose();
+        // Don't close if we're showing note colors (user is picking a color)
+        if (!showNoteColors) {
+          onClose();
+        }
       }
     };
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
+  }, [onClose, showNoteColors]);
 
   const handleAction = async (actionPrompt) => {
     if (isLoading) return;
