@@ -78,6 +78,7 @@ export default function ScriptNotesPanel({
       queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
       setNewNote('');
       toast.success('Nota adicionada');
+      if (onNoteCreated) onNoteCreated();
     }
   });
 
