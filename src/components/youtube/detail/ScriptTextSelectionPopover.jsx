@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
-import { Sparkles, Wand2, ArrowRight, Loader2, Check, X, ArrowDown } from "lucide-react";
+import { Sparkles, Wand2, ArrowRight, Loader2, Check, X, ArrowDown, StickyNote } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ export default function ScriptTextSelectionPopover({
   onClose,
   onReplaceText,
   onInsertBelow,
+  onAddNote,
   fullContent,
   scriptTitle
 }) {
@@ -304,6 +305,17 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
           >
             <Wand2 className="w-3.5 h-3.5" />
             Pedir algo específico...
+          </button>
+          <div className="w-px h-4 bg-slate-200 mx-1" />
+          <button
+            onClick={() => {
+              onAddNote?.();
+              onClose();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-50 rounded-md transition-colors whitespace-nowrap"
+          >
+            <StickyNote className="w-3.5 h-3.5" />
+            Nota
           </button>
         </div>
       )}
