@@ -54,6 +54,15 @@ export default function ScriptNotesPanel({
   const [editingText, setEditingText] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
+  
+  // Auto-focus and prep for new note when pendingNote changes
+  React.useEffect(() => {
+    if (pendingNote) {
+      // Focus textarea
+      const textarea = document.querySelector('textarea[placeholder="Adicionar uma nota..."]');
+      if (textarea) textarea.focus();
+    }
+  }, [pendingNote]);
 
   // Fetch notes
   const { data: notes = [], isLoading } = useQuery({
