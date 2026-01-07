@@ -112,7 +112,7 @@ export default function YoutubeScriptCard({ script, onClick, onDelete }) {
           {/* Categories */}
           {script.categoria && (
             <div className="flex flex-wrap gap-1.5">
-               <Badge variant="outline" className={`text-[10px] px-2 py-0.5 h-5 border bg-white ${CATEGORIA_COLORS[script.categoria] || CATEGORIA_COLORS["Outros"]}`}>
+               <Badge variant="outline" className={`text-[10px] px-2 py-0.5 h-5 border ${CATEGORIA_COLORS[script.categoria] || CATEGORIA_COLORS["Outros"]}`}>
                 {script.categoria}
               </Badge>
             </div>
