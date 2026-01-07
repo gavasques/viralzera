@@ -240,8 +240,8 @@ export default function YoutubeScriptDetail() {
   };
 
   // Handle Note Creation from Editor
-  const handleAddNote = (noteId, quote) => {
-    setPendingNote({ id: noteId, quote });
+  const handleAddNote = (noteId, quote, color = 'yellow') => {
+    setPendingNote({ id: noteId, quote, color });
     setNotesVisible(true);
     // Remove pending after a while or handle in panel
   };
