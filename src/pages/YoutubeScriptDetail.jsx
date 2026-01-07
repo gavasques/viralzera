@@ -43,10 +43,6 @@ export default function YoutubeScriptDetail() {
   const [initialData, setInitialData] = useState(null);
   const [notesVisible, setNotesVisible] = useState(false);
   
-  // Notes State
-  const [pendingNote, setPendingNote] = useState(null);
-  const [activeNoteId, setActiveNoteId] = useState(null);
-
   // Drawers & Modals state
   const [refinerOpen, setRefinerOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -239,38 +235,6 @@ export default function YoutubeScriptDetail() {
     toast.success('Conteúdo inserido');
   };
 
-  // Handle Note Creation from Editor
-  const handleAddNote = (noteId, quote, color = 'yellow') => {
-    setPendingNote({ id: noteId, quote, color });
-    setNotesVisible(true);
-    // Remove pending after a while or handle in panel
-  };
-
-  const handleNoteSelect = (noteId) => {
-    setActiveNoteId(noteId);
-    setNotesVisible(true);
-  };
-
-  // Handle note deletion - remove highlight from content HTML
-  const handleDeleteNoteHighlight = (dataId) => {
-    if (!dataId) return;
-    
-    // Create a temporary DOM element to manipulate the HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = content;
-    
-    // Find and remove the highlight span
-    const highlightSpan = tempDiv.querySelector(`.script-note-highlight[data-note-id="${dataId}"]`);
-    if (highlightSpan) {
-      // Replace the span with its text content
-      const textNode = document.createTextNode(highlightSpan.textContent);
-      highlightSpan.parentNode.replaceChild(textNode, highlightSpan);
-      
-      // Update content state
-      setContent(tempDiv.innerHTML);
-    }
-  };
-
   // Handle restore version
   const handleRestoreVersion = async (version) => {
     // 1. Save current state as backup
@@ -420,7 +384,6 @@ export default function YoutubeScriptDetail() {
               onChange={(_, val) => setContent(val)}
               onOpenRefiner={handleOpenRefiner}
               scriptTitle={title}
-              scriptId={scriptId}
               // Toolbar props
               videoType={script?.video_type}
               status={script?.status}
@@ -431,9 +394,6 @@ export default function YoutubeScriptDetail() {
               // Notes & Actions props
               notesVisible={notesVisible}
               onToggleNotes={() => setNotesVisible(!notesVisible)}
-              onAddNote={handleAddNote}
-              onNoteSelect={handleNoteSelect}
-              activeNoteId={activeNoteId}
             />
           </div>
         </div>
@@ -442,10 +402,6 @@ export default function YoutubeScriptDetail() {
         <ScriptNotesPanel 
           scriptId={scriptId} 
           isOpen={notesVisible}
-          pendingNote={pendingNote}
-          onNoteCreated={() => setPendingNote(null)}
-          activeNoteId={activeNoteId}
-          onDeleteNote={handleDeleteNoteHighlight}
         />
       </div>
 

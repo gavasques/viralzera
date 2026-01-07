@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
-import { Sparkles, Wand2, ArrowRight, Loader2, Check, X, ArrowDown, StickyNote } from "lucide-react";
+import { Sparkles, Wand2, ArrowRight, Loader2, Check, X, ArrowDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -14,22 +14,12 @@ const QUICK_ACTIONS = [
   { id: 'rewrite', label: 'Reescrever', prompt: 'Reescreva este trecho de forma diferente' },
 ];
 
-const NOTE_COLORS = ['yellow', 'blue', 'green', 'red', 'purple'];
-const NOTE_COLOR_CLASSES = {
-  yellow: 'bg-yellow-400',
-  blue: 'bg-blue-400',
-  green: 'bg-green-400',
-  red: 'bg-red-400',
-  purple: 'bg-purple-400',
-};
-
 export default function ScriptTextSelectionPopover({ 
   selectedText, 
   position, 
   onClose,
   onReplaceText,
   onInsertBelow,
-  onAddNote,
   fullContent,
   scriptTitle
 }) {
@@ -38,7 +28,6 @@ export default function ScriptTextSelectionPopover({
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [generatedText, setGeneratedText] = useState(null);
   const [isReviewing, setIsReviewing] = useState(false);
-  const [showNoteColors, setShowNoteColors] = useState(false);
   const popoverRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -59,28 +48,17 @@ export default function ScriptTextSelectionPopover({
     }
   }, [showCustomInput]);
 
-  // Track if user clicked on color picker
-  const clickedColorPicker = useRef(false);
-
-  // Close on click outside - but NOT when clicking color picker
+  // Close on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      // Skip if clicked inside color picker or popover
-      if (popoverRef.current && popoverRef.current.contains(e.target)) {
-        return;
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        onClose();
       }
-      
-      // Don't close if color picker is visible
-      if (showNoteColors) {
-        return;
-      }
-      
-      onClose();
     };
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose, showNoteColors]);
+  }, [onClose]);
 
   const handleAction = async (actionPrompt) => {
     if (isLoading) return;
@@ -169,23 +147,6 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
       onInsertBelow(generatedText);
       toast.success('Texto adicionado abaixo!');
       onClose();
-    }
-  };
-
-  const handleAddNote = (color = 'yellow') => {
-    console.log('🟡 ScriptTextSelectionPopover.handleAddNote called');
-    console.log('🟡 color:', color);
-    console.log('🟡 selectedText:', selectedText?.substring(0, 50));
-    console.log('🟡 onAddNote exists:', !!onAddNote);
-    
-    if (onAddNote && selectedText) {
-      console.log('🟡 Calling onAddNote...');
-      onAddNote(selectedText, color);
-      console.log('🟡 onAddNote called successfully');
-      setShowNoteColors(false);
-      onClose();
-    } else {
-      console.error('🔴 Missing onAddNote or selectedText', { onAddNote: !!onAddNote, selectedText });
     }
   };
 
@@ -344,46 +305,6 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
             <Wand2 className="w-3.5 h-3.5" />
             Pedir algo específico...
           </button>
-          
-          <div className="w-px h-5 bg-slate-200 mx-1" />
-          
-          <div className="relative">
-            <button
-              onMouseDown={(e) => {
-                e.preventDefault(); // Prevent losing text selection
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowNoteColors(!showNoteColors);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-50 rounded-md transition-colors whitespace-nowrap"
-            >
-              <StickyNote className="w-3.5 h-3.5" />
-              Adicionar Nota
-            </button>
-            {showNoteColors && (
-              <div className="absolute top-full left-0 mt-1 p-2 bg-white rounded-lg shadow-lg border border-slate-200 flex gap-1.5 z-10">
-                {NOTE_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAddNote(color);
-                    }}
-                    className={`w-6 h-6 rounded-full ${NOTE_COLOR_CLASSES[color]} hover:scale-110 transition-transform border-2 border-white shadow-sm`}
-                    title={color}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>,

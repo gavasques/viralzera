@@ -1,37 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import ReactQuill, { Quill } from 'react-quill';
+import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
-
-// Custom Blot for Notes - supports color via data-note-color attribute
-const Inline = Quill.import('blots/inline');
-class NoteBlot extends Inline {
-  static create(value) {
-    let node = super.create();
-    node.setAttribute('class', 'script-note-highlight');
-    // value can be string (id only) or object {id, color}
-    if (typeof value === 'object') {
-      node.setAttribute('data-note-id', value.id);
-      node.setAttribute('data-note-color', value.color || 'yellow');
-    } else {
-      node.setAttribute('data-note-id', value);
-      node.setAttribute('data-note-color', 'yellow');
-    }
-    return node;
-  }
-
-  static formats(node) {
-    return {
-      id: node.getAttribute('data-note-id'),
-      color: node.getAttribute('data-note-color') || 'yellow'
-    };
-  }
-}
-NoteBlot.blotName = 'note';
-NoteBlot.tagName = 'span';
-NoteBlot.className = 'script-note-highlight';
-Quill.register(NoteBlot);
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -43,13 +12,12 @@ import {
   Copy, 
   Download, 
   StickyNote, 
-  EyeOff
+  EyeOff 
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
-import ScriptNoteViewerPopover from "./ScriptNoteViewerPopover";
 
 const VIDEO_TYPE_COLORS = {
   tutorial: "bg-blue-100 text-blue-700",
@@ -70,17 +38,13 @@ const STATUS_COLORS = {
   Publicado: "bg-blue-100 text-blue-700",
 };
 
-// Basic Markdown to HTML converter - preserves existing HTML including note spans
+// Basic Markdown to HTML converter
 const markdownToHtml = (text) => {
   if (!text) return '';
   
-  // Check if it looks like HTML already (preserve it as-is to keep note spans)
-  if (/<[a-z][\s\S]*>/i.test(text)) {
-    console.log('Content is already HTML, preserving as-is');
-    return text;
-  }
+  // Check if it looks like HTML already (basic check)
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
 
-  console.log('Converting markdown to HTML');
   let html = text
     // Headers
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -172,271 +136,13 @@ export default function YoutubeScriptSectionEditor({
   hasChanges,
   onChatToggle,
   notesVisible,
-  onToggleNotes,
-  onAddNote, // Function to notify parent about new note creation
-  onNoteSelect, // Function to notify parent about note selection
-  activeNoteId, // Currently active note ID for highlighting
-  scriptId // Required for fetching note details
+  onToggleNotes
 }) {
-  console.log('🟢 ScriptSectionEditor mounted, scriptId:', scriptId);
-  
   const quillRef = useRef(null);
-  const queryClient = useQueryClient();
   const [selection, setSelection] = useState(null);
-  const [viewingNote, setViewingNote] = useState(null); // { id, position, data }
-  const editorRef = useRef(null);
-
-  // Fetch notes to display content in popover (deduped with ScriptNotesPanel)
-  const { data: notes = [] } = useQuery({
-    queryKey: ['script-notes', scriptId],
-    queryFn: async () => {
-      console.log('🔍 Fetching notes for script:', scriptId);
-      const result = await base44.entities.ScriptNote.filter({ script_id: scriptId });
-      console.log('🔍 Fetched notes:', result);
-      return result;
-    },
-    enabled: !!scriptId
-  });
-
-  // Function to remove highlight from editor by data_id
-  const removeHighlightFromEditor = (dataId) => {
-    if (!quillRef.current) return;
-    
-    const editor = quillRef.current.getEditor();
-    const root = editor.root;
-    
-    // Find the highlight span with this data-note-id
-    const highlightSpan = root.querySelector(`.script-note-highlight[data-note-id="${dataId}"]`);
-    
-    if (highlightSpan) {
-      // Replace the span with its text content
-      const textContent = highlightSpan.textContent;
-      const textNode = document.createTextNode(textContent);
-      highlightSpan.parentNode.replaceChild(textNode, highlightSpan);
-      
-      // Update the content in parent
-      const newHtml = editor.root.innerHTML;
-      onChange(sectionKey, newHtml);
-    }
-  };
-
-  // Delete note mutation
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ScriptNote.delete(id),
-    onSuccess: (_, deletedId) => {
-      // Find the note to get its data_id before invalidating
-      const deletedNote = notes.find(n => n.id === deletedId);
-      if (deletedNote?.data_id) {
-        removeHighlightFromEditor(deletedNote.data_id);
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
-      setViewingNote(null);
-      toast.success('Nota removida');
-    },
-    onError: (err) => {
-        toast.error('Erro ao remover nota: ' + err.message);
-    }
-  });
-
-  // Custom styles for notes with color support
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .script-note-highlight {
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      /* Yellow (default) */
-      .script-note-highlight[data-note-color="yellow"] {
-        background-color: #fef08a;
-        border-bottom: 2px solid #eab308;
-      }
-      .script-note-highlight[data-note-color="yellow"]:hover {
-        background-color: #fde047;
-      }
-      /* Blue */
-      .script-note-highlight[data-note-color="blue"] {
-        background-color: #bfdbfe;
-        border-bottom: 2px solid #3b82f6;
-      }
-      .script-note-highlight[data-note-color="blue"]:hover {
-        background-color: #93c5fd;
-      }
-      /* Green */
-      .script-note-highlight[data-note-color="green"] {
-        background-color: #bbf7d0;
-        border-bottom: 2px solid #22c55e;
-      }
-      .script-note-highlight[data-note-color="green"]:hover {
-        background-color: #86efac;
-      }
-      /* Red */
-      .script-note-highlight[data-note-color="red"] {
-        background-color: #fecaca;
-        border-bottom: 2px solid #ef4444;
-      }
-      .script-note-highlight[data-note-color="red"]:hover {
-        background-color: #fca5a5;
-      }
-      /* Purple */
-      .script-note-highlight[data-note-color="purple"] {
-        background-color: #e9d5ff;
-        border-bottom: 2px solid #a855f7;
-      }
-      .script-note-highlight[data-note-color="purple"]:hover {
-        background-color: #d8b4fe;
-      }
-      /* Active state */
-      .script-note-highlight[data-active="true"] {
-        filter: brightness(0.9);
-      }
-      /* Hide notes when toggled off */
-      .hide-notes .script-note-highlight {
-        background-color: transparent !important;
-        border-bottom: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
-
-  // Update active status of notes
-  useEffect(() => {
-    if (!quillRef.current) return;
-    const editor = quillRef.current.getEditor();
-    const root = editor.root;
-    
-    // Reset all
-    const notes = root.querySelectorAll('.script-note-highlight');
-    notes.forEach(node => node.removeAttribute('data-active'));
-
-    // Set active
-    if (activeNoteId) {
-      const activeNode = root.querySelector(`.script-note-highlight[data-note-id="${activeNoteId}"]`);
-      if (activeNode) {
-        activeNode.setAttribute('data-active', 'true');
-        // Optional: Scroll to view?
-        // activeNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [activeNoteId, content]);
-
-  // Handle note clicks - only when notes are visible
-  useEffect(() => {
-    const handleClick = (e) => {
-      // Don't handle note clicks if notes are hidden
-      if (!notesVisible) return;
-      
-      const target = e.target;
-      if (target.classList.contains('script-note-highlight')) {
-        const noteId = target.getAttribute('data-note-id');
-        
-        // Find note data by data_id
-        const noteData = notes.find(n => n.data_id === noteId);
-        
-        // If not found by data_id, try by id (for backwards compatibility)
-        const noteFallback = !noteData ? notes.find(n => n.id === noteId) : null;
-        
-        const finalNoteData = noteData || noteFallback;
-        
-        if (finalNoteData) {
-            // Notify parent to highlight in sidebar
-            if (noteId && onNoteSelect) {
-              onNoteSelect(noteId);
-            }
-
-            // Show popover
-            const rect = target.getBoundingClientRect();
-            setViewingNote({
-                id: noteId,
-                data: finalNoteData,
-                position: {
-                    x: rect.left + (rect.width / 2),
-                    y: rect.top,
-                    bottom: rect.bottom
-                }
-            });
-            // Clear text selection if any, to avoid overlapping popovers
-            setSelection(null);
-        }
-      }
-    };
-
-    const editorContainer = document.querySelector('.ql-editor');
-    if (editorContainer) {
-      editorContainer.addEventListener('click', handleClick);
-    }
-
-    return () => {
-      if (editorContainer) {
-        editorContainer.removeEventListener('click', handleClick);
-      }
-    };
-  }, [onNoteSelect, notes, notesVisible]);
-
-  // Store selection ref to persist it even when state changes
-  const selectionRef = useRef(null);
-  
-  // Update ref whenever selection changes
-  useEffect(() => {
-    if (selection) {
-      selectionRef.current = selection;
-      console.log('📌 Selection ref updated:', selection.text?.substring(0, 50));
-    }
-  }, [selection]);
-
-  const handleAddNoteInternal = (selectedText, color = 'yellow') => {
-    console.log('🟡 handleAddNoteInternal called:', { selectedText: selectedText?.substring(0, 30), color });
-    
-    // Use ref as primary source since state might have been cleared
-    const currentSelection = selectionRef.current || selection;
-    
-    console.log('🟡 Current selection state:', selection ? 'exists' : 'null');
-    console.log('🟡 Selection ref:', selectionRef.current ? 'exists' : 'null');
-    console.log('🟡 Using currentSelection:', currentSelection ? 'exists' : 'null');
-    
-    if (quillRef.current && currentSelection && currentSelection.range) {
-      const editor = quillRef.current.getEditor();
-      const noteId = crypto.randomUUID();
-      
-      console.log('🟡 Creating note with ID:', noteId, 'color:', color, 'range:', currentSelection.range);
-      
-      // Apply format with color
-      editor.formatText(currentSelection.range.index, currentSelection.range.length, 'note', { id: noteId, color });
-      
-      // Get updated HTML and log it
-      const newHtml = editor.root.innerHTML;
-      console.log('🟡 New HTML after formatting (first 500):', newHtml.substring(0, 500));
-      
-      // Force content update to persist the HTML
-      onChange(sectionKey, newHtml);
-      
-      // Notify parent
-      if (onAddNote) {
-        onAddNote(noteId, selectedText, color);
-      }
-      
-      setSelection(null);
-      selectionRef.current = null;
-    } else {
-      console.error('🔴 No selection available for adding note. quillRef:', !!quillRef.current, 'currentSelection:', !!currentSelection, 'range:', currentSelection?.range);
-      toast.error('Selecione um texto antes de adicionar uma nota');
-    }
-  };
-
-  // Track if we should ignore next selection clear (e.g., when clicking note button)
-  const ignoreNextSelectionClear = useRef(false);
 
   // Handle selection change
   const handleSelectionChange = (range, source, editorProxy) => {
-    // If we should ignore clearing, reset flag and skip
-    if (ignoreNextSelectionClear.current && (!range || range.length === 0)) {
-      console.log('🔵 Ignoring selection clear');
-      ignoreNextSelectionClear.current = false;
-      return;
-    }
-
     // Only update if we have a valid range (ignore blur/null range to keep popover open)
     if (range) {
       if (range.length > 0) {
@@ -454,7 +160,7 @@ export default function YoutubeScriptSectionEditor({
           const editorContainer = quill.container;
           const editorRect = editorContainer.getBoundingClientRect();
           
-          const newSelection = {
+          setSelection({
             range,
             text,
             position: {
@@ -462,10 +168,7 @@ export default function YoutubeScriptSectionEditor({
               y: editorRect.top + bounds.top,
               bottom: editorRect.top + bounds.bottom
             }
-          };
-          
-          setSelection(newSelection);
-          selectionRef.current = newSelection; // Also update ref immediately
+          });
         } catch (e) {
           console.error("Error getting bounds:", e);
         }
@@ -504,15 +207,8 @@ export default function YoutubeScriptSectionEditor({
   // However, if the content comes as Markdown (from generator), we need to convert it.
   // If it comes as HTML (from previous save), we keep it.
   const displayContent = useMemo(() => {
-    const converted = markdownToHtml(content);
-    console.log('📄 Display content (first 300 chars):', converted?.substring(0, 300));
-    return converted;
+    return markdownToHtml(content);
   }, [content]);
-
-  // Debug: log notes when they change
-  useEffect(() => {
-    console.log('📝 Notes updated:', notes);
-  }, [notes]);
 
   // Strip HTML for char count
   const plainText = content?.replace(/<[^>]*>/g, '') || '';
@@ -648,8 +344,6 @@ export default function YoutubeScriptSectionEditor({
                   {notesVisible ? <EyeOff className="w-4 h-4" /> : <StickyNote className="w-4 h-4" />}
               </Button>
 
-
-
               <Button 
                   onClick={onSave}
                   disabled={isSaving || !hasChanges}
@@ -720,7 +414,7 @@ export default function YoutubeScriptSectionEditor({
                     onChange={(val) => onChange(sectionKey, val)}
                     onChangeSelection={handleSelectionChange}
                     placeholder={`Escreva aqui o seu roteiro incrível...`}
-                    className={`flex-1 flex flex-col min-h-0 ${!notesVisible ? 'hide-notes' : ''}`}
+                    className="flex-1 flex flex-col min-h-0"
                     modules={{
                     toolbar: [
                         [{ 'header': [1, 2, 3, false] }],
@@ -740,16 +434,8 @@ export default function YoutubeScriptSectionEditor({
             onClose={() => setSelection(null)}
             onReplaceText={handleReplaceText}
             onInsertBelow={handleInsertBelow}
-            onAddNote={handleAddNoteInternal}
             fullContent={content}
             scriptTitle={scriptTitle}
-            />
-
-            <ScriptNoteViewerPopover 
-                note={viewingNote?.data}
-                position={viewingNote?.position}
-                onClose={() => setViewingNote(null)}
-                onDelete={(id) => deleteMutation.mutate(id)}
             />
         </div>
     </div>

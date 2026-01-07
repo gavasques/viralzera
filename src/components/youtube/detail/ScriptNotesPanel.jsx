@@ -40,14 +40,7 @@ const NOTE_DOT_COLORS = {
   purple: "bg-purple-400",
 };
 
-export default function ScriptNotesPanel({ 
-  scriptId, 
-  isOpen, 
-  pendingNote, 
-  onNoteCreated,
-  activeNoteId,
-  onDeleteNote // callback to remove highlight from editor when note is deleted
-}) {
+export default function ScriptNotesPanel({ scriptId, isOpen }) {
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState('');
   const [selectedColor, setSelectedColor] = useState('yellow');
@@ -55,31 +48,6 @@ export default function ScriptNotesPanel({
   const [editingText, setEditingText] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
-  
-  // Auto-focus and prep for new note when pendingNote changes
-  React.useEffect(() => {
-    if (pendingNote) {
-      // Set color from pending note if available
-      if (pendingNote.color) {
-        setSelectedColor(pendingNote.color);
-      }
-      // Focus textarea
-      const textarea = document.querySelector('textarea[placeholder="Adicionar uma nota..."]');
-      if (textarea) textarea.focus();
-    }
-  }, [pendingNote]);
-
-  // Scroll to active note when activeNoteId changes
-  React.useEffect(() => {
-    if (activeNoteId && isOpen) {
-      setTimeout(() => {
-        const element = document.getElementById(`note-${activeNoteId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 150);
-    }
-  }, [activeNoteId, isOpen]);
 
   // Fetch notes
   const { data: notes = [], isLoading } = useQuery({
@@ -95,7 +63,6 @@ export default function ScriptNotesPanel({
       queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
       setNewNote('');
       toast.success('Nota adicionada');
-      if (onNoteCreated) onNoteCreated();
     }
   });
 
@@ -111,15 +78,8 @@ export default function ScriptNotesPanel({
 
   // Delete note
   const deleteMutation = useMutation({
-    mutationFn: async (note) => {
-      await base44.entities.ScriptNote.delete(note.id);
-      return note; // Return the note so we can access data_id in onSuccess
-    },
-    onSuccess: (deletedNote) => {
-      // Notify parent to remove highlight from editor
-      if (deletedNote?.data_id && onDeleteNote) {
-        onDeleteNote(deletedNote.data_id);
-      }
+    mutationFn: (id) => base44.entities.ScriptNote.delete(id),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
       toast.success('Nota removida');
     }
@@ -127,20 +87,11 @@ export default function ScriptNotesPanel({
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
-    
-    const noteData = {
+    createMutation.mutate({
       script_id: scriptId,
       note: newNote.trim(),
       color: selectedColor
-    };
-
-    if (pendingNote) {
-      noteData.data_id = pendingNote.id;
-      noteData.quote = pendingNote.quote;
-      console.log('Creating note with data_id:', pendingNote.id, 'quote:', pendingNote.quote);
-    }
-
-    createMutation.mutate(noteData);
+    });
   };
 
   const handleStartEdit = (note) => {
@@ -160,7 +111,7 @@ export default function ScriptNotesPanel({
 
   const confirmDelete = () => {
     if (noteToDelete) {
-      deleteMutation.mutate(noteToDelete); // Pass entire note object
+      deleteMutation.mutate(noteToDelete.id);
     }
     setDeleteDialogOpen(false);
     setNoteToDelete(null);
@@ -180,32 +131,14 @@ export default function ScriptNotesPanel({
         
         {/* Add new note */}
         <div className="space-y-2">
-          {pendingNote && (
-            <div className="p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-500 italic mb-2 border-l-2 border-l-amber-400">
-              "{(pendingNote.quote.length > 50 ? pendingNote.quote.substring(0, 50) + '...' : pendingNote.quote)}"
-            </div>
-          )}
           <Textarea
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
-            placeholder={pendingNote ? "Escreva a nota sobre o trecho selecionado..." : "Adicionar uma nota..."}
+            placeholder="Adicionar uma nota..."
             className="min-h-[60px] text-sm resize-none"
           />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              {pendingNote && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setNewNote('');
-                    if (onNoteCreated) onNoteCreated(); // Clear pending note
-                  }}
-                  className="h-6 px-2 text-[10px] text-slate-400 hover:text-red-500 mr-2"
-                >
-                  Cancelar seleção
-                </Button>
-              )}
               {Object.keys(NOTE_COLORS).map((color) => (
                 <button
                   key={color}
@@ -252,10 +185,7 @@ export default function ScriptNotesPanel({
             notes.map((note) => (
               <div
                 key={note.id}
-                className={`p-3 rounded-lg border transition-all ${NOTE_COLORS[note.color || 'yellow']} ${
-                  activeNoteId === note.data_id ? 'ring-2 ring-offset-2 ring-amber-400 shadow-md transform scale-[1.02]' : ''
-                }`}
-                id={`note-${note.data_id}`}
+                className={`p-3 rounded-lg border transition-all ${NOTE_COLORS[note.color || 'yellow']}`}
               >
                 {editingId === note.id ? (
                   <div className="space-y-2">
@@ -290,13 +220,8 @@ export default function ScriptNotesPanel({
                   </div>
                 ) : (
                   <>
-                    {note.quote && (
-                      <div className="mb-2 pb-2 border-b border-black/5 text-xs text-slate-500 italic">
-                        "{note.quote.length > 80 ? note.quote.substring(0, 80) + '...' : note.quote}"
-                      </div>
-                    )}
                     <p 
-                      className="text-sm text-slate-700 whitespace-pre-wrap cursor-pointer font-medium"
+                      className="text-sm text-slate-700 whitespace-pre-wrap cursor-pointer"
                       onClick={() => handleStartEdit(note)}
                     >
                       {note.note}
