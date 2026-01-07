@@ -263,7 +263,7 @@ export default function YoutubeScriptSectionEditor({
         
         // Find note data by data_id
         console.log('🔎 Looking for noteId:', noteId);
-        console.log('🔎 Notes in array:', notes.map(n => ({ id: n.id, data_id: n.data_id, quote: n.quote, note: n.note })));
+        console.log('🔎 Notes in array (FULL):', JSON.stringify(notes.map(n => ({ id: n.id, data_id: n.data_id, quote: n.quote, note: n.note }))));
         
         const noteData = notes.find(n => n.data_id === noteId);
         console.log('🔎 Found note by data_id:', noteData);
