@@ -161,9 +161,9 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
     }
   };
 
-  const handleAddNote = () => {
+  const handleAddNote = (color = 'yellow') => {
     if (onAddNote) {
-      onAddNote(selectedText);
+      onAddNote(selectedText, color);
       onClose();
     }
   };
