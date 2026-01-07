@@ -165,9 +165,15 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
   };
 
   const handleAddNote = (color = 'yellow') => {
-    console.log('🟡 handleAddNote called with color:', color, 'selectedText:', selectedText);
+    console.log('🟡 ScriptTextSelectionPopover.handleAddNote called');
+    console.log('🟡 color:', color);
+    console.log('🟡 selectedText:', selectedText?.substring(0, 50));
+    console.log('🟡 onAddNote exists:', !!onAddNote);
+    
     if (onAddNote && selectedText) {
+      console.log('🟡 Calling onAddNote...');
       onAddNote(selectedText, color);
+      console.log('🟡 onAddNote called successfully');
       setShowNoteColors(false);
       onClose();
     } else {
