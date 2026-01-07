@@ -59,6 +59,10 @@ export default function ScriptNotesPanel({
   // Auto-focus and prep for new note when pendingNote changes
   React.useEffect(() => {
     if (pendingNote) {
+      // Set color from pending note if available
+      if (pendingNote.color) {
+        setSelectedColor(pendingNote.color);
+      }
       // Focus textarea
       const textarea = document.querySelector('textarea[placeholder="Adicionar uma nota..."]');
       if (textarea) textarea.focus();
