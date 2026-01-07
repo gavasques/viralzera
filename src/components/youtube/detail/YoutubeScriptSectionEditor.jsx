@@ -554,6 +554,26 @@ export default function YoutubeScriptSectionEditor({
               </Button>
 
               <Button 
+                  onClick={() => {
+                    if (quillRef.current) {
+                      const editor = quillRef.current.getEditor();
+                      const html = editor.root.innerHTML;
+                      // Remove all note highlights but keep inner text
+                      const cleanHtml = html.replace(/<span[^>]*class="script-note-highlight"[^>]*>(.*?)<\/span>/gi, '$1');
+                      editor.root.innerHTML = cleanHtml;
+                      onChange(sectionKey, cleanHtml);
+                      toast.success('Destaques removidos');
+                    }
+                  }}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50"
+                  title="Limpar todos os destaques"
+              >
+                  <Eraser className="w-4 h-4" />
+              </Button>
+
+              <Button 
                   onClick={onSave}
                   disabled={isSaving || !hasChanges}
                   size="sm"
