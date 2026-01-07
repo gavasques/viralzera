@@ -526,7 +526,7 @@ export default function YoutubeScriptSectionEditor({
                     onChange={(val) => onChange(sectionKey, val)}
                     onChangeSelection={handleSelectionChange}
                     placeholder={`Escreva aqui o seu roteiro incrível...`}
-                    className="flex-1 flex flex-col min-h-0"
+                    className={`flex-1 flex flex-col min-h-0 ${!notesVisible ? 'hide-notes' : ''}`}
                     modules={{
                     toolbar: [
                         [{ 'header': [1, 2, 3, false] }],
