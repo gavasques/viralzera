@@ -294,36 +294,27 @@ export default function YoutubeScriptSectionEditor({
     }
   }, [activeNoteId, content]);
 
-  // Handle note clicks
+  // Handle note clicks - only when notes are visible
   useEffect(() => {
     const handleClick = (e) => {
-      console.log('Click detected, target:', e.target, 'classList:', e.target.classList);
+      // Don't handle note clicks if notes are hidden
+      if (!notesVisible) return;
       
       const target = e.target;
       if (target.classList.contains('script-note-highlight')) {
         const noteId = target.getAttribute('data-note-id');
         
-        console.log('✅ Note clicked, noteId:', noteId);
-        console.log('Available notes:', notes);
-        
         // Find note data by data_id
-        console.log('🔎 Looking for noteId:', noteId);
-        console.log('🔎 Notes in array (FULL):', JSON.stringify(notes.map(n => ({ id: n.id, data_id: n.data_id, quote: n.quote, note: n.note }))));
-        
         const noteData = notes.find(n => n.data_id === noteId);
-        console.log('🔎 Found note by data_id:', noteData);
         
         // If not found by data_id, try by id (for backwards compatibility)
         const noteFallback = !noteData ? notes.find(n => n.id === noteId) : null;
-        console.log('🔎 Found note by id (fallback):', noteFallback);
         
         const finalNoteData = noteData || noteFallback;
-        console.log('🔎 Final note data:', finalNoteData);
         
         if (finalNoteData) {
             // Notify parent to highlight in sidebar
             if (noteId && onNoteSelect) {
-              console.log('Calling onNoteSelect with:', noteId);
               onNoteSelect(noteId);
             }
 
@@ -340,18 +331,13 @@ export default function YoutubeScriptSectionEditor({
             });
             // Clear text selection if any, to avoid overlapping popovers
             setSelection(null);
-        } else {
-            console.warn('❌ Note not found for noteId:', noteId, 'in notes:', notes);
         }
       }
     };
 
     const editorContainer = document.querySelector('.ql-editor');
     if (editorContainer) {
-      console.log('Adding click handler to editor');
       editorContainer.addEventListener('click', handleClick);
-    } else {
-      console.warn('Editor container not found');
     }
 
     return () => {
@@ -359,7 +345,7 @@ export default function YoutubeScriptSectionEditor({
         editorContainer.removeEventListener('click', handleClick);
       }
     };
-  }, [onNoteSelect, notes]);
+  }, [onNoteSelect, notes, notesVisible]);
 
   const handleAddNoteInternal = (selectedText, color = 'yellow') => {
     if (quillRef.current && selection) {
