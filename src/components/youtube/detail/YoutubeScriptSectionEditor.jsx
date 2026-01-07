@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 // Custom Blot for Notes
 const Inline = Quill.import('blots/inline');
@@ -37,6 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import RefinerButton from "@/components/youtube/refiner/RefinerButton";
 import ScriptTextSelectionPopover from "./ScriptTextSelectionPopover";
+import ScriptNoteViewerPopover from "./ScriptNoteViewerPopover";
 
 const VIDEO_TYPE_COLORS = {
   tutorial: "bg-blue-100 text-blue-700",
@@ -158,11 +161,34 @@ export default function YoutubeScriptSectionEditor({
   onToggleNotes,
   onAddNote, // Function to notify parent about new note creation
   onNoteSelect, // Function to notify parent about note selection
-  activeNoteId // Currently active note ID for highlighting
+  activeNoteId, // Currently active note ID for highlighting
+  scriptId // Required for fetching note details
 }) {
   const quillRef = useRef(null);
+  const queryClient = useQueryClient();
   const [selection, setSelection] = useState(null);
+  const [viewingNote, setViewingNote] = useState(null); // { id, position, data }
   const editorRef = useRef(null);
+
+  // Fetch notes to display content in popover (deduped with ScriptNotesPanel)
+  const { data: notes = [] } = useQuery({
+    queryKey: ['script-notes', scriptId],
+    queryFn: () => base44.entities.ScriptNote.filter({ script_id: scriptId }),
+    enabled: !!scriptId
+  });
+
+  // Delete note mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.ScriptNote.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
+      setViewingNote(null);
+      toast.success('Nota removida');
+    },
+    onError: (err) => {
+        toast.error('Erro ao remover nota: ' + err.message);
+    }
+  });
 
   // Custom styles for notes
   useEffect(() => {
@@ -218,9 +244,35 @@ export default function YoutubeScriptSectionEditor({
       const target = e.target;
       if (target.classList.contains('script-note-highlight')) {
         const noteId = target.getAttribute('data-note-id');
+        
+        // Notify parent
         if (noteId && onNoteSelect) {
           onNoteSelect(noteId);
         }
+
+        // Show popover
+        const rect = target.getBoundingClientRect();
+        // Find note data
+        const noteData = notes.find(n => n.id === noteId || n.data_id === noteId);
+        
+        if (noteData) {
+            setViewingNote({
+                id: noteId,
+                data: noteData,
+                position: {
+                    x: rect.left + (rect.width / 2),
+                    y: rect.top,
+                    bottom: rect.bottom
+                }
+            });
+            // Clear text selection if any, to avoid overlapping popovers
+            setSelection(null);
+        }
+      } else {
+        // Clicked elsewhere, close popover
+        // But we need to check if we clicked inside the popover (handled by popover's click outside)
+        // Here we just handle clicks inside the editor that are NOT notes
+        // Actually, let's rely on the Popover's click outside listener.
       }
     };
 
@@ -549,6 +601,13 @@ export default function YoutubeScriptSectionEditor({
             onAddNote={handleAddNoteInternal}
             fullContent={content}
             scriptTitle={scriptTitle}
+            />
+
+            <ScriptNoteViewerPopover 
+                note={viewingNote?.data}
+                position={viewingNote?.position}
+                onClose={() => setViewingNote(null)}
+                onDelete={(id) => deleteMutation.mutate(id)}
             />
         </div>
     </div>
