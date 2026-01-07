@@ -14,6 +14,15 @@ const QUICK_ACTIONS = [
   { id: 'rewrite', label: 'Reescrever', prompt: 'Reescreva este trecho de forma diferente' },
 ];
 
+const NOTE_COLORS = ['yellow', 'blue', 'green', 'red', 'purple'];
+const NOTE_COLOR_CLASSES = {
+  yellow: 'bg-yellow-400',
+  blue: 'bg-blue-400',
+  green: 'bg-green-400',
+  red: 'bg-red-400',
+  purple: 'bg-purple-400',
+};
+
 export default function ScriptTextSelectionPopover({ 
   selectedText, 
   position, 
@@ -29,6 +38,7 @@ export default function ScriptTextSelectionPopover({
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [generatedText, setGeneratedText] = useState(null);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [showNoteColors, setShowNoteColors] = useState(false);
   const popoverRef = useRef(null);
   const inputRef = useRef(null);
 
