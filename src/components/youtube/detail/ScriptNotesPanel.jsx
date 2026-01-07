@@ -64,17 +64,17 @@ export default function ScriptNotesPanel({
     }
   }, [pendingNote]);
 
-  // Scroll to active note
+  // Scroll to active note when activeNoteId changes
   React.useEffect(() => {
-    if (activeNoteId) {
+    if (activeNoteId && isOpen) {
       setTimeout(() => {
         const element = document.getElementById(`note-${activeNoteId}`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-      }, 100);
+      }, 150);
     }
-  }, [activeNoteId]);
+  }, [activeNoteId, isOpen]);
 
   // Fetch notes
   const { data: notes = [], isLoading } = useQuery({
@@ -125,6 +125,7 @@ export default function ScriptNotesPanel({
     if (pendingNote) {
       noteData.data_id = pendingNote.id;
       noteData.quote = pendingNote.quote;
+      console.log('Creating note with data_id:', pendingNote.id, 'quote:', pendingNote.quote);
     }
 
     createMutation.mutate(noteData);
@@ -242,7 +243,7 @@ export default function ScriptNotesPanel({
                 className={`p-3 rounded-lg border transition-all ${NOTE_COLORS[note.color || 'yellow']} ${
                   activeNoteId === note.data_id ? 'ring-2 ring-offset-2 ring-amber-400 shadow-md transform scale-[1.02]' : ''
                 }`}
-                id={`note-${note.data_id || note.id}`}
+                id={`note-${note.data_id}`}
               >
                 {editingId === note.id ? (
                   <div className="space-y-2">

@@ -245,15 +245,20 @@ export default function YoutubeScriptSectionEditor({
       if (target.classList.contains('script-note-highlight')) {
         const noteId = target.getAttribute('data-note-id');
         
-        // Notify parent
+        console.log('Note clicked, noteId:', noteId);
+        console.log('Available notes:', notes);
+        
+        // Notify parent to highlight in sidebar
         if (noteId && onNoteSelect) {
           onNoteSelect(noteId);
         }
 
         // Show popover
         const rect = target.getBoundingClientRect();
-        // Find note data
-        const noteData = notes.find(n => n.id === noteId || n.data_id === noteId);
+        // Find note data by data_id
+        const noteData = notes.find(n => n.data_id === noteId);
+        
+        console.log('Found note data:', noteData);
         
         if (noteData) {
             setViewingNote({
@@ -267,12 +272,9 @@ export default function YoutubeScriptSectionEditor({
             });
             // Clear text selection if any, to avoid overlapping popovers
             setSelection(null);
+        } else {
+            console.warn('Note not found for noteId:', noteId);
         }
-      } else {
-        // Clicked elsewhere, close popover
-        // But we need to check if we clicked inside the popover (handled by popover's click outside)
-        // Here we just handle clicks inside the editor that are NOT notes
-        // Actually, let's rely on the Popover's click outside listener.
       }
     };
 
@@ -286,15 +288,21 @@ export default function YoutubeScriptSectionEditor({
         editorContainer.removeEventListener('click', handleClick);
       }
     };
-  }, [onNoteSelect]);
+  }, [onNoteSelect, notes]);
 
   const handleAddNoteInternal = (selectedText) => {
     if (quillRef.current && selection) {
       const editor = quillRef.current.getEditor();
       const noteId = crypto.randomUUID();
       
+      console.log('Creating note with ID:', noteId, 'for text:', selectedText);
+      
       // Apply format
       editor.formatText(selection.range.index, selection.range.length, 'note', noteId);
+      
+      // Force content update to persist the HTML
+      const newHtml = editor.root.innerHTML;
+      onChange(sectionKey, newHtml);
       
       // Notify parent
       if (onAddNote) {
