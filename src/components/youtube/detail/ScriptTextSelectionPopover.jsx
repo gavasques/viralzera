@@ -335,7 +335,15 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
           
           <div className="relative">
             <button
-              onClick={() => setShowNoteColors(!showNoteColors)}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevent losing text selection
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowNoteColors(!showNoteColors);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-50 rounded-md transition-colors whitespace-nowrap"
             >
               <StickyNote className="w-3.5 h-3.5" />
@@ -346,9 +354,14 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
                 {NOTE_COLORS.map((color) => (
                   <button
                     key={color}
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       handleAddNote(color);
-                      setShowNoteColors(false);
                     }}
                     className={`w-6 h-6 rounded-full ${NOTE_COLOR_CLASSES[color]} hover:scale-110 transition-transform border-2 border-white shadow-sm`}
                     title={color}
