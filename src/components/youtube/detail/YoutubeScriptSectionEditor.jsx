@@ -382,25 +382,31 @@ export default function YoutubeScriptSectionEditor({
   useEffect(() => {
     if (selection) {
       selectionRef.current = selection;
+      console.log('📌 Selection ref updated:', selection.text?.substring(0, 50));
     }
   }, [selection]);
 
   const handleAddNoteInternal = (selectedText, color = 'yellow') => {
+    console.log('🟡 handleAddNoteInternal called:', { selectedText: selectedText?.substring(0, 30), color });
+    
     // Use ref as fallback if state selection was lost
     const currentSelection = selection || selectionRef.current;
+    
+    console.log('🟡 Current selection state:', selection ? 'exists' : 'null');
+    console.log('🟡 Selection ref:', selectionRef.current ? 'exists' : 'null');
     
     if (quillRef.current && currentSelection) {
       const editor = quillRef.current.getEditor();
       const noteId = crypto.randomUUID();
       
-      console.log('🟡 Creating note with ID:', noteId, 'color:', color, 'for text:', selectedText);
+      console.log('🟡 Creating note with ID:', noteId, 'color:', color, 'range:', currentSelection.range);
       
       // Apply format with color
       editor.formatText(currentSelection.range.index, currentSelection.range.length, 'note', { id: noteId, color });
       
       // Get updated HTML and log it
       const newHtml = editor.root.innerHTML;
-      console.log('🟡 New HTML after formatting:', newHtml.substring(0, 500));
+      console.log('🟡 New HTML after formatting (first 500):', newHtml.substring(0, 500));
       
       // Force content update to persist the HTML
       onChange(sectionKey, newHtml);
@@ -413,7 +419,7 @@ export default function YoutubeScriptSectionEditor({
       setSelection(null);
       selectionRef.current = null;
     } else {
-      console.error('🔴 No selection available for adding note');
+      console.error('🔴 No selection available for adding note. quillRef:', !!quillRef.current, 'currentSelection:', !!currentSelection);
     }
   };
 
