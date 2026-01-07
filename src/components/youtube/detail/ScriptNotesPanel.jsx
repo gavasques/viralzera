@@ -168,6 +168,19 @@ export default function ScriptNotesPanel({
           />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
+              {pendingNote && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setNewNote('');
+                    if (onNoteCreated) onNoteCreated(); // Clear pending note
+                  }}
+                  className="h-6 px-2 text-[10px] text-slate-400 hover:text-red-500 mr-2"
+                >
+                  Cancelar seleção
+                </Button>
+              )}
               {Object.keys(NOTE_COLORS).map((color) => (
                 <button
                   key={color}
