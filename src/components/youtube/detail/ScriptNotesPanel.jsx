@@ -265,8 +265,13 @@ export default function ScriptNotesPanel({
                   </div>
                 ) : (
                   <>
+                    {note.quote && (
+                      <div className="mb-2 pb-2 border-b border-black/5 text-xs text-slate-500 italic">
+                        "{note.quote.length > 80 ? note.quote.substring(0, 80) + '...' : note.quote}"
+                      </div>
+                    )}
                     <p 
-                      className="text-sm text-slate-700 whitespace-pre-wrap cursor-pointer"
+                      className="text-sm text-slate-700 whitespace-pre-wrap cursor-pointer font-medium"
                       onClick={() => handleStartEdit(note)}
                     >
                       {note.note}
