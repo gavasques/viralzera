@@ -165,9 +165,13 @@ Retorne APENAS o texto editado, pronto para substituir o trecho acima.`;
   };
 
   const handleAddNote = (color = 'yellow') => {
-    if (onAddNote) {
+    console.log('🟡 handleAddNote called with color:', color, 'selectedText:', selectedText);
+    if (onAddNote && selectedText) {
       onAddNote(selectedText, color);
+      setShowNoteColors(false);
       onClose();
+    } else {
+      console.error('🔴 Missing onAddNote or selectedText', { onAddNote: !!onAddNote, selectedText });
     }
   };
 
