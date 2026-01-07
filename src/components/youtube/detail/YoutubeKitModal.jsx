@@ -262,11 +262,9 @@ export default function YoutubeKitModal({ open, onOpenChange, scriptContent, scr
         
         toast.success('Kit gerado com sucesso!');
       } else {
-        console.error('No JSON found in response');
         throw new Error('Resposta não contém JSON válido');
       }
     } catch (err) {
-      console.error('Error generating kit:', err);
       toast.error('Erro ao gerar kit: ' + err.message);
     } finally {
       setIsGenerating(false);
