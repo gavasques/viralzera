@@ -40,12 +40,45 @@ const NOTE_DOT_COLORS = {
   purple: "bg-purple-400",
 };
 
-export default function ScriptNotesPanel({ scriptId, isOpen }) {
+export default function ScriptNotesPanel({ 
+  scriptId, 
+  isOpen, 
+  pendingNote, 
+  onNoteCreated, 
+  activeNoteId, 
+  onNoteClick,
+  onClosePending 
+}) {
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState('');
   const [selectedColor, setSelectedColor] = useState('yellow');
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
+  
+  // Ref for new note input
+  const newNoteRef = React.useRef(null);
+
+  // Focus input when pending note arrives
+  React.useEffect(() => {
+    if (pendingNote && isOpen) {
+      setTimeout(() => {
+        newNoteRef.current?.focus();
+      }, 100);
+    }
+  }, [pendingNote, isOpen]);
+
+  // Scroll to active note
+  React.useEffect(() => {
+    if (activeNoteId && isOpen) {
+      setTimeout(() => {
+        const el = document.getElementById(`note-${activeNoteId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight effect handled by CSS classes
+        }
+      }, 100);
+    }
+  }, [activeNoteId, isOpen]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
 
@@ -59,10 +92,14 @@ export default function ScriptNotesPanel({ scriptId, isOpen }) {
   // Create note
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ScriptNote.create(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['script-notes', scriptId] });
       setNewNote('');
       toast.success('Nota adicionada');
+      if (pendingNote && onNoteCreated) {
+        onNoteCreated(data); // data is the created note object
+      }
+      if (onClosePending) onClosePending();
     }
   });
 
@@ -90,7 +127,8 @@ export default function ScriptNotesPanel({ scriptId, isOpen }) {
     createMutation.mutate({
       script_id: scriptId,
       note: newNote.trim(),
-      color: selectedColor
+      color: selectedColor,
+      quote: pendingNote?.text || null
     });
   };
 
@@ -131,7 +169,20 @@ export default function ScriptNotesPanel({ scriptId, isOpen }) {
         
         {/* Add new note */}
         <div className="space-y-2">
+          {pendingNote && (
+            <div className="bg-indigo-50 border border-indigo-100 rounded-md p-2 text-xs text-indigo-700 mb-2 relative group">
+              <span className="font-semibold block mb-1">Vinculado a:</span>
+              <p className="line-clamp-2 italic">"{pendingNote.text}"</p>
+              <button 
+                onClick={onClosePending}
+                className="absolute top-1 right-1 p-1 hover:bg-indigo-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
           <Textarea
+            ref={newNoteRef}
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             placeholder="Adicionar uma nota..."
@@ -185,8 +236,19 @@ export default function ScriptNotesPanel({ scriptId, isOpen }) {
             notes.map((note) => (
               <div
                 key={note.id}
-                className={`p-3 rounded-lg border transition-all ${NOTE_COLORS[note.color || 'yellow']}`}
+                id={`note-${note.id}`}
+                onClick={() => onNoteClick?.(note.id)}
+                className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                  activeNoteId === note.id 
+                    ? 'ring-2 ring-indigo-500 shadow-md scale-[1.02]' 
+                    : 'hover:shadow-sm'
+                } ${NOTE_COLORS[note.color || 'yellow']}`}
               >
+                {note.quote && (
+                  <div className="mb-2 pb-2 border-b border-black/5 text-xs text-slate-500 italic line-clamp-2">
+                    "{note.quote}"
+                  </div>
+                )}
                 {editingId === note.id ? (
                   <div className="space-y-2">
                     <Textarea
