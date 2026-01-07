@@ -400,6 +400,7 @@ export default function YoutubeScriptDetail() {
               onChange={(_, val) => setContent(val)}
               onOpenRefiner={handleOpenRefiner}
               scriptTitle={title}
+              scriptId={scriptId}
               // Toolbar props
               videoType={script?.video_type}
               status={script?.status}
