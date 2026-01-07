@@ -214,7 +214,10 @@ export default function ScriptNotesPanel({
             notes.map((note) => (
               <div
                 key={note.id}
-                className={`p-3 rounded-lg border transition-all ${NOTE_COLORS[note.color || 'yellow']}`}
+                className={`p-3 rounded-lg border transition-all ${NOTE_COLORS[note.color || 'yellow']} ${
+                  activeNoteId === note.data_id ? 'ring-2 ring-offset-2 ring-amber-400 shadow-md transform scale-[1.02]' : ''
+                }`}
+                id={`note-${note.data_id || note.id}`}
               >
                 {editingId === note.id ? (
                   <div className="space-y-2">
