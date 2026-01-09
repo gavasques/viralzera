@@ -494,22 +494,26 @@ export default function YoutubeScriptDetail() {
               Você tem alterações não salvas neste roteiro. Se sair agora, suas alterações serão perdidas.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0 mt-4">
-            <AlertDialogCancel className="mt-0">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowUnsavedDialog(false)}
+              className="w-full sm:w-auto order-1"
+            >
               Continuar editando
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </Button>
+            <Button
               onClick={handleDiscardChanges}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white order-2"
             >
               Descartar alterações
-            </AlertDialogAction>
-            <AlertDialogAction
+            </Button>
+            <Button
               onClick={handleSaveAndLeave}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white order-3"
             >
               Salvar e sair
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
