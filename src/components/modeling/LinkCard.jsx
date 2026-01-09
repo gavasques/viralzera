@@ -1,22 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Play, Edit, Sparkles, RefreshCw
+  MoreVertical, Loader2, CheckCircle2, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Download, Edit, Sparkles, RefreshCw, Clock, ChevronDown
 } from "lucide-react";
 
-const statusConfig = {
-  pending: { label: "Pendente", color: "bg-slate-100 text-slate-600", icon: null },
-  processing: { label: "Processando...", color: "bg-amber-100 text-amber-700", icon: Loader2 },
-  completed: { label: "Concluído", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  error: { label: "Erro", color: "bg-red-100 text-red-700", icon: AlertCircle }
+const scrapeStatusConfig = {
+  pending: { label: "Pendente", color: "bg-slate-100 text-slate-600", icon: Clock },
+  processing: { label: "Processando", color: "bg-blue-100 text-blue-600", icon: Loader2 },
+  completed: { label: "Dados OK", color: "bg-green-100 text-green-600", icon: CheckCircle2 },
+  error: { label: "Erro", color: "bg-red-100 text-red-600", icon: AlertCircle }
 };
 
-export default function LinkCard({ link, analysis, onProcess, onAnalyze, onView, onEdit, onDelete, isProcessing, isAnalyzing }) {
-  const status = statusConfig[link.status] || statusConfig.pending;
-  const StatusIcon = status.icon;
+const analysisStatusConfig = {
+  pending: { label: "Não analisado", color: "bg-slate-100 text-slate-600", icon: Clock },
+  processing: { label: "Analisando", color: "bg-purple-100 text-purple-600", icon: Loader2 },
+  completed: { label: "Analisado", color: "bg-emerald-100 text-emerald-600", icon: Sparkles },
+  error: { label: "Erro", color: "bg-red-100 text-red-600", icon: AlertCircle }
+};
+
+export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, onDelete, processing = false, analyzing = false }) {
+  const [showContent, setShowContent] = useState(false);
+  const ScrapeStatusIcon = scrapeStatusConfig[link.scrape_status]?.icon || Clock;
+  const AnalysisStatusIcon = analysisStatusConfig[link.analysis_status]?.icon || Clock;
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -68,21 +76,28 @@ export default function LinkCard({ link, analysis, onProcess, onAnalyze, onView,
                     <Edit className="w-4 h-4 mr-2" /> Editar
                   </DropdownMenuItem>
 
-                  {link.summary && (
-                    <DropdownMenuItem onClick={onView}>
-                      <Eye className="w-4 h-4 mr-2" /> Ver Resumo
+                  {link.scrape_status === 'completed' && link.content && (
+                    <DropdownMenuItem onClick={() => setShowContent(!showContent)}>
+                      <Eye className="w-4 h-4 mr-2" /> {showContent ? 'Ocultar' : 'Ver'} Conteúdo
                     </DropdownMenuItem>
                   )}
 
-                  {link.status === 'completed' && (
-                    <>
-                      <DropdownMenuItem onClick={onProcess}>
-                        <RefreshCw className="w-4 h-4 mr-2" /> Reprocessar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onAnalyze} disabled={isAnalyzing}>
-                        <Sparkles className="w-4 h-4 mr-2" /> {isAnalyzing ? 'Analisando...' : analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar'}
-                      </DropdownMenuItem>
-                    </>
+                  {link.analysis_status === 'completed' && (
+                    <DropdownMenuItem onClick={onClick}>
+                      <Sparkles className="w-4 h-4 mr-2" /> Ver Análise
+                    </DropdownMenuItem>
+                  )}
+
+                  {link.scrape_status === 'completed' && (
+                    <DropdownMenuItem onClick={onScrape}>
+                      <RefreshCw className="w-4 h-4 mr-2" /> Reprocessar Dados
+                    </DropdownMenuItem>
+                  )}
+
+                  {link.analysis_status === 'completed' && (
+                    <DropdownMenuItem onClick={onAnalyze}>
+                      <RefreshCw className="w-4 h-4 mr-2" /> Reanalisar
+                    </DropdownMenuItem>
                   )}
 
                   <DropdownMenuItem onClick={onDelete} className="text-red-600">
@@ -92,85 +107,92 @@ export default function LinkCard({ link, analysis, onProcess, onAnalyze, onView,
               </DropdownMenu>
             </div>
 
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Badge className={`${status.color} text-[10px]`}>
-                {StatusIcon && <StatusIcon className={`w-3 h-3 mr-1 ${link.status === 'processing' ? 'animate-spin' : ''}`} />}
-                {status.label}
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              <Badge 
+                variant="outline" 
+                className={`text-[10px] h-5 px-2 border-0 ${scrapeStatusConfig[link.scrape_status]?.color || scrapeStatusConfig.pending.color}`}
+              >
+                <ScrapeStatusIcon className={`w-3 h-3 mr-1 ${link.scrape_status === 'processing' ? 'animate-spin' : ''}`} />
+                {scrapeStatusConfig[link.scrape_status]?.label || "Pendente"}
               </Badge>
-
-              {analysis?.status === 'completed' && (
-                <Badge className="bg-purple-100 text-purple-700 text-[10px]">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Analisado
-                </Badge>
-              )}
               
-              {link.status === 'completed' && (
-                <>
-                  <Badge variant="outline" className="text-[10px]">
-                    <FileText className="w-3 h-3 mr-1" />
-                    {formatNumber(link.character_count)} chars
-                  </Badge>
-                  <Badge variant="outline" className="text-[10px]">
-                    <Hash className="w-3 h-3 mr-1" />
-                    ~{formatNumber(link.token_estimate)} tokens
-                  </Badge>
-                </>
+              {link.scrape_status === 'completed' && (
+                <Badge 
+                  variant="outline" 
+                  className={`text-[10px] h-5 px-2 border-0 ${analysisStatusConfig[link.analysis_status]?.color || analysisStatusConfig.pending.color}`}
+                >
+                  <AnalysisStatusIcon className={`w-3 h-3 mr-1 ${link.analysis_status === 'processing' ? 'animate-spin' : ''}`} />
+                  {analysisStatusConfig[link.analysis_status]?.label || "Pendente"}
+                </Badge>
               )}
             </div>
-
-            {analysis?.status === 'completed' && (
+              
+            {link.scrape_status === 'completed' && link.character_count > 0 && (
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+                <Badge variant="outline" className="text-[10px]">
                   <FileText className="w-3 h-3 mr-1" />
-                  {formatNumber(analysis.character_count)} chars
+                  {formatNumber(link.character_count)} chars
                 </Badge>
-                <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+                <Badge variant="outline" className="text-[10px]">
                   <Hash className="w-3 h-3 mr-1" />
-                  ~{formatNumber(analysis.token_estimate)} tokens
+                  ~{formatNumber(link.token_estimate)} tokens
                 </Badge>
               </div>
             )}
 
-            {link.status === 'error' && link.error_message && (
-              <p className="text-xs text-red-600 mt-2 truncate">{link.error_message}</p>
+            {link.scrape_status === 'completed' && link.content && showContent && (
+              <div className="mt-3 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 max-h-40 overflow-y-auto whitespace-pre-wrap">
+                {link.content}
+              </div>
+            )}
+
+            {link.scrape_status === 'error' && link.scrape_error_message && (
+              <div className="text-xs text-red-600 bg-red-50 p-2 rounded-lg border border-red-100 mt-2">
+                <span className="font-medium">Erro no scraping:</span> {link.scrape_error_message}
+              </div>
+            )}
+
+            {link.analysis_status === 'error' && link.analysis_error_message && (
+              <div className="text-xs text-red-600 bg-red-50 p-2 rounded-lg border border-red-100 mt-2">
+                <span className="font-medium">Erro na análise:</span> {link.analysis_error_message}
+              </div>
             )}
 
             {link.notes && (
-              <p className="text-xs text-slate-500 mt-2 line-clamp-1">{link.notes}</p>
+              <p className="text-xs text-slate-500 mt-2 line-clamp-2 italic border-l-2 border-slate-200 pl-2">{link.notes}</p>
             )}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 mt-3">
-              {link.status === 'pending' && (
+              {link.scrape_status === 'pending' && (
                 <Button 
                   size="sm" 
                   className="h-7 text-xs bg-sky-600 hover:bg-sky-700"
-                  onClick={onProcess}
-                  disabled={isProcessing}
+                  onClick={onScrape}
+                  disabled={processing}
                 >
-                  {isProcessing ? (
+                  {processing ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Processando...
+                      Puxando dados...
                     </>
                   ) : (
                     <>
-                      <Play className="w-3 h-3 mr-1" />
-                      Processar
+                      <Download className="w-3 h-3 mr-1" />
+                      Puxar Dados
                     </>
                   )}
                 </Button>
               )}
 
-              {link.status === 'completed' && (!analysis || analysis.status !== 'completed') && (
+              {link.scrape_status === 'completed' && link.analysis_status === 'pending' && (
                 <Button 
                   size="sm" 
                   className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
                   onClick={onAnalyze}
-                  disabled={isAnalyzing}
+                  disabled={analyzing}
                 >
-                  {isAnalyzing ? (
+                  {analyzing ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                       Analisando...
@@ -184,15 +206,47 @@ export default function LinkCard({ link, analysis, onProcess, onAnalyze, onView,
                 </Button>
               )}
 
-              {link.status === 'error' && (
+              {link.scrape_status === 'error' && (
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="h-7 text-xs"
-                  onClick={onProcess}
-                  disabled={isProcessing}
+                  className="h-7 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                  onClick={onScrape}
+                  disabled={processing}
                 >
-                  Tentar novamente
+                  {processing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Tentando novamente...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Tentar novamente
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {link.analysis_status === 'error' && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="h-7 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                  onClick={onAnalyze}
+                  disabled={analyzing}
+                >
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Tentando novamente...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Reanalisar
+                    </>
+                  )}
                 </Button>
               )}
             </div>
