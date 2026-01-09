@@ -12,6 +12,7 @@ import { Loader2, Edit } from "lucide-react";
 export default function EditLinkModal({ open, onOpenChange, link, modelingId }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
+    url: '',
     title: '',
     notes: '',
     purpose: ''
@@ -20,6 +21,7 @@ export default function EditLinkModal({ open, onOpenChange, link, modelingId }) 
   useEffect(() => {
     if (link) {
       setFormData({
+        url: link.url || '',
         title: link.title || '',
         notes: link.notes || '',
         purpose: link.purpose || ''
@@ -57,6 +59,16 @@ export default function EditLinkModal({ open, onOpenChange, link, modelingId }) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>URL</Label>
+            <Input
+              value={formData.url}
+              onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+              placeholder="https://exemplo.com/artigo"
+              required
+            />
+          </div>
+
           <div className="space-y-2">
             <Label>Título</Label>
             <Input
