@@ -48,7 +48,7 @@ export default function ModelingCard({ modeling, onClick, onEdit, onDelete }) {
           
           {/* Title & Description */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-slate-900 mb-0.5 truncate">
+            <h3 className="text-base font-semibold text-slate-900 mb-0.5 truncate">
               {modeling.title}
             </h3>
             {modeling.description && (
