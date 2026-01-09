@@ -1180,7 +1180,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                     onClick={() => setViewingLink(link)}
                     onEdit={() => setEditingLink(link)}
                     onScrape={() => handleScrapeLink(link.id)}
-                    onAnalyze={() => handleAnalyzeLinkContent(link.id)}
+                    onAnalyze={() => handleAnalyzeLink(link.id)}
                     onDelete={() => {
                       if (confirm('Excluir este link?')) {
                         deleteLinkMutation.mutate(link.id);
