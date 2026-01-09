@@ -25,7 +25,8 @@ export default function AddTextModal({ open, onOpenChange, modelingId, textToEdi
     title: '',
     description: '',
     content: '',
-    text_type: 'reference'
+    text_type: 'reference',
+    purpose: ''
   });
 
   // Load textToEdit into formData when it changes
@@ -35,14 +36,16 @@ export default function AddTextModal({ open, onOpenChange, modelingId, textToEdi
         title: textToEdit.title || '',
         description: textToEdit.description || '',
         content: textToEdit.content || '',
-        text_type: textToEdit.text_type || 'reference'
+        text_type: textToEdit.text_type || 'reference',
+        purpose: textToEdit.purpose || ''
       });
     } else {
       setFormData({
         title: '',
         description: '',
         content: '',
-        text_type: 'reference'
+        text_type: 'reference',
+        purpose: ''
       });
     }
   }, [textToEdit, open]);
@@ -100,7 +103,7 @@ export default function AddTextModal({ open, onOpenChange, modelingId, textToEdi
         console.warn('Função de análise indisponível no momento');
       }
       
-      setFormData({ title: '', description: '', content: '', text_type: 'reference' });
+      setFormData({ title: '', description: '', content: '', text_type: 'reference', purpose: '' });
       onOpenChange(false);
     },
     onError: (err) => {
@@ -190,6 +193,17 @@ export default function AddTextModal({ open, onOpenChange, modelingId, textToEdi
               placeholder="Cole ou digite o texto aqui..."
               className="min-h-[300px] font-mono text-sm"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Finalidade do Material (opcional)</Label>
+            <Textarea
+              value={formData.purpose}
+              onChange={(e) => setFormData(prev => ({ ...prev, purpose: e.target.value }))}
+              placeholder="Ex: Analisar o tom de voz, extrair insights principais, identificar estrutura argumentativa..."
+              className="min-h-[80px]"
+            />
+            <p className="text-xs text-slate-500">Informe o que a IA deve focar ao analisar este texto</p>
           </div>
 
           <DialogFooter>

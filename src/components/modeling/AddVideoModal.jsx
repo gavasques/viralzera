@@ -29,7 +29,7 @@ function extractYouTubeInfo(url) {
 
 export default function AddVideoModal({ open, onOpenChange, modelingId }) {
   const queryClient = useQueryClient();
-  const [videos, setVideos] = useState([{ url: '', title: '', notes: '' }]);
+  const [videos, setVideos] = useState([{ url: '', title: '', notes: '', purpose: '' }]);
 
   const createMutation = useMutation({
     mutationFn: async (videosData) => {
@@ -43,6 +43,7 @@ export default function AddVideoModal({ open, onOpenChange, modelingId }) {
           video_id: info?.videoId || '',
           thumbnail_url: info?.thumbnail || '',
           notes: video.notes || '',
+          purpose: video.purpose || '',
           status: 'pending'
         });
         results.push(result);
@@ -53,14 +54,14 @@ export default function AddVideoModal({ open, onOpenChange, modelingId }) {
       queryClient.invalidateQueries({ queryKey: ['modelingVideos', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Vídeo(s) adicionado(s)!');
-      setVideos([{ url: '', title: '', notes: '' }]);
+      setVideos([{ url: '', title: '', notes: '', purpose: '' }]);
       onOpenChange(false);
     },
     onError: (err) => toast.error('Erro ao adicionar: ' + err.message)
   });
 
   const addVideo = () => {
-    setVideos(prev => [...prev, { url: '', title: '', notes: '' }]);
+    setVideos(prev => [...prev, { url: '', title: '', notes: '', purpose: '' }]);
   };
 
   const removeVideo = (index) => {
@@ -153,6 +154,17 @@ export default function AddVideoModal({ open, onOpenChange, modelingId }) {
                     placeholder="Observações sobre o vídeo..."
                     className="min-h-[60px]"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Finalidade do Material (opcional)</Label>
+                  <Textarea
+                    value={video.purpose}
+                    onChange={(e) => updateVideo(index, 'purpose', e.target.value)}
+                    placeholder="Ex: Analisar a estrutura do roteiro, identificar o foco do criador, estudar o gancho utilizado..."
+                    className="min-h-[60px]"
+                  />
+                  <p className="text-xs text-slate-500">Informe o que a IA deve focar ao analisar este vídeo</p>
                 </div>
               </div>
             );

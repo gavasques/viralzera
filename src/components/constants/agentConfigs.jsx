@@ -334,17 +334,21 @@ Responda de forma clara e direta. Quando gerar conteúdo editado, formate-o de f
     title: 'Configurações de Modelagem (Transcrição)',
     defaultPrompt: `You are a Video Transcription Specialist.
 
-Output language: Brazilian Portuguese (pt-BR).
-Return ONLY the transcript text, clean and normalized.
+  Output language: Brazilian Portuguese (pt-BR).
+  Return ONLY the transcript text, clean and normalized.
 
-Task:
-- Transcribe the entire video content accurately
-- Keep the original language and expressions used by the speaker
-- Preserve slang, filler words (tipo, né, mano, tá ligado, etc.)
-- Keep natural speech patterns
-- Mark [RISOS] for laughter, [PAUSA] for pauses
-- Do NOT rewrite into formal Portuguese - preserve the voice`,
-    promptPlaceholders: []
+  Task:
+  - Transcribe the entire video content accurately
+  - Keep the original language and expressions used by the speaker
+  - Preserve slang, filler words (tipo, né, mano, tá ligado, etc.)
+  - Keep natural speech patterns
+  - Mark [RISOS] for laughter, [PAUSA] for pauses
+  - Do NOT rewrite into formal Portuguese - preserve the voice
+
+  {{purpose_note}}`,
+    promptPlaceholders: [
+      { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
+    ]
   },
 
   youtubeScriptGenerator: {
@@ -487,9 +491,12 @@ Retorne APENAS um JSON válido no formato:
   modelingScraper: {
     configEntity: 'ModelingScraperConfig',
     title: 'Configurações do Leitor de Links',
-    defaultPrompt: `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.`,
+    defaultPrompt: `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.
+
+  {{purpose_note}}`,
     promptPlaceholders: [
-      { key: '{{conteudo_artigo}}', description: 'O texto completo extraído do link' }
+      { key: '{{conteudo_artigo}}', description: 'O texto completo extraído do link' },
+      { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
     ]
   },
 
@@ -507,14 +514,17 @@ Retorne APENAS um JSON válido no formato:
     title: 'Configurações do Analisador Individual (Vídeos)',
     defaultPrompt: `Você é um Analista de Conteúdo Sênior. Sua tarefa é analisar o material a seguir (transcrição de vídeo, texto ou resumo de artigo) e criar um resumo analítico focado em:
 
-1. **Ideia Central**: Qual o principal argumento ou mensagem?
-2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
-3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
-4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
+  1. **Ideia Central**: Qual o principal argumento ou mensagem?
+  2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
+  3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
+  4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
 
-Formate a saída em Markdown.`,
+  {{purpose_note}}
+
+  Formate a saída em Markdown.`,
     promptPlaceholders: [
-      { key: '{{material_content}}', description: 'Conteúdo do vídeo, texto ou link' }
+      { key: '{{material_content}}', description: 'Conteúdo do vídeo, texto ou link' },
+      { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
     ]
   },
 
@@ -523,15 +533,18 @@ Formate a saída em Markdown.`,
     title: 'Configurações do Analisador de Textos',
     defaultPrompt: `Você é um Analista de Conteúdo Sênior especializado em textos e pesquisas. Sua tarefa é analisar o texto a seguir e criar um resumo analítico focado em:
 
-1. **Ideia Central**: Qual o principal argumento ou mensagem do texto?
-2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
-3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
-4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
-5. **Dados e Estatísticas**: Liste números, pesquisas ou fatos relevantes.
+  1. **Ideia Central**: Qual o principal argumento ou mensagem do texto?
+  2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
+  3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
+  4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
+  5. **Dados e Estatísticas**: Liste números, pesquisas ou fatos relevantes.
 
-Formate a saída em Markdown.`,
+  {{purpose_note}}
+
+  Formate a saída em Markdown.`,
     promptPlaceholders: [
-      { key: '{{text_content}}', description: 'Conteúdo completo do texto' }
+      { key: '{{text_content}}', description: 'Conteúdo completo do texto' },
+      { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
     ]
   },
 

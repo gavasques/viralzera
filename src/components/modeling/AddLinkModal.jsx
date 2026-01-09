@@ -11,7 +11,7 @@ import { Plus, X, ExternalLink, Loader2 } from "lucide-react";
 
 export default function AddLinkModal({ open, onOpenChange, modelingId }) {
   const queryClient = useQueryClient();
-  const [links, setLinks] = useState([{ url: '', title: '', notes: '' }]);
+  const [links, setLinks] = useState([{ url: '', title: '', notes: '', purpose: '' }]);
 
   const createMutation = useMutation({
     mutationFn: async (linksData) => {
@@ -21,6 +21,7 @@ export default function AddLinkModal({ open, onOpenChange, modelingId }) {
           url: link.url,
           title: link.title || null,
           notes: link.notes || null,
+          purpose: link.purpose || null,
           status: 'pending'
         })
       );
@@ -30,7 +31,7 @@ export default function AddLinkModal({ open, onOpenChange, modelingId }) {
       queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Links adicionados!');
-      setLinks([{ url: '', title: '', notes: '' }]);
+      setLinks([{ url: '', title: '', notes: '', purpose: '' }]);
       onOpenChange(false);
     },
     onError: (error) => {
@@ -66,7 +67,7 @@ export default function AddLinkModal({ open, onOpenChange, modelingId }) {
   };
 
   const addLink = () => {
-    setLinks([...links, { url: '', title: '', notes: '' }]);
+    setLinks([...links, { url: '', title: '', notes: '', purpose: '' }]);
   };
 
   const removeLink = (index) => {
@@ -137,6 +138,18 @@ export default function AddLinkModal({ open, onOpenChange, modelingId }) {
                   onChange={(e) => updateLink(index, 'notes', e.target.value)}
                   rows={2}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`purpose-${index}`}>Finalidade do Material (opcional)</Label>
+                <Textarea
+                  id={`purpose-${index}`}
+                  placeholder="Ex: Extrair dados e estatísticas, identificar argumentos principais, analisar formato do conteúdo..."
+                  value={link.purpose}
+                  onChange={(e) => updateLink(index, 'purpose', e.target.value)}
+                  rows={2}
+                />
+                <p className="text-xs text-slate-500">Informe o que a IA deve focar ao processar este link</p>
               </div>
             </div>
           ))}
