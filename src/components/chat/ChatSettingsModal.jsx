@@ -147,6 +147,7 @@ export default function ChatSettingsModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [configEntity, 'global'] });
+      queryClient.invalidateQueries({ queryKey: ['allAgentConfigs'] });
       toast.success('✓ Configurações salvas com sucesso!');
       setTimeout(() => onOpenChange(false), 500);
     },
