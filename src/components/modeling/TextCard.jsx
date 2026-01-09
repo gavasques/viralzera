@@ -26,6 +26,7 @@ const typeColors = {
 };
 
 export default function TextCard({ text, analysis, onView, onEdit, onDelete, onAnalyze, isAnalyzing }) {
+  const [showAnalysis, setShowAnalysis] = React.useState(false);
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -109,24 +110,32 @@ export default function TextCard({ text, analysis, onView, onEdit, onDelete, onA
             {text.content.substring(0, 150)}...
           </p>
         )}
-        
+
         {/* Analysis Summary */}
         {analysis?.status === 'completed' && (
-          <div className="mt-3 p-3 bg-purple-50 rounded-lg text-xs text-slate-700 max-h-32 overflow-y-auto">
-            {analysis.analysis_summary}
+          <div className="mt-3 border-t pt-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowAnalysis(!showAnalysis); }}
+              className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3" />
+              {showAnalysis ? 'Ocultar' : 'Ver'} Análise
+            </button>
+            {showAnalysis && (
+              <div className="mt-2 p-3 bg-purple-50 rounded-lg text-xs text-slate-700 max-h-40 overflow-y-auto">
+                {analysis.analysis_summary}
+              </div>
+            )}
           </div>
         )}
-        
-        {/* Analyze Button */}
-        {!analysis || analysis.status !== 'completed' ? (
-          <div className="mt-3 pt-3 border-t" onClick={e => e.stopPropagation()}>
+
+        {/* Action Button */}
+        {(!analysis || analysis.status !== 'completed') && (
+          <div className="mt-3 pt-3 border-t">
             <Button 
               size="sm" 
               className="h-7 text-xs bg-purple-600 hover:bg-purple-700 w-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAnalyze?.();
-              }}
+              onClick={(e) => { e.stopPropagation(); onAnalyze?.(); }}
               disabled={isAnalyzing}
             >
               {isAnalyzing ? (
@@ -142,7 +151,7 @@ export default function TextCard({ text, analysis, onView, onEdit, onDelete, onA
               )}
             </Button>
           </div>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   );

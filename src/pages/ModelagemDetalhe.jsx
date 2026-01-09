@@ -459,35 +459,6 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
-  // Analyze text
-  const handleAnalyzeText = async (textId) => {
-    setAnalyzingTextId(textId);
-    
-    const text = texts.find(t => t.id === textId);
-    if (!text || !text.content) {
-      toast.error('Texto não encontrado ou sem conteúdo');
-      setAnalyzingTextId(null);
-      return;
-    }
-
-    try {
-      toast.info('Analisando texto...');
-
-      await base44.functions.invoke('analyzeText', {
-        textId,
-        modeling_id: modelingId
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
-      toast.success('Texto analisado!');
-    } catch (error) {
-      console.error('Erro na análise:', error);
-      toast.error('Erro ao analisar: ' + error.message);
-    } finally {
-      setAnalyzingTextId(null);
-    }
-  };
-
   // Analyze video
   const handleAnalyzeVideo = async (videoId) => {
     setAnalyzingId(videoId);
@@ -574,6 +545,37 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
+  // Analyze text
+  const handleAnalyzeText = async (textId) => {
+    setAnalyzingTextId(textId);
+    
+    const text = texts.find(t => t.id === textId);
+    if (!text || !text.content) {
+      toast.error('Texto sem conteúdo');
+      setAnalyzingTextId(null);
+      return;
+    }
+
+    try {
+      toast.info('Analisando texto...');
+
+      await base44.functions.invoke('runModelingAnalysis', {
+        modeling_id: modelingId,
+        materialId: textId,
+        materialType: 'text',
+        content: text.content
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
+      toast.success('Texto analisado!');
+    } catch (error) {
+      console.error('Erro na análise:', error);
+      toast.error('Erro ao analisar: ' + error.message);
+    } finally {
+      setAnalyzingTextId(null);
+    }
+  };
+
   // Generate complete dossier with all references
   const handleGenerateDossier = async () => {
     setGeneratingDossier(true);
@@ -606,17 +608,6 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         materiaisBrutos += `## 💡 Ideia do Criador\n\n${modeling.creator_idea}\n\n`;
       }
 
-      // Adicionar análises de textos
-      const textAnalyses = analyses.filter(a => a.material_type === 'text' && a.status === 'completed');
-      if (textAnalyses.length > 0) {
-        materiaisBrutos += `---\n\n## 📄 ANÁLISES DE TEXTOS E PESQUISAS (${textAnalyses.length})\n\n`;
-        textAnalyses.forEach((a) => {
-          materiaisBrutos += `### ${a.material_title || 'Sem título'}\n\n`;
-          materiaisBrutos += `${a.analysis_summary}\n\n`;
-          materiaisBrutos += `---\n\n`;
-        });
-      }
-
       // Adicionar análises de vídeos
       const videoAnalyses = analyses.filter(a => a.material_type === 'video' && a.status === 'completed');
       if (videoAnalyses.length > 0) {
@@ -646,11 +637,37 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         }
       }
 
-      // Adicionar textos SEM análise
-      const textsWithoutAnalysis = texts.filter(t => !textAnalyses.find(a => a.material_id === t.id));
-      if (textsWithoutAnalysis.length > 0) {
-        materiaisBrutos += `## 📄 TEXTOS DE REFERÊNCIA (SEM ANÁLISE) (${textsWithoutAnalysis.length})\n\n`;
-        textsWithoutAnalysis.forEach((t, i) => {
+      // Adicionar análises de textos (prioridade) ou textos completos (fallback)
+      const textAnalyses = analyses.filter(a => a.material_type === 'text' && a.status === 'completed');
+      if (textAnalyses.length > 0) {
+        materiaisBrutos += `## 📄 ANÁLISES DE TEXTOS DE REFERÊNCIA (${textAnalyses.length})\n\n`;
+        textAnalyses.forEach((a, i) => {
+          const text = texts.find(t => t.id === a.material_id);
+          materiaisBrutos += `### ${a.material_title || text?.title || 'Sem título'}\n\n`;
+          if (text?.description) {
+            materiaisBrutos += `**Descrição:** ${text.description}\n\n`;
+          }
+          materiaisBrutos += `${a.analysis_summary}\n\n`;
+          materiaisBrutos += `---\n\n`;
+        });
+        
+        // Adicionar textos sem análise (se houver)
+        const textsWithoutAnalysis = texts.filter(t => !textAnalyses.some(a => a.material_id === t.id));
+        if (textsWithoutAnalysis.length > 0) {
+          materiaisBrutos += `## 📄 TEXTOS ADICIONAIS (${textsWithoutAnalysis.length})\n\n`;
+          textsWithoutAnalysis.forEach((t, i) => {
+            materiaisBrutos += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
+            if (t.description) {
+              materiaisBrutos += `**Descrição:** ${t.description}\n\n`;
+            }
+            materiaisBrutos += `${t.content}\n\n`;
+            materiaisBrutos += `---\n\n`;
+          });
+        }
+      } else if (texts.length > 0) {
+        // Fallback: usar textos completos se não houver análises
+        materiaisBrutos += `## 📄 TEXTOS DE REFERÊNCIA (${texts.length})\n\n`;
+        texts.forEach((t, i) => {
           materiaisBrutos += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
           if (t.description) {
             materiaisBrutos += `**Descrição:** ${t.description}\n\n`;
@@ -676,7 +693,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       }
 
       // Verificar se há conteúdo suficiente
-      const hasContent = textAnalyses.length > 0 || videoAnalyses.length > 0 || texts.length > 0 || completedLinks.length > 0 || (videos.some(v => v.status === 'transcribed')) || modeling.creator_idea;
+      const hasContent = videoAnalyses.length > 0 || textAnalyses.length > 0 || texts.length > 0 || completedLinks.length > 0 || (videos.some(v => v.status === 'transcribed')) || modeling.creator_idea;
       
       if (!hasContent) {
         throw new Error('Não há conteúdo suficiente para gerar o dossiê. Adicione vídeos analisados, textos, links processados ou uma ideia do criador.');
@@ -1014,12 +1031,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                     text={text}
                     analysis={analysis}
                     isAnalyzing={analyzingTextId === text.id}
-                    onAnalyze={() => handleAnalyzeText(text.id)}
                     onView={() => setViewingText(text)}
                     onEdit={() => {
                       setEditingText(text);
                       setShowAddText(true);
                     }}
+                    onAnalyze={() => handleAnalyzeText(text.id)}
                     onDelete={() => {
                       if (confirm('Excluir este texto?')) {
                         deleteTextMutation.mutate(text.id);
