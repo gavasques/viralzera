@@ -169,10 +169,19 @@ export const AGENT_CARDS = [
   },
   {
     key: 'modelingAnalyzer',
-    title: 'Modelagem - Analisador Individual',
-    description: 'Analisa materiais individuais e extrai insights',
+    title: 'Analisador Individual (Vídeos)',
+    description: 'Analisa vídeos individualmente extraindo insights',
     icon: Microscope,
-    color: 'bg-fuchsia-500'
+    color: 'bg-fuchsia-500',
+    category: 'youtube'
+  },
+  {
+    key: 'modelingTextAnalyzer',
+    title: 'Analisador de Textos',
+    description: 'Analisa textos e pesquisas extraindo insights e tópicos-chave',
+    icon: FileText,
+    color: 'bg-blue-600',
+    category: 'youtube'
   },
   {
     key: 'deepResearch',
