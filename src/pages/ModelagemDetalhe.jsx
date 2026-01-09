@@ -1048,18 +1048,6 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         {/* Texts Tab */}
         <TabsContent value="texts" className="space-y-4">
           <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
-              onClick={() => openDeepResearch(modelingId)}
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              Deep Research
-            </Button>
-            <Button onClick={() => setShowDeepResearchWebhook(true)} className="bg-violet-600 hover:bg-violet-700 text-white border-none">
-                <Search className="w-4 h-4 mr-2" />
-                Nova Pesquisa
-            </Button>
             <Button onClick={() => setShowAddText(true)} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Texto
