@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Play
+  MoreVertical, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Play, Pencil, Sparkles, RefreshCw
 } from "lucide-react";
 
 const statusConfig = {
@@ -14,7 +14,7 @@ const statusConfig = {
   error: { label: "Erro", color: "bg-red-100 text-red-700", icon: AlertCircle }
 };
 
-export default function LinkCard({ link, onProcess, onView, onDelete, isProcessing }) {
+export default function LinkCard({ link, analysis, onProcess, onView, onDelete, onEdit, onAnalyze, isProcessing, isAnalyzing }) {
   const status = statusConfig[link.status] || statusConfig.pending;
   const StatusIcon = status.icon;
 
@@ -63,10 +63,18 @@ export default function LinkCard({ link, onProcess, onView, onDelete, isProcessi
                   <DropdownMenuItem onClick={() => window.open(link.url, '_blank')}>
                     <ExternalLink className="w-4 h-4 mr-2" /> Abrir Link
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Pencil className="w-4 h-4 mr-2" /> Editar
+                  </DropdownMenuItem>
                   {link.summary && (
-                    <DropdownMenuItem onClick={onView}>
-                      <Eye className="w-4 h-4 mr-2" /> Ver Resumo
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem onClick={onView}>
+                        <Eye className="w-4 h-4 mr-2" /> Ver Resumo
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={onAnalyze} disabled={isAnalyzing}>
+                        <Sparkles className="w-4 h-4 mr-2" /> Reanalisar Link
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuItem onClick={onDelete} className="text-red-600">
                     <Trash2 className="w-4 h-4 mr-2" /> Excluir
@@ -81,6 +89,13 @@ export default function LinkCard({ link, onProcess, onView, onDelete, isProcessi
                 {status.label}
               </Badge>
               
+              {analysis?.status === 'completed' && (
+                <Badge className="bg-purple-100 text-purple-700 text-[10px]">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Analisado
+                </Badge>
+              )}
+              
               {link.status === 'completed' && (
                 <>
                   <Badge variant="outline" className="text-[10px]">
@@ -94,6 +109,19 @@ export default function LinkCard({ link, onProcess, onView, onDelete, isProcessi
                 </>
               )}
             </div>
+            
+            {analysis?.status === 'completed' && (
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+                  <FileText className="w-3 h-3 mr-1" />
+                  {formatNumber(analysis.character_count)} chars
+                </Badge>
+                <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+                  <Hash className="w-3 h-3 mr-1" />
+                  ~{formatNumber(analysis.token_estimate)} tokens
+                </Badge>
+              </div>
+            )}
 
             {link.status === 'error' && link.error_message && (
               <p className="text-xs text-red-600 mt-2 truncate">{link.error_message}</p>
@@ -103,39 +131,62 @@ export default function LinkCard({ link, onProcess, onView, onDelete, isProcessi
               <p className="text-xs text-slate-500 mt-2 line-clamp-1">{link.notes}</p>
             )}
 
-            {/* Action Button */}
-            {link.status === 'pending' && (
-              <Button 
-                size="sm" 
-                className="mt-3 h-7 text-xs bg-sky-600 hover:bg-sky-700"
-                onClick={onProcess}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3 h-3 mr-1" />
-                    Processar
-                  </>
-                )}
-              </Button>
-            )}
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 mt-3">
+              {link.status === 'pending' && (
+                <Button 
+                  size="sm" 
+                  className="h-7 text-xs bg-sky-600 hover:bg-sky-700"
+                  onClick={onProcess}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3 h-3 mr-1" />
+                      Processar
+                    </>
+                  )}
+                </Button>
+              )}
 
-            {link.status === 'error' && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="mt-3 h-7 text-xs"
-                onClick={onProcess}
-                disabled={isProcessing}
-              >
-                Tentar novamente
-              </Button>
-            )}
+              {link.status === 'completed' && (
+                <Button 
+                  size="sm" 
+                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
+                  onClick={onAnalyze}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      {analysis?.status === 'completed' ? 'Reanalisando...' : 'Analisando...'}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      {analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar'}
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {link.status === 'error' && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={onProcess}
+                  disabled={isProcessing}
+                >
+                  Tentar novamente
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

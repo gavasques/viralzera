@@ -25,7 +25,7 @@ const typeColors = {
   other: 'bg-slate-100 text-slate-700'
 };
 
-export default function TextCard({ text, analysis, onView, onEdit, onDelete, onAnalyze, isAnalyzing }) {
+export default function TextCard({ text, analysis, onView, onEdit, onDelete, onAnalyze, onReanalyze, isAnalyzing }) {
   const [showAnalysis, setShowAnalysis] = React.useState(false);
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -64,6 +64,11 @@ export default function TextCard({ text, analysis, onView, onEdit, onDelete, onA
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit?.(); }}>
                 <Pencil className="w-4 h-4 mr-2" /> Editar
               </DropdownMenuItem>
+              {analysis?.status === 'completed' && (
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onReanalyze?.(); }} disabled={isAnalyzing}>
+                  <Sparkles className="w-4 h-4 mr-2" /> Reanalisar Texto
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete?.(); }} className="text-red-600">
                 <Trash2 className="w-4 h-4 mr-2" /> Excluir
               </DropdownMenuItem>
@@ -130,28 +135,29 @@ export default function TextCard({ text, analysis, onView, onEdit, onDelete, onA
         )}
 
         {/* Action Button */}
-        {(!analysis || analysis.status !== 'completed') && (
-          <div className="mt-3 pt-3 border-t">
-            <Button 
-              size="sm" 
-              className="h-7 text-xs bg-purple-600 hover:bg-purple-700 w-full"
-              onClick={(e) => { e.stopPropagation(); onAnalyze?.(); }}
-              disabled={isAnalyzing}
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Analisando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Analisar Texto
-                </>
-              )}
-            </Button>
-          </div>
-        )}
+        <div className="mt-3 pt-3 border-t">
+          <Button 
+            size="sm" 
+            className="h-7 text-xs bg-purple-600 hover:bg-purple-700 w-full"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              analysis?.status === 'completed' ? onReanalyze?.() : onAnalyze?.(); 
+            }}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                {analysis?.status === 'completed' ? 'Reanalisando...' : 'Analisando...'}
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3 h-3 mr-1" />
+                {analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar Texto'}
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

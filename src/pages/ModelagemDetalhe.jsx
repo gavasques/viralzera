@@ -20,6 +20,8 @@ import AddVideoModal from "@/components/modeling/AddVideoModal";
 import AddTextModal from "@/components/modeling/AddTextModal";
 import AddLinkModal from "@/components/modeling/AddLinkModal";
 import LinkCard from "@/components/modeling/LinkCard";
+import VideoEditModal from "@/components/modeling/VideoEditModal";
+import LinkEditModal from "@/components/modeling/LinkEditModal";
 import LinkViewerModal from "@/components/modeling/LinkViewerModal";
 import CreatorIdeaEditor from "@/components/modeling/CreatorIdeaEditor";
 import TranscriptViewerModal from "@/components/modeling/TranscriptViewerModal";
@@ -49,6 +51,9 @@ export default function ModelagemDetalhe() {
   const [generatingDossier, setGeneratingDossier] = useState(false);
   const [analyzingId, setAnalyzingId] = useState(null);
   const [analyzingTextId, setAnalyzingTextId] = useState(null);
+  const [analyzingLinkId, setAnalyzingLinkId] = useState(null);
+  const [editingVideo, setEditingVideo] = useState(null);
+  const [editingLink, setEditingLink] = useState(null);
   const { openDeepResearch } = useDeepResearch();
   const [showDeepResearchWebhook, setShowDeepResearchWebhook] = useState(false);
 
@@ -471,6 +476,100 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
+  // Analyze link
+  const handleAnalyzeLink = async (linkId) => {
+    setAnalyzingLinkId(linkId);
+    
+    const link = links.find(l => l.id === linkId);
+    if (!link || !link.summary) {
+      toast.error('Link não processado');
+      setAnalyzingLinkId(null);
+      return;
+    }
+
+    try {
+      toast.info('Analisando link...');
+
+      const analyzerConfigs = await base44.entities.ModelingAnalyzerConfig.list();
+      const config = analyzerConfigs?.[0];
+      
+      if (!config?.model) {
+        throw new Error('Configure o agente de Análise Individual em Configurações de Agentes');
+      }
+
+      let systemPrompt = config.prompt || `Você é um analista de conteúdo especializado. Analise este material e extraia os insights, tópicos-chave e informações mais relevantes para criação de conteúdo.`;
+
+      if (link.purpose) {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, `\n\n**FINALIDADE ESPECÍFICA DESTE MATERIAL:**\n${link.purpose}\n\nFoque sua análise considerando esta finalidade informada pelo usuário.`);
+      } else {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, '');
+      }
+
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter em Configurações');
+      }
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Link Analyzer'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: link.summary }
+          ],
+          temperature: 0.5,
+          max_tokens: 4000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const analysisSummary = data.choices?.[0]?.message?.content;
+
+      if (!analysisSummary) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      // Deletar análise antiga se existir
+      const existingAnalysis = analyses.find(a => a.material_id === linkId && a.material_type === 'link');
+      if (existingAnalysis) {
+        await base44.entities.ModelingAnalysis.delete(existingAnalysis.id);
+      }
+
+      await base44.entities.ModelingAnalysis.create({
+        modeling_id: modelingId,
+        material_id: linkId,
+        material_type: 'link',
+        material_title: link.title || link.url,
+        analysis_summary: analysisSummary,
+        character_count: analysisSummary.length,
+        token_estimate: Math.ceil(analysisSummary.length / 4),
+        status: 'completed'
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
+      toast.success('Link analisado!');
+    } catch (error) {
+      console.error('Erro na análise:', error);
+      toast.error('Erro ao analisar: ' + error.message);
+    } finally {
+      setAnalyzingLinkId(null);
+    }
+  };
+
   // Analyze video
   const handleAnalyzeVideo = async (videoId) => {
     setAnalyzingId(videoId);
@@ -540,6 +639,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
       if (!analysisSummary) {
         throw new Error('Resposta inválida da API');
+      }
+
+      // Deletar análise antiga se existir
+      const existingAnalysis = analyses.find(a => a.material_id === videoId && a.material_type === 'video');
+      if (existingAnalysis) {
+        await base44.entities.ModelingAnalysis.delete(existingAnalysis.id);
       }
 
       // Salvar análise
@@ -633,6 +738,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
       if (!analysisSummary) {
         throw new Error('Resposta inválida da API');
+      }
+
+      // Deletar análise antiga se existir
+      const existingAnalysis = analyses.find(a => a.material_id === textId && a.material_type === 'text');
+      if (existingAnalysis) {
+        await base44.entities.ModelingAnalysis.delete(existingAnalysis.id);
       }
 
       // Salvar análise
@@ -1059,6 +1170,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                     onAnalyze={() => handleAnalyzeVideo(video.id)}
                     onStopTranscription={() => handleStopTranscription(video.id)}
                     onView={() => setViewingVideo(video)}
+                    onEdit={() => setEditingVideo(video)}
                     onDelete={() => {
                       if (confirm('Excluir este vídeo?')) {
                         deleteVideoMutation.mutate(video.id);
@@ -1106,6 +1218,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                       setShowAddText(true);
                     }}
                     onAnalyze={() => handleAnalyzeText(text.id)}
+                    onReanalyze={() => handleAnalyzeText(text.id)}
                     onDelete={() => {
                       if (confirm('Excluir este texto?')) {
                         deleteTextMutation.mutate(text.id);
@@ -1154,20 +1267,27 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
             />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {links.map(link => (
-                <LinkCard
-                  key={link.id}
-                  link={link}
-                  isProcessing={processingLinkId === link.id}
-                  onProcess={() => handleProcessLink(link.id)}
-                  onView={() => setViewingLink(link)}
-                  onDelete={() => {
+              {links.map(link => {
+                const analysis = analyses.find(a => a.material_id === link.id && a.material_type === 'link');
+                return (
+                  <LinkCard
+                    key={link.id}
+                    link={link}
+                    analysis={analysis}
+                    isProcessing={processingLinkId === link.id}
+                    isAnalyzing={analyzingLinkId === link.id}
+                    onProcess={() => handleProcessLink(link.id)}
+                    onView={() => setViewingLink(link)}
+                    onEdit={() => setEditingLink(link)}
+                    onAnalyze={() => handleAnalyzeLink(link.id)}
+                    onDelete={() => {
                     if (confirm('Excluir este link?')) {
                       deleteLinkMutation.mutate(link.id);
                     }
                   }}
-                />
-              ))}
+                  />
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -1230,6 +1350,20 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       <DeepResearchWebhookModal
         open={showDeepResearchWebhook}
         onOpenChange={setShowDeepResearchWebhook}
+        modelingId={modelingId}
+      />
+
+      <VideoEditModal
+        open={!!editingVideo}
+        onOpenChange={(val) => !val && setEditingVideo(null)}
+        video={editingVideo}
+        modelingId={modelingId}
+      />
+
+      <LinkEditModal
+        open={!!editingLink}
+        onOpenChange={(val) => !val && setEditingLink(null)}
+        link={editingLink}
         modelingId={modelingId}
       />
       </div>

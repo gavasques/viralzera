@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Sparkles, RefreshCw, StopCircle
+  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Sparkles, RefreshCw, StopCircle, Pencil
 } from "lucide-react";
 
 const statusConfig = {
@@ -23,6 +23,7 @@ export default function VideoCard({
   onDelete, 
   onStopTranscription,
   onRetranscribe,
+  onEdit,
   isTranscribing, 
   isAnalyzing 
 }) {
@@ -89,12 +90,16 @@ export default function VideoCard({
                     </DropdownMenuItem>
                   )}
 
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Pencil className="w-4 h-4 mr-2" /> Editar
+                  </DropdownMenuItem>
+
                   {video.status === 'transcribed' && (
                     <>
                       <DropdownMenuItem onClick={onRetranscribe}>
                         <RefreshCw className="w-4 h-4 mr-2" /> Retranscrever
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onAnalyze}>
+                      <DropdownMenuItem onClick={onAnalyze} disabled={isAnalyzing}>
                         <Sparkles className="w-4 h-4 mr-2" /> Reanalisar Vídeo
                       </DropdownMenuItem>
                     </>
@@ -202,7 +207,7 @@ export default function VideoCard({
                 </Button>
               )}
 
-              {video.status === 'transcribed' && (!analysis || analysis.status !== 'completed') && (
+              {video.status === 'transcribed' && (
                 <Button 
                   size="sm" 
                   className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
@@ -212,12 +217,12 @@ export default function VideoCard({
                   {isAnalyzing ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Analisando...
+                      {analysis?.status === 'completed' ? 'Reanalisando...' : 'Analisando...'}
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-3 h-3 mr-1" />
-                      Analisar
+                      {analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar'}
                     </>
                   )}
                 </Button>
