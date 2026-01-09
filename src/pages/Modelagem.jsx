@@ -176,7 +176,7 @@ export default function Modelagem() {
           onAction={handleNew}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="space-y-3">
           {filteredModelings.map(modeling => (
             <ModelingCard
               key={modeling.id}
