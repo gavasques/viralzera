@@ -1,5 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+/**
+ * Função para extrair conteúdo de links da modelagem
+ * Apenas faz scraping do conteúdo, não analisa
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -25,18 +29,11 @@ Deno.serve(async (req) => {
 
     // Atualizar status para processing
     await base44.entities.ModelingLink.update(link_id, {
-      status: 'processing',
-      error_message: null
+      scrape_status: 'processing',
+      scrape_error_message: null
     });
 
     try {
-      // Buscar configuração do agente
-      const configs = await base44.entities.ModelingScraperConfig.list();
-      const config = configs?.[0];
-
-      const model = config?.model || 'openai/gpt-4o-mini';
-      const systemPrompt = config?.prompt || `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.`;
-
       // Extrair conteúdo do link usando a API InvokeLLM com web search
       const extractResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: `Extraia o conteúdo principal deste artigo, removendo navegação, ads e elementos irrelevantes. Retorne apenas o texto do artigo de forma limpa e estruturada.\n\nURL: ${link.url}`,
@@ -49,60 +46,16 @@ Deno.serve(async (req) => {
         throw new Error('Não foi possível extrair conteúdo suficiente do link');
       }
 
-      // Buscar API key
-      const userConfigs = await base44.entities.UserConfig.filter({ created_by: user.email });
-      const apiKey = userConfigs[0]?.openrouter_api_key;
-
-      if (!apiKey) {
-        throw new Error('Configure sua API Key do OpenRouter');
-      }
-
-      // Substituir placeholder
-      const finalPrompt = systemPrompt.replace(/\{\{conteudo_artigo\}\}/g, articleContent);
-
-      // Chamar OpenRouter para gerar resumo
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': Deno.env.get('APP_URL') || 'https://app.base44.com',
-          'X-Title': 'ContentAI - Link Scraper'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: finalPrompt },
-            { role: 'user', content: articleContent }
-          ],
-          temperature: 0.5,
-          max_tokens: 2000
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const summary = data.choices?.[0]?.message?.content;
-
-      if (!summary) {
-        throw new Error('Resposta inválida da API');
-      }
-
-      const charCount = summary.length;
+      const charCount = articleContent.length;
       const tokenEstimate = Math.ceil(charCount / 4);
 
-      // Atualizar link com resumo
+      // Atualizar link com conteúdo extraído
       await base44.entities.ModelingLink.update(link_id, {
-        summary,
         content: articleContent,
         character_count: charCount,
         token_estimate: tokenEstimate,
-        status: 'completed',
-        error_message: null
+        scrape_status: 'completed',
+        scrape_error_message: null
       });
 
       // Atualizar totais da modelagem
@@ -124,15 +77,16 @@ Deno.serve(async (req) => {
 
       return Response.json({
         success: true,
-        summary,
-        usage: data.usage
+        content: articleContent,
+        character_count: charCount,
+        token_estimate: tokenEstimate
       });
 
     } catch (error) {
       // Atualizar status para error
       await base44.entities.ModelingLink.update(link_id, {
-        status: 'error',
-        error_message: error.message
+        scrape_status: 'error',
+        scrape_error_message: error.message
       });
       throw error;
     }

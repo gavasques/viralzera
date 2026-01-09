@@ -46,7 +46,8 @@ export default function ModelagemDetalhe() {
   const [viewingText, setViewingText] = useState(null);
   const [editingText, setEditingText] = useState(null);
   const [transcribingId, setTranscribingId] = useState(null);
-  const [processingLinkId, setProcessingLinkId] = useState(null);
+  const [scrapingLinkId, setScrapingLinkId] = useState(null);
+  const [analyzingLinkId, setAnalyzingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [generatingDossier, setGeneratingDossier] = useState(false);
   const [analyzingId, setAnalyzingId] = useState(null);
