@@ -3,29 +3,39 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, MoreVertical, Eye, Trash2, Hash, Sparkles, Layers, Calendar } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { FileText, MoreVertical, Eye, Trash2, Hash, Sparkles, Layers, Calendar, Power } from "lucide-react";
 import { format } from "date-fns";
 
-export default function DossierCard({ dossier, onView, onDelete, onUseForScript }) {
+export default function DossierCard({ dossier, onView, onDelete, onUseForScript, onToggleActive }) {
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num?.toString() || '0';
   };
 
+  const isActive = dossier.is_active !== false; // default true
+  
   return (
-    <Card className="hover:shadow-lg transition-all group">
+    <Card className={`hover:shadow-lg transition-all group ${!isActive ? 'opacity-60' : ''}`}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
               <FileText className="w-5 h-5 text-purple-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-slate-900 text-sm line-clamp-1">
-                {dossier.modeling?.title || 'Dossiê'}
-              </h3>
-              <p className="text-xs text-slate-500 flex items-center gap-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-900 text-sm line-clamp-1">
+                  {dossier.modeling?.title || 'Dossiê'}
+                </h3>
+                {!isActive && (
+                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">
+                    Inativo
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                 <Calendar className="w-3 h-3" />
                 {format(new Date(dossier.created_date), 'dd/MM/yyyy')}
               </p>
@@ -44,6 +54,9 @@ export default function DossierCard({ dossier, onView, onDelete, onUseForScript 
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onUseForScript}>
                 <Sparkles className="w-4 h-4 mr-2" /> Usar para Roteiro
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onToggleActive}>
+                <Power className="w-4 h-4 mr-2" /> {isActive ? 'Inativar' : 'Ativar'}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onDelete} className="text-red-600">
                 <Trash2 className="w-4 h-4 mr-2" /> Excluir

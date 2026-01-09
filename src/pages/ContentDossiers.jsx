@@ -67,8 +67,17 @@ export default function ContentDossiers() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.ContentDossier.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dossiers'] });
+      queryClient.invalidateQueries({ queryKey: ['contentDossiers'] });
       toast.success('Dossiê excluído!');
+    }
+  });
+
+  // Toggle active mutation
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, is_active }) => base44.entities.ContentDossier.update(id, { is_active }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contentDossiers'] });
+      toast.success('Status atualizado!');
     }
   });
 
@@ -93,6 +102,11 @@ export default function ContentDossiers() {
 
   const handleUseForScript = (dossierId) => {
     window.location.href = createPageUrl('YoutubeScripts') + `?action=new&dossierId=${dossierId}`;
+  };
+
+  const handleToggleActive = (dossier) => {
+    const newStatus = !dossier.is_active;
+    toggleActiveMutation.mutate({ id: dossier.id, is_active: newStatus });
   };
 
   if (!selectedFocusId) {
@@ -179,6 +193,7 @@ export default function ContentDossiers() {
               onView={() => setViewingDossier(dossier)}
               onDelete={() => handleDelete(dossier.id)}
               onUseForScript={() => handleUseForScript(dossier.id)}
+              onToggleActive={() => handleToggleActive(dossier)}
             />
           ))}
         </div>

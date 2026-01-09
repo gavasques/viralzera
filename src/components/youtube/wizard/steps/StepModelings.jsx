@@ -7,12 +7,28 @@ import { Badge } from "@/components/ui/badge";
 import { Video, FileText, Lightbulb, Database } from "lucide-react";
 
 export function StepModelings({ focusId, value, onChange }) {
+  // Fetch active dossiers for this focus
+  const { data: allDossiers = [], isLoading: loadingDossiers } = useQuery({
+    queryKey: ['dossiers-wizard', focusId],
+    queryFn: async () => {
+      const dossiers = await base44.entities.ContentDossier.filter({ is_active: true }, '-created_date', 100);
+      return dossiers;
+    },
+    enabled: !!focusId
+  });
+
   // Fetch modelings for this focus
-  const { data: modelings = [], isLoading: loadingModelings } = useQuery({
+  const { data: allModelings = [], isLoading: loadingModelings } = useQuery({
     queryKey: ['modelings-wizard', focusId],
     queryFn: () => base44.entities.Modeling.filter({ focus_id: focusId }, '-created_date', 50),
     enabled: !!focusId
   });
+
+  // Filter modelings that have active dossiers
+  const modelings = React.useMemo(() => {
+    const dossierModelingIds = allDossiers.map(d => d.modeling_id);
+    return allModelings.filter(m => dossierModelingIds.includes(m.id));
+  }, [allModelings, allDossiers]);
 
   // Fetch video counts
   const { data: videos = [] } = useQuery({
@@ -88,7 +104,7 @@ export function StepModelings({ focusId, value, onChange }) {
     return acc + getModelingStats(id).estimatedTokens;
   }, 0);
 
-  if (loadingModelings) {
+  if (loadingModelings || loadingDossiers) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-6 w-48" />
@@ -113,9 +129,9 @@ export function StepModelings({ focusId, value, onChange }) {
       {modelings.length === 0 ? (
         <div className="bg-slate-50 rounded-xl p-8 text-center">
           <Database className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-600 font-medium">Nenhuma modelagem encontrada</p>
+          <p className="text-slate-600 font-medium">Nenhum dossiê ativo encontrado</p>
           <p className="text-sm text-slate-400 mt-1">
-            Crie modelagens na seção "Modelagem" para usar como referência
+            Crie modelagens, gere dossiês e ative-os para usar como referência
           </p>
         </div>
       ) : (
