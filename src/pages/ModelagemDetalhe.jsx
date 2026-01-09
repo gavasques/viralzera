@@ -48,6 +48,7 @@ export default function ModelagemDetalhe() {
   const [transcribingId, setTranscribingId] = useState(null);
   const [scrapingLinkId, setScrapingLinkId] = useState(null);
   const [analyzingLinkId, setAnalyzingLinkId] = useState(null);
+  const [processingLinkId, setProcessingLinkId] = useState(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [generatingDossier, setGeneratingDossier] = useState(false);
   const [analyzingId, setAnalyzingId] = useState(null);
@@ -336,9 +337,9 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
   };
 
-  // Process link
-  const handleProcessLink = async (linkId) => {
-    setProcessingLinkId(linkId);
+  // Scrape link (puxar dados)
+  const handleScrapeLink = async (linkId) => {
+    setScrapingLinkId(linkId);
     
     const link = links.find(l => l.id === linkId);
     if (!link) {
@@ -348,132 +349,46 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
 
     try {
-      // Atualizar status para processing
-      await base44.entities.ModelingLink.update(linkId, {
-        status: 'processing',
-        error_message: null
-      });
-      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
-
-      // Buscar configuração do agente
-      const scraperConfigs = await base44.entities.ModelingScraperConfig.list();
-      const config = scraperConfigs?.[0];
-      
-      const model = config?.model || 'openai/gpt-4o-mini';
-      let systemPrompt = config?.prompt || `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.`;
-
-      // Adicionar finalidade do material se informada
-      if (link.purpose) {
-        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, `\n\n**FINALIDADE ESPECÍFICA DESTE MATERIAL:**\n${link.purpose}\n\nFoque seu resumo considerando esta finalidade informada pelo usuário.`);
-      } else {
-        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, '');
-      }
-
-      // Extrair conteúdo do link usando InvokeLLM
-      const articleContent = await base44.integrations.Core.InvokeLLM({
-        prompt: `Extraia o conteúdo principal deste artigo, removendo navegação, ads e elementos irrelevantes. Retorne apenas o texto do artigo de forma limpa e estruturada.\n\nURL: ${link.url}`,
-        add_context_from_internet: true
-      });
-
-      if (!articleContent || articleContent.length < 100) {
-        throw new Error('Não foi possível extrair conteúdo suficiente do link');
-      }
-
-      // Buscar API key
-      const userConfigs = await base44.entities.UserConfig.list();
-      const apiKey = userConfigs[0]?.openrouter_api_key;
-
-      if (!apiKey) {
-        throw new Error('Configure sua API Key do OpenRouter');
-      }
-
-      // Chamar OpenRouter diretamente
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'ContentAI - Link Scraper'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt.replace(/\{\{conteudo_artigo\}\}/g, articleContent) },
-            { role: 'user', content: articleContent }
-          ],
-          temperature: 0.5,
-          max_tokens: 2000
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const summary = data.choices?.[0]?.message?.content;
-
-      if (!summary) {
-        throw new Error('Resposta inválida da API');
-      }
-
-      const charCount = summary.length;
-      const tokenEstimate = Math.ceil(charCount / 4);
-
-      // Atualizar link
-      await base44.entities.ModelingLink.update(linkId, {
-        summary,
-        content: articleContent,
-        character_count: charCount,
-        token_estimate: tokenEstimate,
-        status: 'completed',
-        error_message: null
-      });
-
+      await base44.functions.invoke('modelingScraper', { link_id: linkId });
       queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
-      toast.success('Link processado!');
-
-      // Executar análise individual do link
-      try {
-        toast.info('Analisando link...');
-        await base44.functions.invoke('runModelingAnalysis', {
-          modeling_id: modelingId,
-          materialId: linkId,
-          materialType: 'link',
-          content: summary
-        });
-        queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
-        toast.success('Link analisado!');
-      } catch (analysisError) {
-        console.error('Erro na análise individual:', analysisError);
-        toast.error('Link processado, mas análise falhou: ' + analysisError.message);
-      }
-
-      } catch (error) {
-      await base44.entities.ModelingLink.update(linkId, {
-        status: 'error',
-        error_message: error.message
-      });
-      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
-      toast.error('Erro ao processar: ' + error.message);
+      toast.success('Dados extraídos com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao extrair dados: ' + error.message);
     } finally {
-      setProcessingLinkId(null);
+      setScrapingLinkId(null);
     }
   };
 
-  // Process all pending links
+  // Analyze link (analisar)
+  const handleAnalyzeLinkContent = async (linkId) => {
+    setAnalyzingLinkId(linkId);
+    
+    try {
+      await base44.functions.invoke('analyzeLinkContent', { 
+        linkId, 
+        modeling_id: modelingId 
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
+      queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
+      toast.success('Link analisado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao analisar link: ' + error.message);
+    } finally {
+      setAnalyzingLinkId(null);
+    }
+  };
+
+  // Process all pending links (scrape all)
   const handleProcessAllLinks = async () => {
-    const pendingLinks = links.filter(l => l.status === 'pending');
+    const pendingLinks = links.filter(l => l.scrape_status === 'pending');
     if (pendingLinks.length === 0) {
       toast.info('Nenhum link pendente para processar');
       return;
     }
 
     for (const link of pendingLinks) {
-      await handleProcessLink(link.id);
+      await handleScrapeLink(link.id);
     }
   };
 
@@ -857,23 +772,26 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         });
       }
 
-      // Adicionar links processados
-      const completedLinks = links.filter(l => l.status === 'completed' && l.summary);
-      if (completedLinks.length > 0) {
-        materiaisBrutos += `## 🔗 ARTIGOS E LINKS PROCESSADOS (${completedLinks.length})\n\n`;
-        completedLinks.forEach((l, i) => {
-          materiaisBrutos += `### Link ${i + 1}: ${l.title || 'Sem título'}\n\n`;
-          materiaisBrutos += `**URL:** ${l.url}\n\n`;
-          if (l.notes) {
-            materiaisBrutos += `**Notas:** ${l.notes}\n\n`;
+      // Adicionar análises de links
+      const linkAnalyses = analyses.filter(a => a.material_type === 'link' && a.status === 'completed');
+      if (linkAnalyses.length > 0) {
+        materiaisBrutos += `## 🔗 ANÁLISES DE LINKS DE REFERÊNCIA (${linkAnalyses.length})\n\n`;
+        linkAnalyses.forEach((a, i) => {
+          const link = links.find(l => l.id === a.material_id);
+          materiaisBrutos += `### ${a.material_title || link?.title || 'Sem título'}\n\n`;
+          if (link?.url) {
+            materiaisBrutos += `**URL:** ${link.url}\n\n`;
           }
-          materiaisBrutos += `**Resumo:**\n\n${l.summary}\n\n`;
+          if (link?.notes) {
+            materiaisBrutos += `**Notas:** ${link.notes}\n\n`;
+          }
+          materiaisBrutos += `${a.analysis_summary}\n\n`;
           materiaisBrutos += `---\n\n`;
         });
       }
 
       // Verificar se há conteúdo suficiente
-      const hasContent = videoAnalyses.length > 0 || textAnalyses.length > 0 || texts.length > 0 || completedLinks.length > 0 || (videos.some(v => v.status === 'transcribed')) || modeling.creator_idea;
+      const hasContent = videoAnalyses.length > 0 || textAnalyses.length > 0 || texts.length > 0 || linkAnalyses.length > 0 || (videos.some(v => v.status === 'transcribed')) || modeling.creator_idea;
       
       if (!hasContent) {
         throw new Error('Não há conteúdo suficiente para gerar o dossiê. Adicione vídeos analisados, textos, links processados ou uma ideia do criador.');
@@ -943,7 +861,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
   const pendingCount = videos.filter(v => v.status === 'pending').length;
   const transcribedCount = videos.filter(v => v.status === 'transcribed').length;
-  const pendingLinksCount = links.filter(l => l.status === 'pending').length;
+  const pendingLinksCount = links.filter(l => l.scrape_status === 'pending').length;
 
   if (!modelingId) {
     return (
@@ -1261,18 +1179,17 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                   <LinkCard
                     key={link.id}
                     link={link}
-                    analysis={analysis}
-                    isProcessing={processingLinkId === link.id}
-                    isAnalyzing={analyzingLinkId === link.id}
-                    onProcess={() => handleProcessLink(link.id)}
-                    onAnalyze={() => handleAnalyzeLink(link.id)}
+                    onClick={() => setViewingLink(link)}
                     onEdit={() => setEditingLink(link)}
-                    onView={() => setViewingLink(link)}
+                    onScrape={() => handleScrapeLink(link.id)}
+                    onAnalyze={() => handleAnalyzeLinkContent(link.id)}
                     onDelete={() => {
                       if (confirm('Excluir este link?')) {
                         deleteLinkMutation.mutate(link.id);
                       }
                     }}
+                    processing={scrapingLinkId === link.id}
+                    analyzing={analyzingLinkId === link.id}
                   />
                 );
               })}
