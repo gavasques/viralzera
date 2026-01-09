@@ -26,6 +26,8 @@ export default function YoutubeScripts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoriaFilter, setCategoriaFilter] = useState('all');
+  
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -119,60 +121,62 @@ export default function YoutubeScripts() {
 
       {/* Filters */}
       {scripts.length > 0 && (
-        <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Buscar roteiros..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por título ou conteúdo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
 
-          {/* Status Filter */}
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos Status</SelectItem>
-              <SelectItem value="Rascunho">Rascunho</SelectItem>
-              <SelectItem value="Roteiro Pronto">Roteiro Pronto</SelectItem>
-              <SelectItem value="Finalizado">Finalizado</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="Rascunho">Rascunho</SelectItem>
+                <SelectItem value="Roteiro Pronto">Roteiro Pronto</SelectItem>
+                <SelectItem value="Finalizado">Finalizado</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Categoria Filter */}
-          <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas Categorias</SelectItem>
-              <SelectItem value="Amazon">Amazon</SelectItem>
-              <SelectItem value="Importação">Importação</SelectItem>
-              <SelectItem value="Ferramentas">Ferramentas</SelectItem>
-              <SelectItem value="Gestão">Gestão</SelectItem>
-              <SelectItem value="Dubai">Dubai</SelectItem>
-              <SelectItem value="Marketplaces">Marketplaces</SelectItem>
-              <SelectItem value="Economia">Economia</SelectItem>
-              <SelectItem value="Genérico">Genérico</SelectItem>
-              <SelectItem value="Inteligência Artificial">Inteligência Artificial</SelectItem>
-              <SelectItem value="Parcerias">Parcerias</SelectItem>
-              <SelectItem value="Aulas">Aulas</SelectItem>
-              <SelectItem value="Política">Política</SelectItem>
-              <SelectItem value="Mercado Livre">Mercado Livre</SelectItem>
-              <SelectItem value="Shopee">Shopee</SelectItem>
-              <SelectItem value="Tiktok Shop">Tiktok Shop</SelectItem>
-              <SelectItem value="Afiliados">Afiliados</SelectItem>
-              <SelectItem value="Outros">Outros</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Categoria Filter */}
+            <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Categorias</SelectItem>
+                <SelectItem value="Amazon">Amazon</SelectItem>
+                <SelectItem value="Importação">Importação</SelectItem>
+                <SelectItem value="Ferramentas">Ferramentas</SelectItem>
+                <SelectItem value="Gestão">Gestão</SelectItem>
+                <SelectItem value="Dubai">Dubai</SelectItem>
+                <SelectItem value="Marketplaces">Marketplaces</SelectItem>
+                <SelectItem value="Economia">Economia</SelectItem>
+                <SelectItem value="Genérico">Genérico</SelectItem>
+                <SelectItem value="Inteligência Artificial">Inteligência Artificial</SelectItem>
+                <SelectItem value="Parcerias">Parcerias</SelectItem>
+                <SelectItem value="Aulas">Aulas</SelectItem>
+                <SelectItem value="Política">Política</SelectItem>
+                <SelectItem value="Mercado Livre">Mercado Livre</SelectItem>
+                <SelectItem value="Shopee">Shopee</SelectItem>
+                <SelectItem value="Tiktok Shop">Tiktok Shop</SelectItem>
+                <SelectItem value="Afiliados">Afiliados</SelectItem>
+                <SelectItem value="Outros">Outros</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <div className="text-sm text-slate-500">
-            {filteredScripts.length} roteiro(s)
+            <div className="text-sm text-slate-500 flex items-center">
+              {filteredScripts.length} roteiro(s)
+            </div>
           </div>
         </div>
       )}

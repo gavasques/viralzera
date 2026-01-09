@@ -70,7 +70,7 @@ export default function YoutubeScriptCard({ script, onClick, onDelete }) {
   return (
     <>
     <Card 
-      className="hover:shadow-md transition-all cursor-pointer group border-slate-200 hover:border-red-200"
+      className="group cursor-pointer hover:shadow-md transition-all border-slate-200 hover:border-red-200 bg-white overflow-hidden relative"
       onClick={onClick}
     >
       <CardContent className="p-4">
@@ -82,7 +82,7 @@ export default function YoutubeScriptCard({ script, onClick, onDelete }) {
           
           {/* Title & Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-slate-900 mb-0.5 truncate">
+            <h3 className="text-base font-semibold text-slate-900 truncate mb-0.5">
               {script.title || "Sem título"}
             </h3>
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
@@ -98,7 +98,7 @@ export default function YoutubeScriptCard({ script, onClick, onDelete }) {
                 </Badge>
               )}
               <span className="text-[10px] text-slate-400">
-                • {format(new Date(script.created_date), "dd/MM/yyyy")}
+                • {format(new Date(script.created_date), "dd MMM yyyy", { locale: ptBR })}
               </span>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function YoutubeScriptCard({ script, onClick, onDelete }) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 text-slate-300 hover:text-red-500 hover:bg-red-50"
+            className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 hover:bg-red-50"
             onClick={(e) => {
               e.stopPropagation();
               setShowDeleteDialog(true);
