@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, FileText, Hash, Pencil, Trash2, Eye
+  MoreVertical, FileText, Hash, Pencil, Trash2, Eye, Sparkles, Loader2
 } from "lucide-react";
 
 const typeLabels = {
@@ -25,7 +25,7 @@ const typeColors = {
   other: 'bg-slate-100 text-slate-700'
 };
 
-export default function TextCard({ text, onView, onEdit, onDelete }) {
+export default function TextCard({ text, analysis, onView, onEdit, onDelete, onAnalyze, isAnalyzing }) {
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -74,6 +74,14 @@ export default function TextCard({ text, onView, onEdit, onDelete }) {
           <Badge className={`${typeColors[text.text_type] || typeColors.other} text-[10px]`}>
             {typeLabels[text.text_type] || 'Outro'}
           </Badge>
+          
+          {analysis?.status === 'completed' && (
+            <Badge className="bg-purple-100 text-purple-700 text-[10px]">
+              <Sparkles className="w-3 h-3 mr-1" />
+              Analisado
+            </Badge>
+          )}
+          
           <Badge variant="outline" className="text-[10px]">
             {formatNumber(text.character_count)} chars
           </Badge>
@@ -82,12 +90,59 @@ export default function TextCard({ text, onView, onEdit, onDelete }) {
             ~{formatNumber(text.token_estimate)} tokens
           </Badge>
         </div>
+        
+        {analysis?.status === 'completed' && (
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+              <FileText className="w-3 h-3 mr-1" />
+              {formatNumber(analysis.character_count)} chars
+            </Badge>
+            <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+              <Hash className="w-3 h-3 mr-1" />
+              ~{formatNumber(analysis.token_estimate)} tokens
+            </Badge>
+          </div>
+        )}
 
         {text.content && (
           <p className="text-xs text-slate-500 mt-3 line-clamp-2 bg-slate-50 p-2 rounded">
             {text.content.substring(0, 150)}...
           </p>
         )}
+        
+        {/* Analysis Summary */}
+        {analysis?.status === 'completed' && (
+          <div className="mt-3 p-3 bg-purple-50 rounded-lg text-xs text-slate-700 max-h-32 overflow-y-auto">
+            {analysis.analysis_summary}
+          </div>
+        )}
+        
+        {/* Analyze Button */}
+        {!analysis || analysis.status !== 'completed' ? (
+          <div className="mt-3 pt-3 border-t" onClick={e => e.stopPropagation()}>
+            <Button 
+              size="sm" 
+              className="h-7 text-xs bg-purple-600 hover:bg-purple-700 w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAnalyze?.();
+              }}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Analisando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Analisar Texto
+                </>
+              )}
+            </Button>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

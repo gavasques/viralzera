@@ -504,7 +504,7 @@ Retorne APENAS um JSON válido no formato:
 
   modelingAnalyzer: {
     configEntity: 'ModelingAnalyzerConfig',
-    title: 'Configurações do Analisador Individual',
+    title: 'Configurações do Analisador Individual (Vídeos)',
     defaultPrompt: `Você é um Analista de Conteúdo Sênior. Sua tarefa é analisar o material a seguir (transcrição de vídeo, texto ou resumo de artigo) e criar um resumo analítico focado em:
 
 1. **Ideia Central**: Qual o principal argumento ou mensagem?
@@ -515,6 +515,23 @@ Retorne APENAS um JSON válido no formato:
 Formate a saída em Markdown.`,
     promptPlaceholders: [
       { key: '{{material_content}}', description: 'Conteúdo do vídeo, texto ou link' }
+    ]
+  },
+
+  modelingTextAnalyzer: {
+    configEntity: 'ModelingTextAnalyzerConfig',
+    title: 'Configurações do Analisador de Textos',
+    defaultPrompt: `Você é um Analista de Conteúdo Sênior especializado em textos e pesquisas. Sua tarefa é analisar o texto a seguir e criar um resumo analítico focado em:
+
+1. **Ideia Central**: Qual o principal argumento ou mensagem do texto?
+2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
+3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
+4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
+5. **Dados e Estatísticas**: Liste números, pesquisas ou fatos relevantes.
+
+Formate a saída em Markdown.`,
+    promptPlaceholders: [
+      { key: '{{text_content}}', description: 'Conteúdo completo do texto' }
     ]
   },
 
