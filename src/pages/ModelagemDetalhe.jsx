@@ -342,7 +342,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     const link = links.find(l => l.id === linkId);
     if (!link) {
       toast.error('Link não encontrado');
-      setProcessingLinkId(null);
+      setScrapingLinkId(null);
       return;
     }
 
@@ -1146,7 +1146,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
                   variant="outline" 
                   size="sm"
                   onClick={handleProcessAllLinks}
-                  disabled={processingLinkId !== null}
+                  disabled={scrapingLinkId !== null}
                 >
                   <PlayCircle className="w-4 h-4 mr-2" />
                   Processar Todos ({pendingLinksCount})
