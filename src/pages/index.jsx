@@ -70,6 +70,8 @@ import UserContent from "./UserContent";
 
 import ContentDossiers from "./ContentDossiers";
 
+import Phrases from "./Phrases";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import AppProviders from '@/components/providers/AppProviders';
 
@@ -144,6 +146,8 @@ const PAGES = {
     UserContent: UserContent,
 
     ContentDossiers: ContentDossiers,
+
+    Phrases: Phrases,
 
     }
 
@@ -241,6 +245,8 @@ function PagesContent() {
                 <Route path="/UserContent" element={<UserContent />} />
 
                 <Route path="/ContentDossiers" element={<ContentDossiers />} />
+
+                <Route path="/Phrases" element={<Phrases />} />
 
                 </Routes>
         </Layout>
