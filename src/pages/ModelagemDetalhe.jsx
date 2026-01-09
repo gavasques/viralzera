@@ -559,11 +559,66 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     try {
       toast.info('Analisando texto...');
 
-      await base44.functions.invoke('runModelingAnalysis', {
+      // Buscar configuração do agente de análise de textos
+      const analyzerConfigs = await base44.entities.ModelingTextAnalyzerConfig.list();
+      const config = analyzerConfigs?.[0];
+      
+      if (!config?.model) {
+        throw new Error('Configure o agente de Análise de Textos em Configurações de Agentes');
+      }
+
+      const systemPrompt = config.prompt.replace(/\{\{text_content\}\}/g, text.content);
+
+      // Buscar API key
+      const userConfigs = await base44.entities.UserConfig.list();
+      const apiKey = userConfigs[0]?.openrouter_api_key;
+
+      if (!apiKey) {
+        throw new Error('Configure sua API Key do OpenRouter em Configurações');
+      }
+
+      // Chamar OpenRouter diretamente
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'ContentAI - Text Analyzer'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Por favor, analise este texto:\n\n${text.content}` }
+          ],
+          temperature: 0.7,
+          max_tokens: config.max_tokens || 4000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const analysisSummary = data.choices?.[0]?.message?.content;
+
+      if (!analysisSummary) {
+        throw new Error('Resposta inválida da API');
+      }
+
+      // Salvar análise
+      await base44.entities.ModelingAnalysis.create({
         modeling_id: modelingId,
-        materialId: textId,
-        materialType: 'text',
-        content: text.content
+        material_id: textId,
+        material_type: 'text',
+        material_title: text.title,
+        analysis_summary: analysisSummary,
+        character_count: analysisSummary.length,
+        token_estimate: Math.ceil(analysisSummary.length / 4),
+        status: 'completed'
       });
 
       queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
