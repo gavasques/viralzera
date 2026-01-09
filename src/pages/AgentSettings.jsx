@@ -28,7 +28,8 @@ export default function AgentSettings() {
         'YoutubeScriptEditorConfig', 'YoutubeTitleConfig', 'YoutubeKitGeneratorConfig',
         'YoutubeCreativeDirectiveConfig', 'YoutubeFormatSelectorConfig', 'YoutubePromptRefinerConfig',
         'ModelingAssistantConfig', 'ModelingScraperConfig', 'DossierGeneratorConfig',
-        'ModelingAnalyzerConfig', 'ModelingTextAnalyzerConfig', 'DeepResearchConfig', 'PostTypeConfig'
+        'ModelingAnalyzerConfig', 'ModelingTextAnalyzerConfig', 'ModelingLinkAnalyzerConfig', 
+        'DeepResearchConfig', 'PostTypeConfig'
       ];
       
       const results = await Promise.all(

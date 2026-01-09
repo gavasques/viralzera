@@ -40,6 +40,8 @@ export default function ChatSettingsModal({
   const [enableWebSearch, setEnableWebSearch] = useState(false);
   const [maxTokens, setMaxTokens] = useState(32000);
   const [webhookUrl, setWebhookUrl] = useState('');
+  const [customTitle, setCustomTitle] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
   const queryClient = useQueryClient();
 
   // Fetch existing config (global - único para todos os usuários)
@@ -128,6 +130,8 @@ export default function ChatSettingsModal({
       setEnableWebSearch(existingConfig.enable_web_search || false);
       setMaxTokens(existingConfig.max_tokens || 32000);
       setWebhookUrl(existingConfig.webhook_url || '');
+      setCustomTitle(existingConfig.custom_title || '');
+      setCustomDescription(existingConfig.custom_description || '');
     }
   }, [existingConfig]);
 
@@ -158,7 +162,9 @@ export default function ChatSettingsModal({
       enable_reasoning: enableReasoning,
       reasoning_effort: reasoningEffort,
       enable_web_search: enableWebSearch,
-      max_tokens: maxTokens
+      max_tokens: maxTokens,
+      custom_title: customTitle || null,
+      custom_description: customDescription || null
     } : {
       model: selectedModel?.id || '',
       model_name: selectedModel?.name || '',
@@ -167,7 +173,9 @@ export default function ChatSettingsModal({
       reasoning_effort: reasoningEffort,
       enable_web_search: enableWebSearch,
       max_tokens: maxTokens,
-      webhook_url: webhookUrl
+      webhook_url: webhookUrl,
+      custom_title: customTitle || null,
+      custom_description: customDescription || null
     };
     
     saveMutation.mutate(data);
@@ -191,6 +199,29 @@ export default function ChatSettingsModal({
           </div>
         ) : (
         <div className="space-y-4 flex-1 overflow-y-auto">
+          {/* Custom Title and Description */}
+          <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <h4 className="font-medium text-sm text-slate-900">Personalização do Agente</h4>
+            <div>
+              <Label className="text-xs text-slate-600">Nome Personalizado (opcional)</Label>
+              <Input
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder="Deixe vazio para usar o nome padrão"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-slate-600">Descrição Personalizada (opcional)</Label>
+              <Textarea
+                value={customDescription}
+                onChange={(e) => setCustomDescription(e.target.value)}
+                placeholder="Deixe vazio para usar a descrição padrão"
+                className="mt-1.5 min-h-[60px]"
+              />
+            </div>
+          </div>
+
           {/* Model Selection */}
           <div>
             <Label className="mb-2 block">Modelo de IA</Label>

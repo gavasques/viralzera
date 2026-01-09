@@ -189,5 +189,13 @@ export const AGENT_CARDS = [
     description: 'Pesquisa avançada com Web Search e raciocínio profundo',
     icon: Search,
     color: 'bg-blue-600'
+  },
+  {
+    key: 'modelingLinkAnalyzer',
+    title: 'Analisador de Links',
+    description: 'Analisa resumos de links e artigos extraindo insights',
+    icon: Link,
+    color: 'bg-sky-600',
+    category: 'youtube'
   }
 ];

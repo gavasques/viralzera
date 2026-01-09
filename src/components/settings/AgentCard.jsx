@@ -20,6 +20,10 @@ export default function AgentCard({ agent, config, onClick }) {
                     getModelShortName(config?.model || config?.search_model || config?.ocr_model);
   const hasWebSearch = config?.enable_web_search;
   const hasReasoning = config?.enable_reasoning;
+  
+  // Use custom title/description if available, otherwise use defaults from agentCards
+  const displayTitle = config?.custom_title || agent.title;
+  const displayDescription = config?.custom_description || agent.description;
 
   return (
     <Card 
@@ -33,10 +37,10 @@ export default function AgentCard({ agent, config, onClick }) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-              {agent.title}
+              {displayTitle}
             </h3>
             <p className="text-sm text-slate-500 mt-1 line-clamp-2">
-              {agent.description}
+              {displayDescription}
             </p>
           </div>
         </div>
