@@ -70,75 +70,71 @@ export default function YoutubeScriptCard({ script, onClick, onDelete }) {
   return (
     <>
     <Card 
-      className="group cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-slate-100 hover:border-red-100 bg-white overflow-hidden relative h-full flex flex-col shadow-sm"
+      className="hover:shadow-md transition-all cursor-pointer group border-slate-200 hover:border-red-200"
       onClick={onClick}
     >
-      <CardContent className="p-5 flex flex-col h-full">
-        {/* Delete Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-all text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full z-10"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowDeleteDialog(true);
-          }}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-
-        {/* Header */}
-        <div className="flex items-start gap-4 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center shrink-0 shadow-sm border border-red-100/50 group-hover:scale-105 transition-transform duration-300">
-            <Youtube className="w-6 h-6 text-red-600" />
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div className="p-2 bg-red-50 rounded-lg shrink-0">
+            <Youtube className="w-5 h-5 text-red-600" />
           </div>
-          <div className="min-w-0 flex-1 pt-1">
-            <h3 className="font-bold text-slate-800 text-base leading-tight mb-2 line-clamp-2 group-hover:text-red-600 transition-colors">
+          
+          {/* Title & Info */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-slate-900 mb-0.5 truncate">
               {script.title || "Sem título"}
             </h3>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 h-5 border-0 ${VIDEO_TYPE_COLORS[script.video_type] || VIDEO_TYPE_COLORS["Outro"]}`}>
+            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+              <Badge variant="secondary" className={`text-[10px] h-4 px-1.5 border-0 ${VIDEO_TYPE_COLORS[script.video_type] || VIDEO_TYPE_COLORS["Outro"]}`}>
                 {script.video_type || "Outro"}
               </Badge>
-              <Badge variant="secondary" className={`text-[10px] font-medium px-2 py-0.5 h-5 border-0 ${STATUS_COLORS[script.status] || STATUS_COLORS["Rascunho"]}`}>
+              <Badge variant="secondary" className={`text-[10px] h-4 px-1.5 border-0 ${STATUS_COLORS[script.status] || STATUS_COLORS["Rascunho"]}`}>
                 {script.status || "Rascunho"}
               </Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Preview & Meta */}
-        <div className="mt-auto space-y-4">
-          {/* Categories */}
-          {script.categoria && (
-            <div className="flex flex-wrap gap-1.5">
-               <Badge variant="outline" className={`text-[10px] px-2 py-0.5 h-5 border ${CATEGORIA_COLORS[script.categoria] || CATEGORIA_COLORS["Outros"]}`}>
-                {script.categoria}
-              </Badge>
-            </div>
-          )}
-
-          {/* Divider */}
-          <div className="h-px bg-slate-50 w-full" />
-
-          {/* Footer Stats */}
-          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
-            <div className="flex items-center gap-3">
-              {script.duracao_estimada && (
-                <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {script.duracao_estimada} min
-                </span>
+              {script.categoria && (
+                <Badge variant="outline" className={`text-[10px] h-4 px-1.5 border ${CATEGORIA_COLORS[script.categoria] || CATEGORIA_COLORS["Outros"]}`}>
+                  {script.categoria}
+                </Badge>
               )}
-              <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
-                {(script.corpo?.length || 0).toLocaleString()} chars
+              <span className="text-[10px] text-slate-400">
+                • {format(new Date(script.created_date), "dd/MM/yyyy")}
               </span>
             </div>
-            <span className="opacity-60">
-              {format(new Date(script.created_date), "dd MMM yyyy", { locale: ptBR })}
-            </span>
           </div>
+
+          {/* Stats */}
+          <div className="hidden sm:flex items-center gap-4 shrink-0">
+            {script.duracao_estimada && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-red-500" />
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{script.duracao_estimada}</p>
+                  <p className="text-[9px] text-slate-400 leading-none">min</p>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-red-500" />
+              <div>
+                <p className="text-sm font-bold text-slate-900">{(script.corpo?.length || 0).toLocaleString()}</p>
+                <p className="text-[9px] text-slate-400 leading-none">chars</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Delete Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-slate-300 hover:text-red-500 hover:bg-red-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteDialog(true);
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
         </div>
       </CardContent>
     </Card>

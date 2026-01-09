@@ -26,6 +26,8 @@ export default function YoutubeScripts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoriaFilter, setCategoriaFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -85,6 +87,16 @@ export default function YoutubeScripts() {
     });
   }, [scripts, searchTerm, statusFilter, categoriaFilter]);
 
+  // Pagination
+  const totalPages = Math.ceil(filteredScripts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedScripts = filteredScripts.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, categoriaFilter]);
+
   if (isLoading) {
     return <PageSkeleton />;
   }
@@ -107,58 +119,60 @@ export default function YoutubeScripts() {
 
       {/* Filters */}
       {scripts.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Buscar por título ou conteúdo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+        <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Buscar roteiros..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Status</SelectItem>
-                <SelectItem value="Rascunho">Rascunho</SelectItem>
-                <SelectItem value="Roteiro Pronto">Roteiro Pronto</SelectItem>
-                <SelectItem value="Finalizado">Finalizado</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Status</SelectItem>
+              <SelectItem value="Rascunho">Rascunho</SelectItem>
+              <SelectItem value="Roteiro Pronto">Roteiro Pronto</SelectItem>
+              <SelectItem value="Finalizado">Finalizado</SelectItem>
+            </SelectContent>
+          </Select>
 
-            {/* Categoria Filter */}
-            <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas Categorias</SelectItem>
-                <SelectItem value="Amazon">Amazon</SelectItem>
-                <SelectItem value="Importação">Importação</SelectItem>
-                <SelectItem value="Ferramentas">Ferramentas</SelectItem>
-                <SelectItem value="Gestão">Gestão</SelectItem>
-                <SelectItem value="Dubai">Dubai</SelectItem>
-                <SelectItem value="Marketplaces">Marketplaces</SelectItem>
-                <SelectItem value="Economia">Economia</SelectItem>
-                <SelectItem value="Genérico">Genérico</SelectItem>
-                <SelectItem value="Inteligência Artificial">Inteligência Artificial</SelectItem>
-                <SelectItem value="Parcerias">Parcerias</SelectItem>
-                <SelectItem value="Aulas">Aulas</SelectItem>
-                <SelectItem value="Política">Política</SelectItem>
-                <SelectItem value="Mercado Livre">Mercado Livre</SelectItem>
-                <SelectItem value="Shopee">Shopee</SelectItem>
-                <SelectItem value="Tiktok Shop">Tiktok Shop</SelectItem>
-                <SelectItem value="Afiliados">Afiliados</SelectItem>
-                <SelectItem value="Outros">Outros</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Categoria Filter */}
+          <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas Categorias</SelectItem>
+              <SelectItem value="Amazon">Amazon</SelectItem>
+              <SelectItem value="Importação">Importação</SelectItem>
+              <SelectItem value="Ferramentas">Ferramentas</SelectItem>
+              <SelectItem value="Gestão">Gestão</SelectItem>
+              <SelectItem value="Dubai">Dubai</SelectItem>
+              <SelectItem value="Marketplaces">Marketplaces</SelectItem>
+              <SelectItem value="Economia">Economia</SelectItem>
+              <SelectItem value="Genérico">Genérico</SelectItem>
+              <SelectItem value="Inteligência Artificial">Inteligência Artificial</SelectItem>
+              <SelectItem value="Parcerias">Parcerias</SelectItem>
+              <SelectItem value="Aulas">Aulas</SelectItem>
+              <SelectItem value="Política">Política</SelectItem>
+              <SelectItem value="Mercado Livre">Mercado Livre</SelectItem>
+              <SelectItem value="Shopee">Shopee</SelectItem>
+              <SelectItem value="Tiktok Shop">Tiktok Shop</SelectItem>
+              <SelectItem value="Afiliados">Afiliados</SelectItem>
+              <SelectItem value="Outros">Outros</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="text-sm text-slate-500">
+            {filteredScripts.length} roteiro(s)
           </div>
         </div>
       )}
@@ -176,16 +190,53 @@ export default function YoutubeScripts() {
           <p className="text-slate-500">Nenhum roteiro encontrado com os filtros aplicados.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredScripts.map((script) => (
-            <YoutubeScriptCard 
-              key={script.id} 
-              script={script} 
-              onClick={() => handleCardClick(script)}
-              onDelete={(id) => deleteMutation.mutateAsync(id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-3">
+            {paginatedScripts.map((script) => (
+              <YoutubeScriptCard 
+                key={script.id} 
+                script={script} 
+                onClick={() => handleCardClick(script)}
+                onDelete={(id) => deleteMutation.mutateAsync(id)}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className={currentPage === page ? "bg-red-600 hover:bg-red-700" : ""}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       <YoutubeScriptWizardModal 
