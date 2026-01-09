@@ -66,7 +66,7 @@ export default function TextCard({ text, analysis, onView, onEdit, onDelete, onA
               </DropdownMenuItem>
               {analysis?.status === 'completed' && (
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onReanalyze?.(); }} disabled={isAnalyzing}>
-                  <Sparkles className="w-4 h-4 mr-2" /> Reanalisar Texto
+                  <Sparkles className="w-4 h-4 mr-2" /> {isAnalyzing ? 'Reanalisando...' : 'Reanalisar'}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete?.(); }} className="text-red-600">
@@ -135,29 +135,28 @@ export default function TextCard({ text, analysis, onView, onEdit, onDelete, onA
         )}
 
         {/* Action Button */}
-        <div className="mt-3 pt-3 border-t">
-          <Button 
-            size="sm" 
-            className="h-7 text-xs bg-purple-600 hover:bg-purple-700 w-full"
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              analysis?.status === 'completed' ? onReanalyze?.() : onAnalyze?.(); 
-            }}
-            disabled={isAnalyzing}
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                {analysis?.status === 'completed' ? 'Reanalisando...' : 'Analisando...'}
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3 h-3 mr-1" />
-                {analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar Texto'}
-              </>
-            )}
-          </Button>
-        </div>
+        {(!analysis || analysis.status !== 'completed') && (
+          <div className="mt-3 pt-3 border-t">
+            <Button 
+              size="sm" 
+              className="h-7 text-xs bg-purple-600 hover:bg-purple-700 w-full"
+              onClick={(e) => { e.stopPropagation(); onAnalyze?.(); }}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Analisando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Analisar Texto
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

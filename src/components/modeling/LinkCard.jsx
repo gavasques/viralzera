@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Play, Pencil, Sparkles, RefreshCw
+  MoreVertical, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Play, Edit, Sparkles, RefreshCw
 } from "lucide-react";
 
 const statusConfig = {
@@ -14,7 +14,7 @@ const statusConfig = {
   error: { label: "Erro", color: "bg-red-100 text-red-700", icon: AlertCircle }
 };
 
-export default function LinkCard({ link, analysis, onProcess, onView, onDelete, onEdit, onAnalyze, isProcessing, isAnalyzing }) {
+export default function LinkCard({ link, analysis, onProcess, onAnalyze, onView, onEdit, onDelete, isProcessing, isAnalyzing }) {
   const status = statusConfig[link.status] || statusConfig.pending;
   const StatusIcon = status.icon;
 
@@ -63,19 +63,28 @@ export default function LinkCard({ link, analysis, onProcess, onView, onDelete, 
                   <DropdownMenuItem onClick={() => window.open(link.url, '_blank')}>
                     <ExternalLink className="w-4 h-4 mr-2" /> Abrir Link
                   </DropdownMenuItem>
+                  
                   <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="w-4 h-4 mr-2" /> Editar
+                    <Edit className="w-4 h-4 mr-2" /> Editar
                   </DropdownMenuItem>
+
                   {link.summary && (
+                    <DropdownMenuItem onClick={onView}>
+                      <Eye className="w-4 h-4 mr-2" /> Ver Resumo
+                    </DropdownMenuItem>
+                  )}
+
+                  {link.status === 'completed' && (
                     <>
-                      <DropdownMenuItem onClick={onView}>
-                        <Eye className="w-4 h-4 mr-2" /> Ver Resumo
+                      <DropdownMenuItem onClick={onProcess}>
+                        <RefreshCw className="w-4 h-4 mr-2" /> Reprocessar
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={onAnalyze} disabled={isAnalyzing}>
-                        <Sparkles className="w-4 h-4 mr-2" /> Reanalisar Link
+                        <Sparkles className="w-4 h-4 mr-2" /> {isAnalyzing ? 'Analisando...' : analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar'}
                       </DropdownMenuItem>
                     </>
                   )}
+
                   <DropdownMenuItem onClick={onDelete} className="text-red-600">
                     <Trash2 className="w-4 h-4 mr-2" /> Excluir
                   </DropdownMenuItem>
@@ -88,7 +97,7 @@ export default function LinkCard({ link, analysis, onProcess, onView, onDelete, 
                 {StatusIcon && <StatusIcon className={`w-3 h-3 mr-1 ${link.status === 'processing' ? 'animate-spin' : ''}`} />}
                 {status.label}
               </Badge>
-              
+
               {analysis?.status === 'completed' && (
                 <Badge className="bg-purple-100 text-purple-700 text-[10px]">
                   <Sparkles className="w-3 h-3 mr-1" />
@@ -109,7 +118,7 @@ export default function LinkCard({ link, analysis, onProcess, onView, onDelete, 
                 </>
               )}
             </div>
-            
+
             {analysis?.status === 'completed' && (
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                 <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
@@ -154,7 +163,7 @@ export default function LinkCard({ link, analysis, onProcess, onView, onDelete, 
                 </Button>
               )}
 
-              {link.status === 'completed' && (
+              {link.status === 'completed' && (!analysis || analysis.status !== 'completed') && (
                 <Button 
                   size="sm" 
                   className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
@@ -164,12 +173,12 @@ export default function LinkCard({ link, analysis, onProcess, onView, onDelete, 
                   {isAnalyzing ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      {analysis?.status === 'completed' ? 'Reanalisando...' : 'Analisando...'}
+                      Analisando...
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-3 h-3 mr-1" />
-                      {analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar'}
+                      Analisar
                     </>
                   )}
                 </Button>

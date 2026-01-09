@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
-  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Sparkles, RefreshCw, StopCircle, Pencil
+  MoreVertical, Play, Loader2, CheckCircle, AlertCircle, Hash, FileText, Trash2, Eye, ExternalLink, Sparkles, RefreshCw, StopCircle, Edit
 } from "lucide-react";
 
 const statusConfig = {
@@ -84,15 +84,15 @@ export default function VideoCard({
                     <ExternalLink className="w-4 h-4 mr-2" /> Abrir no YouTube
                   </DropdownMenuItem>
                   
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Edit className="w-4 h-4 mr-2" /> Editar
+                  </DropdownMenuItem>
+
                   {video.transcript && (
                     <DropdownMenuItem onClick={onView}>
                       <Eye className="w-4 h-4 mr-2" /> Ver Transcrição
                     </DropdownMenuItem>
                   )}
-
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="w-4 h-4 mr-2" /> Editar
-                  </DropdownMenuItem>
 
                   {video.status === 'transcribed' && (
                     <>
@@ -100,7 +100,7 @@ export default function VideoCard({
                         <RefreshCw className="w-4 h-4 mr-2" /> Retranscrever
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={onAnalyze} disabled={isAnalyzing}>
-                        <Sparkles className="w-4 h-4 mr-2" /> Reanalisar Vídeo
+                        <Sparkles className="w-4 h-4 mr-2" /> {isAnalyzing ? 'Reanalisando...' : 'Reanalisar Vídeo'}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -207,7 +207,7 @@ export default function VideoCard({
                 </Button>
               )}
 
-              {video.status === 'transcribed' && (
+              {video.status === 'transcribed' && (!analysis || analysis.status !== 'completed') && (
                 <Button 
                   size="sm" 
                   className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
@@ -217,12 +217,12 @@ export default function VideoCard({
                   {isAnalyzing ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      {analysis?.status === 'completed' ? 'Reanalisando...' : 'Analisando...'}
+                      Analisando...
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-3 h-3 mr-1" />
-                      {analysis?.status === 'completed' ? 'Reanalisar' : 'Analisar'}
+                      Analisar
                     </>
                   )}
                 </Button>
