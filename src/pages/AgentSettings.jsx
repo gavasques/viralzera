@@ -120,7 +120,7 @@ export default function AgentSettings() {
       </div>
 
       {/* Settings Modal */}
-      {currentConfig && (
+      {currentConfig && openModal && (
         <ChatSettingsModal
           open={!!openModal}
           onOpenChange={(open) => !open && handleCloseModal()}
@@ -128,6 +128,8 @@ export default function AgentSettings() {
           title={currentConfig.title}
           defaultPrompt={currentConfig.defaultPrompt}
           promptPlaceholders={currentConfig.promptPlaceholders}
+          defaultTitle={AGENT_CARDS.find(a => a.key === openModal)?.title || ''}
+          defaultDescription={AGENT_CARDS.find(a => a.key === openModal)?.description || ''}
         />
       )}
 

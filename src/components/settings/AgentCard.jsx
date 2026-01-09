@@ -20,8 +20,8 @@ export default function AgentCard({ agent, config, onClick }) {
                     getModelShortName(config?.model || config?.search_model || config?.ocr_model);
   const hasWebSearch = config?.enable_web_search;
   const hasReasoning = config?.enable_reasoning;
-  
-  // Use custom title/description if available, otherwise use defaults from agentCards
+
+  // Use custom title/description if available
   const displayTitle = config?.custom_title || agent.title;
   const displayDescription = config?.custom_description || agent.description;
 

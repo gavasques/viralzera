@@ -528,6 +528,26 @@ Retorne APENAS um JSON válido no formato:
     ]
   },
 
+  modelingTextAnalyzer: {
+    configEntity: 'ModelingTextAnalyzerConfig',
+    title: 'Analisador de Textos',
+    defaultPrompt: `Você é um Analista de Conteúdo Sênior especializado em textos e pesquisas. Sua tarefa é analisar o texto a seguir e criar um resumo analítico focado em:
+
+  1. **Ideia Central**: Qual o principal argumento ou mensagem do texto?
+  2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
+  3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
+  4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
+  5. **Dados e Estatísticas**: Liste números, pesquisas ou fatos relevantes.
+
+  {{purpose_note}}
+
+  Formate a saída em Markdown.`,
+    promptPlaceholders: [
+      { key: '{{text_content}}', description: 'Conteúdo completo do texto' },
+      { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
+    ]
+  },
+
   modelingLinkAnalyzer: {
     configEntity: 'ModelingLinkAnalyzerConfig',
     title: 'Analisador de Links',
@@ -544,26 +564,6 @@ Retorne APENAS um JSON válido no formato:
   Formate a saída em Markdown.`,
     promptPlaceholders: [
       { key: '{{material_content}}', description: 'Resumo do link/artigo' },
-      { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
-    ]
-  },
-
-  modelingTextAnalyzer: {
-    configEntity: 'ModelingTextAnalyzerConfig',
-    title: 'Configurações do Analisador de Textos',
-    defaultPrompt: `Você é um Analista de Conteúdo Sênior especializado em textos e pesquisas. Sua tarefa é analisar o texto a seguir e criar um resumo analítico focado em:
-
-  1. **Ideia Central**: Qual o principal argumento ou mensagem do texto?
-  2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
-  3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
-  4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
-  5. **Dados e Estatísticas**: Liste números, pesquisas ou fatos relevantes.
-
-  {{purpose_note}}
-
-  Formate a saída em Markdown.`,
-    promptPlaceholders: [
-      { key: '{{text_content}}', description: 'Conteúdo completo do texto' },
       { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
     ]
   },

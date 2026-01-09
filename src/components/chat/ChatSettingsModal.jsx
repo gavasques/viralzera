@@ -29,7 +29,9 @@ export default function ChatSettingsModal({
   configEntity,
   title = "Configurações do Chat",
   defaultPrompt = "",
-  promptPlaceholders = []
+  promptPlaceholders = [],
+  defaultTitle = "",
+  defaultDescription = ""
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModel, setSelectedModel] = useState(null);
@@ -200,25 +202,31 @@ export default function ChatSettingsModal({
         ) : (
         <div className="space-y-4 flex-1 overflow-y-auto">
           {/* Custom Title and Description */}
-          <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <h4 className="font-medium text-sm text-slate-900">Personalização do Agente</h4>
+          <div className="space-y-3 p-4 bg-slate-50/50 rounded-lg border border-slate-200">
             <div>
-              <Label className="text-xs text-slate-600">Nome Personalizado (opcional)</Label>
+              <Label className="text-sm font-medium mb-1.5 block">Nome do Agente (opcional)</Label>
               <Input
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="Deixe vazio para usar o nome padrão"
-                className="mt-1.5"
+                placeholder={defaultTitle || title}
+                className="bg-white"
               />
+              <p className="text-xs text-slate-500 mt-1">
+                Deixe em branco para usar o nome padrão
+              </p>
             </div>
+
             <div>
-              <Label className="text-xs text-slate-600">Descrição Personalizada (opcional)</Label>
+              <Label className="text-sm font-medium mb-1.5 block">Descrição do Agente (opcional)</Label>
               <Textarea
                 value={customDescription}
                 onChange={(e) => setCustomDescription(e.target.value)}
-                placeholder="Deixe vazio para usar a descrição padrão"
-                className="mt-1.5 min-h-[60px]"
+                placeholder={defaultDescription}
+                className="bg-white min-h-[60px]"
               />
+              <p className="text-xs text-slate-500 mt-1">
+                Deixe em branco para usar a descrição padrão
+              </p>
             </div>
           </div>
 
