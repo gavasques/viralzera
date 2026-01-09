@@ -163,23 +163,23 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
               {link.scrape_status === 'pending' && (
                 <Button 
                   size="sm" 
-                  className="h-7 text-xs bg-sky-600 hover:bg-sky-700"
+                  className="h-8 text-xs bg-sky-600 hover:bg-sky-700 shadow-sm"
                   onClick={onScrape}
                   disabled={processing}
                 >
                   {processing ? (
                     <>
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Puxando dados...
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Capturando...
                     </>
                   ) : (
                     <>
-                      <Download className="w-3 h-3 mr-1" />
-                      Puxar Dados
+                      <Download className="w-3.5 h-3.5 mr-1.5" />
+                      Capturar Dados
                     </>
                   )}
                 </Button>
@@ -188,21 +188,33 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
               {link.scrape_status === 'completed' && link.analysis_status === 'pending' && (
                 <Button 
                   size="sm" 
-                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
+                  className="h-8 text-xs bg-purple-600 hover:bg-purple-700 shadow-sm"
                   onClick={onAnalyze}
                   disabled={analyzing}
                 >
                   {analyzing ? (
                     <>
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                       Analisando...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      Analisar
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Analisar Conteúdo
                     </>
                   )}
+                </Button>
+              )}
+              
+              {link.analysis_status === 'completed' && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="h-8 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  onClick={onClick}
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Ver Análise
                 </Button>
               )}
 
