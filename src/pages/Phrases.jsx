@@ -66,7 +66,7 @@ export default function Phrases() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Phrase.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['phrases'] });
+      queryClient.invalidateQueries({ queryKey: ['phrases', selectedFocusId] });
       toast.success('Frase excluída!');
       setDeletePhrase(null);
     },

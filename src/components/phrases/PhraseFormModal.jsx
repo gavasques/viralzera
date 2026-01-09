@@ -63,7 +63,7 @@ export default function PhraseFormModal({ open, onOpenChange, phrase, categories
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['phrases'] });
+      queryClient.invalidateQueries({ queryKey: ['phrases', selectedFocusId] });
       toast.success(isEditing ? 'Frase atualizada!' : 'Frase adicionada!');
       onOpenChange(false);
     },

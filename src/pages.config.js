@@ -16,6 +16,7 @@ import MultiChatAnalytics from './pages/MultiChatAnalytics';
 import OpenRouterModels from './pages/OpenRouterModels';
 import PersonaGenerator from './pages/PersonaGenerator';
 import Personas from './pages/Personas';
+import Phrases from './pages/Phrases';
 import PostManagement from './pages/PostManagement';
 import PostTypes from './pages/PostTypes';
 import ProductAnalyzer from './pages/ProductAnalyzer';
@@ -33,7 +34,6 @@ import UserSettings from './pages/UserSettings';
 import YoutubeScriptDetail from './pages/YoutubeScriptDetail';
 import YoutubeScripts from './pages/YoutubeScripts';
 import index from './pages/index';
-import Phrases from './pages/Phrases';
 
 
 export const PAGES = {
@@ -55,6 +55,7 @@ export const PAGES = {
     "OpenRouterModels": OpenRouterModels,
     "PersonaGenerator": PersonaGenerator,
     "Personas": Personas,
+    "Phrases": Phrases,
     "PostManagement": PostManagement,
     "PostTypes": PostTypes,
     "ProductAnalyzer": ProductAnalyzer,
@@ -72,7 +73,6 @@ export const PAGES = {
     "YoutubeScriptDetail": YoutubeScriptDetail,
     "YoutubeScripts": YoutubeScripts,
     "index": index,
-    "Phrases": Phrases,
 }
 
 export const pagesConfig = {
