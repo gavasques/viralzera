@@ -189,7 +189,7 @@ export default function ModelagemDetalhe() {
         throw new Error('Configure o modelo de transcrição em Configurações de Agentes > Modelagem');
       }
 
-      const systemPrompt = config.prompt || `Você é um especialista em transcrição de vídeos.
+      let systemPrompt = config.prompt || `Você é um especialista em transcrição de vídeos.
 
 Tarefa:
 - Transcreva todo o conteúdo do vídeo com precisão
@@ -200,6 +200,11 @@ Tarefa:
 - NÃO reescreva em português formal - preserve a voz original
 
 Retorne APENAS o texto da transcrição, limpo e normalizado.`;
+
+      // Adicionar finalidade do material se informada
+      if (video.purpose) {
+        systemPrompt += `\n\n**FINALIDADE ESPECÍFICA DESTE MATERIAL:**\n${video.purpose}\n\nLeve esta finalidade em consideração durante a transcrição.`;
+      }
 
       // Call OpenRouter API directly
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -349,7 +354,14 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
       const config = scraperConfigs?.[0];
       
       const model = config?.model || 'openai/gpt-4o-mini';
-      const systemPrompt = config?.prompt || `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.`;
+      let systemPrompt = config?.prompt || `Resuma este artigo em seus pontos-chave e insights mais importantes para um criador de conteúdo do YouTube. Foque em informações que possam virar tópicos de vídeo.`;
+
+      // Adicionar finalidade do material se informada
+      if (link.purpose) {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, `\n\n**FINALIDADE ESPECÍFICA DESTE MATERIAL:**\n${link.purpose}\n\nFoque seu resumo considerando esta finalidade informada pelo usuário.`);
+      } else {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, '');
+      }
 
       // Extrair conteúdo do link usando InvokeLLM
       const articleContent = await base44.integrations.Core.InvokeLLM({
@@ -481,7 +493,14 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         throw new Error('Configure o agente de Análise Individual em Configurações de Agentes');
       }
 
-      const systemPrompt = config.prompt || `Você é um analista de conteúdo especializado. Analise este material e extraia os insights, tópicos-chave e informações mais relevantes para criação de conteúdo.`;
+      let systemPrompt = config.prompt || `Você é um analista de conteúdo especializado. Analise este material e extraia os insights, tópicos-chave e informações mais relevantes para criação de conteúdo.`;
+
+      // Adicionar finalidade do material se informada
+      if (video.purpose) {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, `\n\n**FINALIDADE ESPECÍFICA DESTE MATERIAL:**\n${video.purpose}\n\nFoque sua análise considerando esta finalidade informada pelo usuário.`);
+      } else {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, '');
+      }
 
       // Buscar API key
       const userConfigs = await base44.entities.UserConfig.list();
@@ -567,7 +586,14 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         throw new Error('Configure o agente de Análise de Textos em Configurações de Agentes');
       }
 
-      const systemPrompt = config.prompt.replace(/\{\{text_content\}\}/g, text.content);
+      let systemPrompt = config.prompt.replace(/\{\{text_content\}\}/g, text.content);
+
+      // Adicionar finalidade do material se informada
+      if (text.purpose) {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, `\n\n**FINALIDADE ESPECÍFICA DESTE MATERIAL:**\n${text.purpose}\n\nFoque sua análise considerando esta finalidade informada pelo usuário.`);
+      } else {
+        systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, '');
+      }
 
       // Buscar API key
       const userConfigs = await base44.entities.UserConfig.list();
