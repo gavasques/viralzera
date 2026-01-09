@@ -29,7 +29,8 @@ import {
         FileText,
         ScrollText,
         Globe,
-        Youtube
+        Youtube,
+        Quote
         } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -169,6 +170,7 @@ export default function Layout({ children }) {
               { name: 'Tendências', icon: TrendingUp, page: 'Trends' },
               { name: 'Matriz de Temas', icon: FolderTree, page: 'ThemeMatrix' },
               { name: 'Prompts', icon: ScrollText, page: 'Prompts' },
+              { name: 'Frases', icon: Quote, page: 'Phrases' },
             ]
           },
           {
