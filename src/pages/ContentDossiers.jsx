@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { FileText, Search, Plus, Layers } from "lucide-react";
+import { FileText, Search, Plus, Layers, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
@@ -20,6 +20,8 @@ export default function ContentDossiers() {
   const { selectedFocusId } = useSelectedFocus();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingDossier, setViewingDossier] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   console.log('📍 Focus selecionado:', selectedFocusId);
 
@@ -94,6 +96,16 @@ export default function ContentDossiers() {
     return modelingTitle.includes(searchTerm.toLowerCase());
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredDossiers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedDossiers = filteredDossiers.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when search changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const handleDelete = (id) => {
     if (confirm('Excluir este dossiê permanentemente?')) {
       deleteMutation.mutate(id);
@@ -133,7 +145,7 @@ export default function ContentDossiers() {
       </div>
 
       {/* Search */}
-      <div className="flex gap-3">
+      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
@@ -143,31 +155,14 @@ export default function ContentDossiers() {
             className="pl-10"
           />
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-            <FileText className="w-4 h-4" />
-            Total de Dossiês
-          </div>
-          <p className="text-2xl font-bold text-slate-900">{dossiers.length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-            <Layers className="w-4 h-4" />
-            Modelagens
-          </div>
-          <p className="text-2xl font-bold text-slate-900">
-            {new Set(dossiers.map(d => d.modeling_id)).size}
-          </p>
+        <div className="text-sm text-slate-500">
+          {filteredDossiers.length} dossiê(s)
         </div>
       </div>
 
       {/* Content */}
       {isLoading ? (
-        <CardGridSkeleton count={6} columns={3} />
+        <CardGridSkeleton count={6} columns={1} />
       ) : filteredDossiers.length === 0 ? (
         searchTerm ? (
           <EmptyState
@@ -185,18 +180,55 @@ export default function ContentDossiers() {
           />
         )
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDossiers.map(dossier => (
-            <DossierCard
-              key={dossier.id}
-              dossier={dossier}
-              onView={() => setViewingDossier(dossier)}
-              onDelete={() => handleDelete(dossier.id)}
-              onUseForScript={() => handleUseForScript(dossier.id)}
-              onToggleActive={() => handleToggleActive(dossier)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-3">
+            {paginatedDossiers.map(dossier => (
+              <DossierCard
+                key={dossier.id}
+                dossier={dossier}
+                onView={() => setViewingDossier(dossier)}
+                onDelete={() => handleDelete(dossier.id)}
+                onUseForScript={() => handleUseForScript(dossier.id)}
+                onToggleActive={() => handleToggleActive(dossier)}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className={currentPage === page ? "bg-purple-600 hover:bg-purple-700" : ""}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Viewer Modal */}

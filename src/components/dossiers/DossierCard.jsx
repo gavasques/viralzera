@@ -17,35 +17,69 @@ export default function DossierCard({ dossier, onView, onDelete, onUseForScript,
   const isActive = dossier.is_active !== false; // default true
   
   return (
-    <Card className={`hover:shadow-lg transition-all group ${!isActive ? 'opacity-60' : ''}`}>
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5 text-purple-600" />
+    <Card className={`hover:shadow-md transition-all cursor-pointer group border-slate-200 hover:border-purple-200 ${!isActive ? 'opacity-60' : ''}`}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div className="p-2 bg-purple-50 rounded-lg shrink-0">
+            <FileText className="w-5 h-5 text-purple-600" />
+          </div>
+          
+          {/* Title & Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="text-base font-semibold text-slate-900 truncate">
+                {dossier.modeling?.title || 'Dossiê'}
+              </h3>
+              {!isActive && (
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-amber-600 border-amber-300">
+                  Inativo
+                </Badge>
+              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900 text-sm line-clamp-1">
-                  {dossier.modeling?.title || 'Dossiê'}
-                </h3>
-                {!isActive && (
-                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">
-                    Inativo
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                <Calendar className="w-3 h-3" />
-                {format(new Date(dossier.created_date), 'dd/MM/yyyy')}
-              </p>
+            {dossier.modeling?.description && (
+              <p className="text-xs text-slate-500 line-clamp-1 mb-1">{dossier.modeling.description}</p>
+            )}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {dossier.modeling?.target_platform && (
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                  {dossier.modeling.target_platform}
+                </Badge>
+              )}
+              {dossier.modeling?.content_type && (
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5 bg-slate-50">
+                  {dossier.modeling.content_type}
+                </Badge>
+              )}
+              <span className="text-[10px] text-slate-400">
+                • {format(new Date(dossier.created_date), 'dd/MM/yyyy')}
+              </span>
             </div>
           </div>
 
+          {/* Stats */}
+          <div className="hidden sm:flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <Hash className="w-3.5 h-3.5 text-purple-500" />
+              <div>
+                <p className="text-sm font-bold text-slate-900">{formatNumber(dossier.character_count)}</p>
+                <p className="text-[9px] text-slate-400 leading-none">chars</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-purple-500" />
+              <div>
+                <p className="text-sm font-bold text-slate-900">~{formatNumber(dossier.token_estimate)}</p>
+                <p className="text-[9px] text-slate-400 leading-none">tokens</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Actions */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                <MoreVertical className="w-4 h-4" />
+                <MoreVertical className="w-3.5 h-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -64,45 +98,6 @@ export default function DossierCard({ dossier, onView, onDelete, onUseForScript,
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
-        {dossier.modeling?.description && (
-          <p className="text-xs text-slate-600 mb-3 line-clamp-2">
-            {dossier.modeling.description}
-          </p>
-        )}
-
-        <div className="flex items-center gap-2 flex-wrap mb-3">
-          {dossier.modeling?.target_platform && (
-            <Badge variant="outline" className="text-[10px]">
-              {dossier.modeling.target_platform}
-            </Badge>
-          )}
-          {dossier.modeling?.content_type && (
-            <Badge variant="outline" className="text-[10px] bg-slate-50">
-              {dossier.modeling.content_type}
-            </Badge>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
-          <div className="text-xs text-slate-500">
-            <Hash className="w-3 h-3 inline mr-1" />
-            {formatNumber(dossier.character_count)} chars
-          </div>
-          <div className="text-xs text-slate-500">
-            <Layers className="w-3 h-3 inline mr-1" />
-            ~{formatNumber(dossier.token_estimate)} tokens
-          </div>
-        </div>
-
-        <Button 
-          size="sm" 
-          className="w-full mt-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          onClick={onView}
-        >
-          <Eye className="w-3 h-3 mr-1" />
-          Visualizar Dossiê
-        </Button>
       </CardContent>
     </Card>
   );
