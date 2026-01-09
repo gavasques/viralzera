@@ -583,12 +583,12 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     try {
       toast.info('Analisando link...');
 
-      // Buscar configuração do agente de análise
-      const analyzerConfigs = await base44.entities.ModelingAnalyzerConfig.list();
+      // Buscar configuração do agente de análise de links
+      const analyzerConfigs = await base44.entities.ModelingLinkAnalyzerConfig.list();
       const config = analyzerConfigs?.[0];
       
       if (!config?.model) {
-        throw new Error('Configure o agente de Análise Individual em Configurações de Agentes');
+        throw new Error('Configure o agente de Analisador de Links em Configurações de Agentes');
       }
 
       let systemPrompt = config.prompt || `Você é um analista de conteúdo especializado. Analise este material e extraia os insights, tópicos-chave e informações mais relevantes para criação de conteúdo.`;

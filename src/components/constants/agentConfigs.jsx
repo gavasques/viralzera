@@ -511,8 +511,8 @@ Retorne APENAS um JSON válido no formato:
 
   modelingAnalyzer: {
     configEntity: 'ModelingAnalyzerConfig',
-    title: 'Configurações do Analisador Individual (Vídeos)',
-    defaultPrompt: `Você é um Analista de Conteúdo Sênior. Sua tarefa é analisar o material a seguir (transcrição de vídeo, texto ou resumo de artigo) e criar um resumo analítico focado em:
+    title: 'Analisador Individual (Vídeos)',
+    defaultPrompt: `Você é um Analista de Conteúdo Sênior. Sua tarefa é analisar a transcrição de vídeo a seguir e criar um resumo analítico focado em:
 
   1. **Ideia Central**: Qual o principal argumento ou mensagem?
   2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
@@ -523,7 +523,27 @@ Retorne APENAS um JSON válido no formato:
 
   Formate a saída em Markdown.`,
     promptPlaceholders: [
-      { key: '{{material_content}}', description: 'Conteúdo do vídeo, texto ou link' },
+      { key: '{{material_content}}', description: 'Conteúdo da transcrição do vídeo' },
+      { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
+    ]
+  },
+
+  modelingLinkAnalyzer: {
+    configEntity: 'ModelingLinkAnalyzerConfig',
+    title: 'Analisador de Links',
+    defaultPrompt: `Você é um Analista de Conteúdo Sênior especializado em análise de artigos e links. Sua tarefa é analisar o resumo do link a seguir e criar um resumo analítico focado em:
+
+  1. **Ideia Central**: Qual o principal argumento ou mensagem do artigo?
+  2. **Tópicos Principais**: Liste os 3-5 pontos mais importantes.
+  3. **Insights e Ângulos**: Que ideias de vídeo podem surgir daqui?
+  4. **Frases de Impacto**: Extraia 2-3 citações poderosas.
+  5. **Dados e Estatísticas**: Liste números, pesquisas ou fatos relevantes encontrados.
+
+  {{purpose_note}}
+
+  Formate a saída em Markdown.`,
+    promptPlaceholders: [
+      { key: '{{material_content}}', description: 'Resumo do link/artigo' },
       { key: 'purpose_note', description: 'Finalidade específica informada pelo usuário (se houver)' }
     ]
   },
