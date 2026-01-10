@@ -407,43 +407,23 @@ export default function YoutubeScriptDetail() {
             />
 
             {/* Show skeleton if no primary version selected yet */}
-            {(() => {
-              const { data: versions = [] } = useQuery({
-                queryKey: ['initial-versions', scriptId],
-                queryFn: async () => {
-                  const all = await base44.entities.YoutubeScriptVersion.filter({ 
-                    script_id: scriptId,
-                    change_type: 'initial'
-                  }, '-created_date');
-                  return all;
-                },
-                enabled: !!scriptId
-              });
-
-              const hasPrimaryVersion = versions.some(v => v.is_primary);
-
-              if (versions.length > 1 && !hasPrimaryVersion) {
-                return (
-                  <div className="bg-white rounded-xl border-2 border-dashed border-slate-200 p-12 mb-6 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 text-slate-400 animate-pulse" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                          Aguardando Escolha da Versão Principal
-                        </h3>
-                        <p className="text-sm text-slate-500">
-                          Selecione uma versão acima para começar a editar o roteiro
-                        </p>
-                      </div>
-                    </div>
+            {initialVersions.length > 1 && !initialVersions.some(v => v.is_primary) && (
+              <div className="bg-white rounded-xl border-2 border-dashed border-slate-200 p-12 mb-6 text-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-slate-400 animate-pulse" />
                   </div>
-                );
-              }
-
-              return null;
-            })()}
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                      Aguardando Escolha da Versão Principal
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      Selecione uma versão acima para começar a editar o roteiro
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Editor - só mostrar se tiver versão principal ou não tiver versões iniciais */}
             {(() => {
