@@ -17,7 +17,10 @@ export default function DossierCard({ dossier, onView, onDelete, onUseForScript,
   const isActive = dossier.is_active !== false; // default true
   
   return (
-    <Card className={`hover:shadow-md transition-all cursor-pointer group border-slate-200 hover:border-purple-200 ${!isActive ? 'opacity-60' : ''}`}>
+    <Card 
+      className={`hover:shadow-md transition-all cursor-pointer group border-slate-200 hover:border-purple-200 ${!isActive ? 'opacity-60' : ''}`}
+      onClick={onView}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           {/* Icon */}
