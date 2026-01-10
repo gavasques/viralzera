@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Copy, Check, Hash, FileText, ExternalLink, Download } from "lucide-react";
 
-export default function LinkViewerModal({ open, onOpenChange, link }) {
+export default function LinkViewerModal({ open, onOpenChange, link, analysis }) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
 
@@ -68,15 +68,15 @@ export default function LinkViewerModal({ open, onOpenChange, link }) {
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="text-xs">
                   <FileText className="w-3 h-3 mr-1" />
-                  {(link.character_count || 0).toLocaleString()} caracteres
+                  {(analysis?.character_count || 0).toLocaleString()} caracteres
                 </Badge>
                 <Badge variant="outline" className="text-xs">
                   <Hash className="w-3 h-3 mr-1" />
-                  ~{(link.token_estimate || 0).toLocaleString()} tokens
+                  ~{(analysis?.token_estimate || 0).toLocaleString()} tokens
                 </Badge>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleCopy(link.summary)}>
+                <Button variant="outline" size="sm" onClick={() => handleCopy(analysis?.analysis_summary)}>
                   {copied ? (
                     <>
                       <Check className="w-3 h-3 mr-1 text-green-600" />
@@ -89,7 +89,7 @@ export default function LinkViewerModal({ open, onOpenChange, link }) {
                     </>
                   )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDownload(link.summary, `${link.title || 'resumo'}.txt`)}>
+                <Button variant="outline" size="sm" onClick={() => handleDownload(analysis?.analysis_summary, `${link.title || 'analise'}.txt`)}>
                   <Download className="w-3 h-3 mr-1" />
                   Baixar
                 </Button>
@@ -98,14 +98,14 @@ export default function LinkViewerModal({ open, onOpenChange, link }) {
 
             <div className="flex-1 mt-2 overflow-y-auto">
               <div className="pr-4">
-                {link.summary ? (
+                {analysis?.analysis_summary ? (
                   <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                    {link.summary}
+                    {analysis.analysis_summary}
                   </p>
                 ) : (
                   <div className="text-center py-12 text-slate-400">
                     <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p>Nenhum resumo disponível</p>
+                    <p>Nenhuma análise disponível</p>
                   </div>
                 )}
               </div>
