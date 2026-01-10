@@ -26,6 +26,20 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
   const ScrapeStatusIcon = scrapeStatusConfig[link.scrape_status]?.icon || Clock;
   const AnalysisStatusIcon = analysisStatusConfig[link.analysis_status]?.icon || Clock;
 
+  const handleScrapeClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Botão Capturar Dados clicado!', link.id);
+    onScrape();
+  };
+
+  const handleAnalyzeClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Botão Analisar clicado!', link.id);
+    onAnalyze();
+  };
+
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -168,10 +182,7 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
                 <Button 
                   size="sm" 
                   className="h-8 text-xs bg-sky-600 hover:bg-sky-700 shadow-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onScrape();
-                  }}
+                  onClick={handleScrapeClick}
                   disabled={processing}
                 >
                   {processing ? (
@@ -192,10 +203,7 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
                 <Button 
                   size="sm" 
                   className="h-8 text-xs bg-purple-600 hover:bg-purple-700 shadow-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAnalyze();
-                  }}
+                  onClick={handleAnalyzeClick}
                   disabled={analyzing}
                 >
                   {analyzing ? (
