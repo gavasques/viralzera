@@ -64,6 +64,19 @@ export default function YoutubeScriptDetail() {
     refetchOnWindowFocus: false, // Prevent auto-refresh on window focus
   });
 
+  // Fetch initial versions
+  const { data: initialVersions = [] } = useQuery({
+    queryKey: ['initial-versions', scriptId],
+    queryFn: async () => {
+      const all = await base44.entities.YoutubeScriptVersion.filter({ 
+        script_id: scriptId,
+        change_type: 'initial'
+      }, '-created_date');
+      return all;
+    },
+    enabled: !!scriptId
+  });
+
   // Reset initial data when scriptId changes
   useEffect(() => {
     setInitialData(null);
