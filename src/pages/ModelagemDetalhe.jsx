@@ -1295,6 +1295,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         open={!!viewingLink}
         onOpenChange={() => setViewingLink(null)}
         link={viewingLink}
+        analysis={analyses.find(a => a.material_id === viewingLink?.id && a.material_type === 'link')}
       />
 
       <ModelingFormModal
