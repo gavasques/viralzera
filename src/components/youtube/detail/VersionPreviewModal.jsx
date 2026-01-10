@@ -34,12 +34,30 @@ export default function VersionPreviewModal({ open, onOpenChange, version, onSet
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50 rounded-lg p-6 border border-slate-200">
-          <div className="prose prose-slate max-w-none">
-            <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
-              {version.corpo}
-            </div>
-          </div>
+        <div className="flex-1 overflow-y-auto bg-white rounded-lg p-8 border border-slate-200">
+          <div 
+            className="text-slate-900 leading-relaxed"
+            style={{
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontSize: '15px',
+              lineHeight: '1.7'
+            }}
+            dangerouslySetInnerHTML={{
+              __html: version.corpo
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/^#{1,6}\s+(.+)$/gm, (match, title) => {
+                  const level = match.match(/^#{1,6}/)[0].length;
+                  return `<h${level} style="font-size: ${20 - level}px; font-weight: bold; margin: 24px 0 12px 0; color: #1e293b;">${title}</h${level}>`;
+                })
+                .replace(/^---$/gm, '<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />')
+                .replace(/\n\n/g, '</p><p style="margin: 16px 0;">')
+                .replace(/^(.+)$/gm, (match) => {
+                  if (match.startsWith('<') || !match.trim()) return match;
+                  return `<p style="margin: 12px 0;">${match}</p>`;
+                })
+            }}
+          />
         </div>
 
         {!version.is_primary && (
