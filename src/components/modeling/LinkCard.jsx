@@ -168,7 +168,10 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
                 <Button 
                   size="sm" 
                   className="h-8 text-xs bg-sky-600 hover:bg-sky-700 shadow-sm"
-                  onClick={onScrape}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onScrape();
+                  }}
                   disabled={processing}
                 >
                   {processing ? (
@@ -189,7 +192,10 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
                 <Button 
                   size="sm" 
                   className="h-8 text-xs bg-purple-600 hover:bg-purple-700 shadow-sm"
-                  onClick={onAnalyze}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAnalyze();
+                  }}
                   disabled={analyzing}
                 >
                   {analyzing ? (
@@ -211,7 +217,10 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
                   size="sm" 
                   variant="outline"
                   className="h-8 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                  onClick={onClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick();
+                  }}
                 >
                   <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                   Ver Análise
