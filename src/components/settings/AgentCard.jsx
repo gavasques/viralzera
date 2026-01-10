@@ -15,9 +15,9 @@ export default function AgentCard({ agent, config, onClick }) {
     return parts[parts.length - 1];
   };
 
-  // Alguns agentes usam campos diferentes (ex: TrendConfig usa search_model, PostTypeConfig usa ocr_model)
-  const modelName = config?.model_name || config?.search_model_name || config?.ocr_model_name || 
-                    getModelShortName(config?.model || config?.search_model || config?.ocr_model);
+  // Alguns agentes usam campos diferentes (ex: TrendConfig usa search_model, PostTypeConfig usa ocr_model, YoutubeGeneratorConfig usa model1/model2/model3)
+  const modelName = config?.model_name || config?.model1_name || config?.search_model_name || config?.ocr_model_name || 
+                    getModelShortName(config?.model || config?.model1 || config?.search_model || config?.ocr_model);
   const hasWebSearch = config?.enable_web_search;
   const hasReasoning = config?.enable_reasoning;
 
