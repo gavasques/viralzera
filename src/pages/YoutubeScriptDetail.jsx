@@ -452,7 +452,8 @@ export default function YoutubeScriptDetail() {
               if (!shouldShowEditor) return null;
 
               return (
-                sectionKey="corpo"
+                <YoutubeScriptSectionEditor
+                  sectionKey="corpo"
                 title="Roteiro Completo"
                 description="Edite o conteúdo completo do roteiro"
                 content={content}
