@@ -426,46 +426,27 @@ export default function YoutubeScriptDetail() {
             )}
 
             {/* Editor - só mostrar se tiver versão principal ou não tiver versões iniciais */}
-            {(() => {
-              const { data: versions = [] } = useQuery({
-                queryKey: ['initial-versions', scriptId],
-                queryFn: async () => {
-                  const all = await base44.entities.YoutubeScriptVersion.filter({ 
-                    script_id: scriptId,
-                    change_type: 'initial'
-                  }, '-created_date');
-                  return all;
-                },
-                enabled: !!scriptId
-              });
-
-              const hasPrimaryVersion = versions.some(v => v.is_primary);
-              const shouldShowEditor = versions.length <= 1 || hasPrimaryVersion;
-
-              if (!shouldShowEditor) return null;
-
-              return (
-                <YoutubeScriptSectionEditor
-                  sectionKey="corpo"
-                  title="Roteiro Completo"
-                  description="Edite o conteúdo completo do roteiro"
-                  content={content}
-                  onChange={(_, val) => setContent(val)}
-                  onOpenRefiner={handleOpenRefiner}
-                  scriptTitle={title}
-                  // Toolbar props
-                  videoType={script?.video_type}
-                  status={script?.status}
-                  onSave={handleSave}
-                  isSaving={saveMutation.isPending}
-                  hasChanges={hasChanges}
-                  onChatToggle={() => setChatOpen(true)}
-                  // Notes & Actions props
-                  notesVisible={notesVisible}
-                  onToggleNotes={() => setNotesVisible(!notesVisible)}
-                />
-              );
-            })()}
+            {(initialVersions.length <= 1 || initialVersions.some(v => v.is_primary)) && (
+              <YoutubeScriptSectionEditor
+                sectionKey="corpo"
+                title="Roteiro Completo"
+                description="Edite o conteúdo completo do roteiro"
+                content={content}
+                onChange={(_, val) => setContent(val)}
+                onOpenRefiner={handleOpenRefiner}
+                scriptTitle={title}
+                // Toolbar props
+                videoType={script?.video_type}
+                status={script?.status}
+                onSave={handleSave}
+                isSaving={saveMutation.isPending}
+                hasChanges={hasChanges}
+                onChatToggle={() => setChatOpen(true)}
+                // Notes & Actions props
+                notesVisible={notesVisible}
+                onToggleNotes={() => setNotesVisible(!notesVisible)}
+              />
+            )}
                 </div>
         </div>
         
