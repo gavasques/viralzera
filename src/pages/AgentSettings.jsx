@@ -66,10 +66,30 @@ export default function AgentSettings() {
     return allConfigs[agentConfig.configEntity] || null;
   };
 
-  const filteredAgents = AGENT_CARDS.filter(agent => 
-    agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAgents = AGENT_CARDS.filter(agent => {
+    if (!searchTerm.trim()) return true;
+    
+    const search = searchTerm.toLowerCase();
+    const config = getConfigForAgent(agent.key);
+    
+    // Buscar em múltiplos campos
+    const searchableFields = [
+      agent.title,
+      agent.description,
+      agent.key,
+      config?.model_name,
+      config?.model,
+      config?.model1_name,
+      config?.model2_name,
+      config?.model3_name,
+      config?.custom_title,
+      config?.custom_description,
+    ].filter(Boolean);
+    
+    return searchableFields.some(field => 
+      field.toLowerCase().includes(search)
+    );
+  });
 
   const handleOpenSettings = (agentKey) => {
     const agent = AGENT_CARDS.find(a => a.key === agentKey);
