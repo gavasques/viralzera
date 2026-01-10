@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from "@tantml:parameter>@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,7 @@ export default function InitialVersionsPanel({ scriptId, onVersionSelected, curr
       });
       
       for (const v of allVersions) {
-        await base44.entities.YoutubeScript Version.update(v.id, { is_primary: false });
+        await base44.entities.YoutubeScriptVersion.update(v.id, { is_primary: false });
       }
 
       // 2. Definir esta como principal

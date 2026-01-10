@@ -25,7 +25,7 @@ import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptCh
 import YoutubeKitModal from "@/components/youtube/detail/YoutubeKitModal";
 import ScriptHistoryDrawer from "@/components/youtube/history/ScriptHistoryDrawer";
 import ScriptNotesPanel from "@/components/youtube/detail/ScriptNotesPanel";
-import VersionsTabs from "@/components/youtube/detail/VersionsTabs";
+import InitialVersionsPanel from "@/components/youtube/detail/InitialVersionsPanel";
 import { useSelectedFocus } from "@/components/hooks/useSelectedFocus";
 
 export default function YoutubeScriptDetail() {
@@ -43,7 +43,6 @@ export default function YoutubeScriptDetail() {
   const [categoria, setCategoria] = useState('Genérico');
   const [initialData, setInitialData] = useState(null);
   const [notesVisible, setNotesVisible] = useState(false);
-  const [currentVersionId, setCurrentVersionId] = useState(null);
   
   // Drawers & Modals state
   const [refinerOpen, setRefinerOpen] = useState(false);
@@ -269,20 +268,6 @@ export default function YoutubeScriptDetail() {
     queryClient.invalidateQueries({ queryKey: ['script-versions', scriptId] });
   };
 
-  // Handle version change
-  const handleVersionChange = (version) => {
-    setCurrentVersionId(version.id);
-    setContent(version.corpo);
-    setTitle(version.title || title);
-    setInitialData({
-      title: version.title || title,
-      corpo: version.corpo,
-      status,
-      categoria
-    });
-    toast.success(`Visualizando: ${version.model_name}`);
-  };
-
   const sendToKanbanMutation = useMutation({
     mutationFn: async () => {
       // 1. Find PostType "Youtube Vídeo Longo"
@@ -388,17 +373,26 @@ export default function YoutubeScriptDetail() {
         isSendingToKanban={sendToKanbanMutation.isPending}
       />
 
-      {/* Versions Tabs */}
-      <VersionsTabs 
-        scriptId={scriptId}
-        currentVersionId={currentVersionId}
-        onVersionChange={handleVersionChange}
-      />
-
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden flex">
         <div className="flex-1 overflow-y-auto">
           <div className={`mx-auto p-6 md:p-8 pb-32 min-h-full transition-all ${notesVisible ? 'max-w-4xl xl:max-w-5xl' : 'max-w-5xl'}`}>
+            {/* Initial Versions Panel */}
+            <InitialVersionsPanel
+              scriptId={scriptId}
+              onVersionSelected={(version) => {
+                setTitle(version.title);
+                setContent(version.corpo);
+                setInitialData({
+                  title: version.title,
+                  corpo: version.corpo,
+                  status,
+                  categoria
+                });
+              }}
+              currentContent={content}
+            />
+
             <YoutubeScriptSectionEditor
               sectionKey="corpo"
               title="Roteiro Completo"
