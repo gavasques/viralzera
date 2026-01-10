@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Sparkles, Trash2, Check, Loader2 } from "lucide-react";
+import { Sparkles, Trash2, Check, Loader2, Eye } from "lucide-react";
 import { toast } from "sonner";
+import VersionPreviewModal from "./VersionPreviewModal";
 
 export default function InitialVersionsPanel({ scriptId, onVersionSelected, currentContent }) {
   const queryClient = useQueryClient();
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [versionToDelete, setVersionToDelete] = useState(null);
+  const [previewVersion, setPreviewVersion] = useState(null);
 
   // Buscar apenas versões "initial" (geradas no wizard)
   const { data: versions = [], isLoading } = useQuery({
@@ -103,7 +105,7 @@ export default function InitialVersionsPanel({ scriptId, onVersionSelected, curr
           <div className="flex-1">
             <h3 className="font-semibold text-slate-900 mb-1">Versões Geradas pela IA</h3>
             <p className="text-sm text-slate-600 mb-3">
-              Este roteiro foi gerado em {versions.length} versões diferentes. Escolha a principal para trabalhar ou tire ideias das outras.
+              Este roteiro foi gerado em {versions.length} versões diferentes. Escolha a principal para trabalhar ou visualize as outras.
             </p>
 
             <Tabs value={selectedVersion || primaryVersion?.id || versions[0]?.id} onValueChange={setSelectedVersion} className="w-full">
@@ -122,62 +124,82 @@ export default function InitialVersionsPanel({ scriptId, onVersionSelected, curr
                 ))}
               </TabsList>
 
-              {versions.map((version) => (
-                <TabsContent key={version.id} value={version.id} className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {version.is_primary ? (
-                        <Badge className="bg-green-100 text-green-700 border-green-200">
-                          <Check className="w-3 h-3 mr-1" />
-                          Principal
-                        </Badge>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => setPrimaryMutation.mutate(version.id)}
-                          disabled={setPrimaryMutation.isPending}
-                          className="bg-purple-600 hover:bg-purple-700"
-                        >
-                          {setPrimaryMutation.isPending ? (
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              <div className="mt-4 space-y-3">
+                {versions.map((version) => {
+                  const isActive = (selectedVersion || primaryVersion?.id || versions[0]?.id) === version.id;
+                  if (!isActive) return null;
+
+                  return (
+                    <div key={version.id} className="space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          {version.is_primary ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200">
+                              <Check className="w-3 h-3 mr-1" />
+                              Principal
+                            </Badge>
                           ) : (
-                            <Check className="w-3 h-3 mr-1" />
+                            <Button
+                              size="sm"
+                              onClick={() => setPrimaryMutation.mutate(version.id)}
+                              disabled={setPrimaryMutation.isPending}
+                              className="bg-purple-600 hover:bg-purple-700"
+                            >
+                              {setPrimaryMutation.isPending ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <Check className="w-3 h-3 mr-1" />
+                              )}
+                              Definir como Principal
+                            </Button>
                           )}
-                          Definir como Principal
-                        </Button>
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPreviewVersion(version)}
+                            className="border-slate-200"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            Ver Prévia
+                          </Button>
+                        </div>
+
+                        {!version.is_primary && versions.length > 1 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setVersionToDelete(version)}
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Excluir
+                          </Button>
+                        )}
+                      </div>
+
+                      {!version.is_primary && (
+                        <p className="text-xs text-slate-500 italic">
+                          💡 Dica: Visualize esta versão ou defina como principal para trabalhar nela.
+                        </p>
                       )}
                     </div>
-
-                    {!version.is_primary && versions.length > 1 && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setVersionToDelete(version)}
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Excluir
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="bg-white p-4 rounded-lg border border-slate-200 max-h-60 overflow-y-auto">
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      {version.corpo.substring(0, 500)}...
-                    </p>
-                  </div>
-
-                  {!version.is_primary && (
-                    <p className="text-xs text-slate-500 italic">
-                      💡 Dica: Você pode copiar trechos desta versão ou definir como principal para trabalhar nela.
-                    </p>
-                  )}
-                </TabsContent>
-              ))}
+                  );
+                })}
+              </div>
             </Tabs>
           </div>
         </div>
       </Card>
+
+      <VersionPreviewModal
+        open={!!previewVersion}
+        onOpenChange={(open) => !open && setPreviewVersion(null)}
+        version={previewVersion}
+        isPrimary={previewVersion?.is_primary}
+        onSetPrimary={(versionId) => setPrimaryMutation.mutate(versionId)}
+        isSettingPrimary={setPrimaryMutation.isPending}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!versionToDelete} onOpenChange={(open) => !open && setVersionToDelete(null)}>
