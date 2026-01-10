@@ -774,23 +774,15 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
           if (video?.url) {
             materiaisBrutos += `**URL:** ${video.url}\n\n`;
           }
+          if (video?.purpose) {
+            materiaisBrutos += `**Finalidade:** ${video.purpose}\n\n`;
+          }
           materiaisBrutos += `${a.analysis_summary}\n\n`;
           materiaisBrutos += `---\n\n`;
         });
-      } else {
-        // Fallback para transcrições se não houver análises
-        const transcribedVideos = videos.filter(v => v.status === 'transcribed' && v.transcript);
-        if (transcribedVideos.length > 0) {
-          materiaisBrutos += `---\n\n## 🎥 VÍDEOS TRANSCRITOS (${transcribedVideos.length})\n\n`;
-          transcribedVideos.forEach((v, i) => {
-            materiaisBrutos += `### Vídeo ${i + 1}: ${v.title || 'Sem título'}\n\n`;
-            materiaisBrutos += `**Transcrição:**\n\n${v.transcript}\n\n`;
-            materiaisBrutos += `---\n\n`;
-          });
-        }
       }
 
-      // Adicionar análises de textos (prioridade) ou textos completos (fallback)
+      // Adicionar análises de textos
       const textAnalyses = analyses.filter(a => a.material_type === 'text' && a.status === 'completed');
       if (textAnalyses.length > 0) {
         materiaisBrutos += `## 📄 ANÁLISES DE TEXTOS DE REFERÊNCIA (${textAnalyses.length})\n\n`;
@@ -800,32 +792,10 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
           if (text?.description) {
             materiaisBrutos += `**Descrição:** ${text.description}\n\n`;
           }
-          materiaisBrutos += `${a.analysis_summary}\n\n`;
-          materiaisBrutos += `---\n\n`;
-        });
-        
-        // Adicionar textos sem análise (se houver)
-        const textsWithoutAnalysis = texts.filter(t => !textAnalyses.some(a => a.material_id === t.id));
-        if (textsWithoutAnalysis.length > 0) {
-          materiaisBrutos += `## 📄 TEXTOS ADICIONAIS (${textsWithoutAnalysis.length})\n\n`;
-          textsWithoutAnalysis.forEach((t, i) => {
-            materiaisBrutos += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
-            if (t.description) {
-              materiaisBrutos += `**Descrição:** ${t.description}\n\n`;
-            }
-            materiaisBrutos += `${t.content}\n\n`;
-            materiaisBrutos += `---\n\n`;
-          });
-        }
-      } else if (texts.length > 0) {
-        // Fallback: usar textos completos se não houver análises
-        materiaisBrutos += `## 📄 TEXTOS DE REFERÊNCIA (${texts.length})\n\n`;
-        texts.forEach((t, i) => {
-          materiaisBrutos += `### Texto ${i + 1}: ${t.title || 'Sem título'}\n\n`;
-          if (t.description) {
-            materiaisBrutos += `**Descrição:** ${t.description}\n\n`;
+          if (text?.purpose) {
+            materiaisBrutos += `**Finalidade:** ${text.purpose}\n\n`;
           }
-          materiaisBrutos += `${t.content}\n\n`;
+          materiaisBrutos += `${a.analysis_summary}\n\n`;
           materiaisBrutos += `---\n\n`;
         });
       }
@@ -843,16 +813,19 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
           if (link?.notes) {
             materiaisBrutos += `**Notas:** ${link.notes}\n\n`;
           }
+          if (link?.purpose) {
+            materiaisBrutos += `**Finalidade:** ${link.purpose}\n\n`;
+          }
           materiaisBrutos += `${a.analysis_summary}\n\n`;
           materiaisBrutos += `---\n\n`;
         });
       }
 
       // Verificar se há conteúdo suficiente
-      const hasContent = videoAnalyses.length > 0 || textAnalyses.length > 0 || texts.length > 0 || linkAnalyses.length > 0 || (videos.some(v => v.status === 'transcribed')) || modeling.creator_idea;
+      const hasContent = videoAnalyses.length > 0 || textAnalyses.length > 0 || linkAnalyses.length > 0 || modeling.creator_idea;
       
       if (!hasContent) {
-        throw new Error('Não há conteúdo suficiente para gerar o dossiê. Adicione vídeos analisados, textos, links processados ou uma ideia do criador.');
+        throw new Error('Não há conteúdo suficiente para gerar o dossiê. Analise os vídeos, textos e links primeiro, ou adicione uma ideia do criador.');
       }
 
       // Substituir placeholder e preparar prompt
