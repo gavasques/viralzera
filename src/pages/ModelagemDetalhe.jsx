@@ -140,6 +140,25 @@ export default function ModelagemDetalhe() {
     }
   });
 
+  // Update modeling totals helper
+  const updateModelingTotals = async () => {
+    const allVideos = await base44.entities.ModelingVideo.filter({ modeling_id: modelingId });
+    const allTexts = await base44.entities.ModelingText.filter({ modeling_id: modelingId });
+    const allLinks = await base44.entities.ModelingLink.filter({ modeling_id: modelingId });
+    
+    const videoChars = allVideos.reduce((sum, v) => sum + (v.character_count || 0), 0);
+    const videoTokens = allVideos.reduce((sum, v) => sum + (v.token_estimate || 0), 0);
+    const textChars = allTexts.reduce((sum, t) => sum + (t.character_count || 0), 0);
+    const textTokens = allTexts.reduce((sum, t) => sum + (t.token_estimate || 0), 0);
+    const linkChars = allLinks.reduce((sum, l) => sum + (l.character_count || 0), 0);
+    const linkTokens = allLinks.reduce((sum, l) => sum + (l.token_estimate || 0), 0);
+
+    await base44.entities.Modeling.update(modelingId, {
+      total_characters: videoChars + textChars + linkChars,
+      total_tokens_estimate: videoTokens + textTokens + linkTokens
+    });
+  };
+
   // Delete research mutation - REMOVED
   const deleteResearchMutation = { mutate: () => {} };
 
@@ -337,7 +356,6 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
   // Scrape link (puxar dados)
   const handleScrapeLink = async (linkId) => {
-    console.log('handleScrapeLink chamado para:', linkId);
     setScrapingLinkId(linkId);
     
     const link = links.find(l => l.id === linkId);
@@ -348,14 +366,50 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
 
     try {
-      console.log('Chamando modelingScraper...');
-      const response = await base44.functions.invoke('modelingScraper', { link_id: linkId });
-      console.log('Resposta do scraper:', response);
+      // Atualizar status para processing
+      await base44.entities.ModelingLink.update(linkId, {
+        scrape_status: 'processing',
+        scrape_error_message: null
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
+
+      // Extrair conteúdo usando InvokeLLM direto do frontend
+      const extractResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: `Extraia o conteúdo principal deste artigo/página, removendo navegação, ads e elementos irrelevantes. Retorne apenas o texto do artigo de forma limpa e estruturada.\n\nURL: ${link.url}`,
+        add_context_from_internet: true
+      });
+
+      const articleContent = extractResponse;
+
+      if (!articleContent || articleContent.length < 100) {
+        throw new Error('Não foi possível extrair conteúdo suficiente do link');
+      }
+
+      const charCount = articleContent.length;
+      const tokenEstimate = Math.ceil(charCount / 4);
+
+      // Atualizar link com conteúdo extraído
+      await base44.entities.ModelingLink.update(linkId, {
+        content: articleContent,
+        character_count: charCount,
+        token_estimate: tokenEstimate,
+        scrape_status: 'completed',
+        scrape_error_message: null
+      });
+
+      // Atualizar totais da modelagem
+      await updateModelingTotals();
+
       queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Dados extraídos com sucesso!');
     } catch (error) {
-      console.error('Erro no scraping:', error);
+      // Atualizar status para error
+      await base44.entities.ModelingLink.update(linkId, {
+        scrape_status: 'error',
+        scrape_error_message: error.message
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       toast.error('Erro ao extrair dados: ' + error.message);
     } finally {
       setScrapingLinkId(null);
