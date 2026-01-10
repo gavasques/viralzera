@@ -86,14 +86,14 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
 
       // Coletar modelos configurados
       const models = [];
-      if (agentConfig?.model_1) {
-        models.push({ model: agentConfig.model_1, name: agentConfig.model_1_name || 'Modelo 1' });
+      if (agentConfig?.model1) {
+        models.push({ model: agentConfig.model1, name: agentConfig.model1_name || 'Modelo 1' });
       }
-      if (agentConfig?.model_2) {
-        models.push({ model: agentConfig.model_2, name: agentConfig.model_2_name || 'Modelo 2' });
+      if (agentConfig?.model2) {
+        models.push({ model: agentConfig.model2, name: agentConfig.model2_name || 'Modelo 2' });
       }
-      if (agentConfig?.model_3) {
-        models.push({ model: agentConfig.model_3, name: agentConfig.model_3_name || 'Modelo 3' });
+      if (agentConfig?.model3) {
+        models.push({ model: agentConfig.model3, name: agentConfig.model3_name || 'Modelo 3' });
       }
 
       if (models.length === 0) {
