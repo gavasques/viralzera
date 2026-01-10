@@ -392,18 +392,18 @@ export default function YoutubeScriptSectionEditor({
             }
             .ql-editor {
                 font-family: 'Inter', sans-serif;
-                font-size: 1.125rem;
-                line-height: 1.6;
+                font-size: 1.05rem;
+                line-height: 1.65;
                 padding: 30px 40px !important;
                 height: 100%;
                 overflow-y: auto;
                 color: #1e293b;
             }
-            .ql-editor h1 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; color: #0f172a; }
-            .ql-editor h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1e293b; }
-            .ql-editor h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #334155; }
-            .ql-editor p { margin-bottom: 0.75rem; }
-            .ql-editor blockquote { border-left: 4px solid #e2e8f0; padding-left: 1rem; color: #64748b; font-style: italic; }
+            .ql-editor h1 { font-size: 1.75rem; font-weight: 800; margin: 1.25rem 0 0.75rem 0; color: #0f172a; }
+            .ql-editor h2 { font-size: 1.4rem; font-weight: 700; margin: 1.15rem 0 0.6rem 0; color: #1e293b; }
+            .ql-editor h3 { font-size: 1.2rem; font-weight: 600; margin: 1rem 0 0.5rem 0; color: #334155; }
+            .ql-editor p { margin: 0.35rem 0; }
+            .ql-editor blockquote { border-left: 4px solid #e2e8f0; padding-left: 1rem; margin: 0.75rem 0; color: #64748b; font-style: italic; }
             `}</style>
             
             <div className="flex-1 flex flex-col min-h-0">
