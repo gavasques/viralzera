@@ -15,6 +15,7 @@ export default function InitialVersionsPanel({ scriptId, onVersionSelected, curr
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [versionToDelete, setVersionToDelete] = useState(null);
   const [previewVersion, setPreviewVersion] = useState(null);
+  const [previewVersion, setPreviewVersion] = useState(null);
 
   // Buscar apenas versões "initial" (geradas no wizard)
   const { data: versions = [], isLoading } = useQuery({
@@ -222,6 +223,19 @@ export default function InitialVersionsPanel({ scriptId, onVersionSelected, curr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  );
-}
+
+      {/* Preview Modal */}
+      <VersionPreviewModal
+        open={!!previewVersion}
+        onOpenChange={(open) => !open && setPreviewVersion(null)}
+        version={previewVersion}
+        onSetPrimary={() => {
+          if (previewVersion) {
+            setPrimaryMutation.mutate(previewVersion.id);
+          }
+        }}
+        isPending={setPrimaryMutation.isPending}
+      />
+      </>
+      );
+      }
