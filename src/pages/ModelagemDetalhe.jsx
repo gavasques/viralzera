@@ -546,13 +546,20 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     setAnalyzingLinkId(linkId);
     
     const link = links.find(l => l.id === linkId);
-    if (!link || !link.summary) {
-      toast.error('Link não processado');
+    if (!link || !link.content) {
+      toast.error('Link sem conteúdo. Capture os dados primeiro.');
       setAnalyzingLinkId(null);
       return;
     }
 
     try {
+      // Atualizar status para processing
+      await base44.entities.ModelingLink.update(linkId, {
+        analysis_status: 'processing',
+        analysis_error_message: null
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
+
       toast.info('Analisando link...');
 
       // Buscar configuração do agente de análise de links
@@ -572,44 +579,26 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         systemPrompt = systemPrompt.replace(/\{\{purpose_note\}\}/g, '');
       }
 
-      // Buscar API key
-      const userConfigs = await base44.entities.UserConfig.list();
-      const apiKey = userConfigs[0]?.openrouter_api_key;
-
-      if (!apiKey) {
-        throw new Error('Configure sua API Key do OpenRouter em Configurações');
-      }
-
-      // Chamar OpenRouter diretamente
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'ContentAI - Link Analyzer'
-        },
-        body: JSON.stringify({
-          model: config.model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Por favor, analise este resumo de link:\n\n${link.summary}` }
-          ],
-          temperature: 0.7,
-          max_tokens: config.max_tokens || 4000
-        })
+      // Chamar OpenRouter via sendMessage
+      const aiResponse = await sendMessage({
+        model: config.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Por favor, analise este conteúdo:\n\n${link.content}` }
+        ],
+        options: {
+          enableReasoning: config?.enable_reasoning || false,
+          reasoningEffort: config?.reasoning_effort || 'medium',
+          enableWebSearch: config?.enable_web_search || false,
+          maxTokens: config?.max_tokens || 4000,
+          feature: 'LinkAnalyzer'
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const analysisSummary = data.choices?.[0]?.message?.content;
+      const analysisSummary = aiResponse.content;
 
       if (!analysisSummary) {
-        throw new Error('Resposta inválida da API');
+        throw new Error('Resposta inválida da IA');
       }
 
       // Salvar análise
@@ -624,9 +613,22 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
         status: 'completed'
       });
 
+      // Atualizar status do link
+      await base44.entities.ModelingLink.update(linkId, {
+        analysis_status: 'completed',
+        analysis_error_message: null
+      });
+
       queryClient.invalidateQueries({ queryKey: ['modelingAnalyses', modelingId] });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       toast.success('Link analisado!');
     } catch (error) {
+      // Atualizar status para error
+      await base44.entities.ModelingLink.update(linkId, {
+        analysis_status: 'error',
+        analysis_error_message: error.message
+      });
+      queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       console.error('Erro na análise:', error);
       toast.error('Erro ao analisar: ' + error.message);
     } finally {
