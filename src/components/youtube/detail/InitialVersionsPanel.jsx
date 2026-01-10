@@ -99,15 +99,10 @@ export default function InitialVersionsPanel({ scriptId, onVersionSelected, curr
 
   return (
     <>
-      <Card className="p-4 mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-        <div className="flex items-start gap-3">
-          <Sparkles className="w-5 h-5 text-purple-600 mt-0.5" />
+      <Card className="p-3 mb-4 bg-gradient-to-r from-purple-50/50 to-pink-50/50 border-purple-200/50">
+        <div className="flex items-center gap-3">
+          <Sparkles className="w-4 h-4 text-purple-600" />
           <div className="flex-1">
-            <h3 className="font-semibold text-slate-900 mb-1">Versões Geradas pela IA</h3>
-            <p className="text-sm text-slate-600 mb-3">
-              Este roteiro foi gerado em {versions.length} versões diferentes. Escolha a principal para trabalhar ou visualize as outras.
-            </p>
-
             <Tabs value={selectedVersion || primaryVersion?.id || versions[0]?.id} onValueChange={setSelectedVersion} className="w-full">
               <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${versions.length}, 1fr)` }}>
                 {versions.map((version) => (
@@ -124,66 +119,60 @@ export default function InitialVersionsPanel({ scriptId, onVersionSelected, curr
                 ))}
               </TabsList>
 
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-2">
                 {versions.map((version) => {
                   const isActive = (selectedVersion || primaryVersion?.id || versions[0]?.id) === version.id;
                   if (!isActive) return null;
 
                   return (
-                    <div key={version.id} className="space-y-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div key={version.id}>
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           {version.is_primary ? (
-                            <Badge className="bg-green-100 text-green-700 border-green-200">
-                              <Check className="w-3 h-3 mr-1" />
-                              Principal
-                            </Badge>
-                          ) : (
+                              <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">
+                                <Check className="w-3 h-3 mr-1" />
+                                Principal
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => setPrimaryMutation.mutate(version.id)}
+                                disabled={setPrimaryMutation.isPending}
+                                className="bg-purple-600 hover:bg-purple-700 h-7 text-xs"
+                              >
+                                {setPrimaryMutation.isPending ? (
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3 mr-1" />
+                                )}
+                                Definir como Principal
+                              </Button>
+                            )}
+
                             <Button
                               size="sm"
-                              onClick={() => setPrimaryMutation.mutate(version.id)}
-                              disabled={setPrimaryMutation.isPending}
-                              className="bg-purple-600 hover:bg-purple-700"
+                              variant="outline"
+                              onClick={() => setPreviewVersion(version)}
+                              className="border-slate-200 h-7 text-xs"
                             >
-                              {setPrimaryMutation.isPending ? (
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              ) : (
-                                <Check className="w-3 h-3 mr-1" />
-                              )}
-                              Definir como Principal
+                              <Eye className="w-3 h-3 mr-1" />
+                              Prévia
                             </Button>
-                          )}
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setPreviewVersion(version)}
-                            className="border-slate-200"
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            Ver Prévia
-                          </Button>
                         </div>
 
                         {!version.is_primary && versions.length > 1 && (
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => setVersionToDelete(version)}
-                            className="text-red-600 border-red-200 hover:bg-red-50"
+                            className="text-red-600 hover:bg-red-50 h-7 w-7 p-0"
                           >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Excluir
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         )}
                       </div>
 
-                      {!version.is_primary && (
-                        <p className="text-xs text-slate-500 italic">
-                          💡 Dica: Visualize esta versão ou defina como principal para trabalhar nela.
-                        </p>
-                      )}
-                    </div>
+                      </div>
                   );
                 })}
               </div>
