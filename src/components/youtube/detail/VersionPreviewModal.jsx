@@ -11,23 +11,14 @@ export default function VersionPreviewModal({ open, onOpenChange, version, onSet
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-xl">{version.title}</DialogTitle>
-              {version.is_primary && (
-                <Badge className="bg-green-100 text-green-700 border-green-200">
-                  <Check className="w-3 h-3 mr-1" />
-                  Principal
-                </Badge>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="w-5 h-5" />
-            </Button>
+          <div className="flex items-center gap-3">
+            <DialogTitle className="text-xl">{version.title}</DialogTitle>
+            {version.is_primary && (
+              <Badge className="bg-green-100 text-green-700 border-green-200">
+                <Check className="w-3 h-3 mr-1" />
+                Principal
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <span>Gerado por: {version.model_name || 'IA'}</span>
