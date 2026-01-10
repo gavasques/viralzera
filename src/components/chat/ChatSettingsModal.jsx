@@ -35,8 +35,12 @@ export default function ChatSettingsModal({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModel, setSelectedModel] = useState(null);
+  const [selectedModel2, setSelectedModel2] = useState(null);
+  const [selectedModel3, setSelectedModel3] = useState(null);
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [openCombobox, setOpenCombobox] = useState(false);
+  const [openCombobox2, setOpenCombobox2] = useState(false);
+  const [openCombobox3, setOpenCombobox3] = useState(false);
   const [enableReasoning, setEnableReasoning] = useState(false);
   const [reasoningEffort, setReasoningEffort] = useState('medium');
   const [enableWebSearch, setEnableWebSearch] = useState(false);
@@ -111,12 +115,15 @@ export default function ChatSettingsModal({
            id.includes('gemini');
   };
 
+  // Check if this is Youtube Generator (multi-model support)
+  const isYoutubeGenerator = configEntity === 'YoutubeGeneratorConfig';
+
   // Load existing config
   useEffect(() => {
     if (existingConfig) {
       // Support both standard field names and TrendConfig-specific names
-      const modelId = existingConfig.model || existingConfig.search_model;
-      const modelName = existingConfig.model_name || existingConfig.search_model_name;
+      const modelId = existingConfig.model || existingConfig.model1 || existingConfig.search_model;
+      const modelName = existingConfig.model_name || existingConfig.model1_name || existingConfig.search_model_name;
       const promptValue = existingConfig.prompt || existingConfig.default_prompt;
       
       if (modelId) {
@@ -124,6 +131,21 @@ export default function ChatSettingsModal({
       } else {
         setSelectedModel(null);
       }
+
+      // Load model2 and model3 for Youtube Generator
+      if (isYoutubeGenerator) {
+        if (existingConfig.model2) {
+          setSelectedModel2({ id: existingConfig.model2, name: existingConfig.model2_name });
+        } else {
+          setSelectedModel2(null);
+        }
+        if (existingConfig.model3) {
+          setSelectedModel3({ id: existingConfig.model3, name: existingConfig.model3_name });
+        } else {
+          setSelectedModel3(null);
+        }
+      }
+
       if (promptValue) {
         setPrompt(promptValue);
       }
@@ -135,7 +157,7 @@ export default function ChatSettingsModal({
       setCustomTitle(existingConfig.custom_title || '');
       setCustomDescription(existingConfig.custom_description || '');
     }
-  }, [existingConfig]);
+  }, [existingConfig, isYoutubeGenerator]);
 
   // Save mutation (global - único registro compartilhado)
   const saveMutation = useMutation({
@@ -158,28 +180,51 @@ export default function ChatSettingsModal({
     // Support TrendConfig which uses different field names
     const isTrendConfig = configEntity === 'TrendConfig';
     
-    const data = isTrendConfig ? {
-      search_model: selectedModel?.id || '',
-      search_model_name: selectedModel?.name || '',
-      default_prompt: prompt,
-      enable_reasoning: enableReasoning,
-      reasoning_effort: reasoningEffort,
-      enable_web_search: enableWebSearch,
-      max_tokens: maxTokens,
-      custom_title: customTitle || null,
-      custom_description: customDescription || null
-    } : {
-      model: selectedModel?.id || '',
-      model_name: selectedModel?.name || '',
-      prompt,
-      enable_reasoning: enableReasoning,
-      reasoning_effort: reasoningEffort,
-      enable_web_search: enableWebSearch,
-      max_tokens: maxTokens,
-      webhook_url: webhookUrl,
-      custom_title: customTitle || null,
-      custom_description: customDescription || null
-    };
+    let data;
+    
+    if (isTrendConfig) {
+      data = {
+        search_model: selectedModel?.id || '',
+        search_model_name: selectedModel?.name || '',
+        default_prompt: prompt,
+        enable_reasoning: enableReasoning,
+        reasoning_effort: reasoningEffort,
+        enable_web_search: enableWebSearch,
+        max_tokens: maxTokens,
+        custom_title: customTitle || null,
+        custom_description: customDescription || null
+      };
+    } else if (isYoutubeGenerator) {
+      // Youtube Generator uses model1, model2, model3
+      data = {
+        model1: selectedModel?.id || '',
+        model1_name: selectedModel?.name || '',
+        model2: selectedModel2?.id || null,
+        model2_name: selectedModel2?.name || null,
+        model3: selectedModel3?.id || null,
+        model3_name: selectedModel3?.name || null,
+        prompt,
+        enable_reasoning: enableReasoning,
+        reasoning_effort: reasoningEffort,
+        enable_web_search: enableWebSearch,
+        max_tokens: maxTokens,
+        custom_title: customTitle || null,
+        custom_description: customDescription || null
+      };
+    } else {
+      data = {
+        model: selectedModel?.id || '',
+        model_name: selectedModel?.name || '',
+        prompt,
+        enable_reasoning: enableReasoning,
+        reasoning_effort: reasoningEffort,
+        enable_web_search: enableWebSearch,
+        max_tokens: maxTokens,
+        webhook_url: webhookUrl,
+        custom_title: customTitle || null,
+        custom_description: customDescription || null
+      };
+    }
     
     saveMutation.mutate(data);
   };
@@ -233,7 +278,9 @@ export default function ChatSettingsModal({
 
           {/* Model Selection */}
           <div>
-            <Label className="mb-2 block">Modelo de IA</Label>
+            <Label className="mb-2 block">
+              {isYoutubeGenerator ? 'Modelo 1 (Principal)' : 'Modelo de IA'}
+            </Label>
             <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
               <PopoverTrigger asChild>
                 <Button
@@ -318,7 +365,210 @@ export default function ChatSettingsModal({
                 </ScrollArea>
               </PopoverContent>
             </Popover>
+            {isYoutubeGenerator && (
+              <p className="text-xs text-slate-500 mt-1">
+                Este modelo gerará a primeira versão do roteiro
+              </p>
+            )}
           </div>
+
+          {/* Model 2 (Youtube Generator only) */}
+          {isYoutubeGenerator && (
+            <div>
+              <Label className="mb-2 block">Modelo 2 (opcional)</Label>
+              <Popover open={openCombobox2} onOpenChange={setOpenCombobox2}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox2}
+                    className="w-full justify-between font-normal text-left h-auto py-3"
+                  >
+                    {selectedModel2 ? (
+                      <div className="flex flex-col items-start gap-0.5 overflow-hidden">
+                        <span className="font-medium truncate w-full">{selectedModel2.name}</span>
+                        <span className="text-xs text-slate-500 truncate w-full">{selectedModel2.id}</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-500">Selecione um modelo (opcional)...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[600px] p-0" align="start">
+                  <div className="p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder="Buscar modelo..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 border-none shadow-none focus-visible:ring-0 bg-slate-50"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[250px] p-1">
+                    {loadingModels ? (
+                      <div className="flex items-center justify-center h-full py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div
+                          onClick={() => {
+                            setSelectedModel2(null);
+                            setOpenCombobox2(false);
+                          }}
+                          className="p-2 rounded-md cursor-pointer hover:bg-slate-50 text-slate-500 italic text-sm"
+                        >
+                          Nenhum (apenas 1 versão)
+                        </div>
+                        {filteredModels.slice(0, 50).map((model) => {
+                          const hasReasoning = supportsReasoning(model);
+                          const hasWebSearch = hasNativeWebSearch(model);
+                          return (
+                            <div
+                              key={model.id}
+                              onClick={() => {
+                                setSelectedModel2(model);
+                                setOpenCombobox2(false);
+                              }}
+                              className={`p-2 rounded-md cursor-pointer flex items-center justify-between transition-colors ${
+                                selectedModel2?.id === model.id 
+                                  ? 'bg-indigo-50 text-indigo-900' 
+                                  : 'hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 mr-2">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-medium truncate">{model.name}</p>
+                                  {hasReasoning && (
+                                    <Brain className="w-3.5 h-3.5 text-purple-500 shrink-0" title="Suporta Extended Reasoning" />
+                                  )}
+                                  {hasWebSearch && (
+                                    <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" title="Web Search Nativo" />
+                                  )}
+                                </div>
+                                <p className={`text-xs truncate ${selectedModel2?.id === model.id ? 'text-indigo-500' : 'text-slate-400'}`}>
+                                  {model.id}
+                                </p>
+                              </div>
+                              {selectedModel2?.id === model.id && (
+                                <Check className="w-4 h-4 text-indigo-600 shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-slate-500 mt-1">
+                Se preenchido, gerará uma segunda versão do roteiro com este modelo
+              </p>
+            </div>
+          )}
+
+          {/* Model 3 (Youtube Generator only) */}
+          {isYoutubeGenerator && (
+            <div>
+              <Label className="mb-2 block">Modelo 3 (opcional)</Label>
+              <Popover open={openCombobox3} onOpenChange={setOpenCombobox3}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox3}
+                    className="w-full justify-between font-normal text-left h-auto py-3"
+                  >
+                    {selectedModel3 ? (
+                      <div className="flex flex-col items-start gap-0.5 overflow-hidden">
+                        <span className="font-medium truncate w-full">{selectedModel3.name}</span>
+                        <span className="text-xs text-slate-500 truncate w-full">{selectedModel3.id}</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-500">Selecione um modelo (opcional)...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[600px] p-0" align="start">
+                  <div className="p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder="Buscar modelo..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 border-none shadow-none focus-visible:ring-0 bg-slate-50"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[250px] p-1">
+                    {loadingModels ? (
+                      <div className="flex items-center justify-center h-full py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div
+                          onClick={() => {
+                            setSelectedModel3(null);
+                            setOpenCombobox3(false);
+                          }}
+                          className="p-2 rounded-md cursor-pointer hover:bg-slate-50 text-slate-500 italic text-sm"
+                        >
+                          Nenhum (apenas 1-2 versões)
+                        </div>
+                        {filteredModels.slice(0, 50).map((model) => {
+                          const hasReasoning = supportsReasoning(model);
+                          const hasWebSearch = hasNativeWebSearch(model);
+                          return (
+                            <div
+                              key={model.id}
+                              onClick={() => {
+                                setSelectedModel3(model);
+                                setOpenCombobox3(false);
+                              }}
+                              className={`p-2 rounded-md cursor-pointer flex items-center justify-between transition-colors ${
+                                selectedModel3?.id === model.id 
+                                  ? 'bg-indigo-50 text-indigo-900' 
+                                  : 'hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 mr-2">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-medium truncate">{model.name}</p>
+                                  {hasReasoning && (
+                                    <Brain className="w-3.5 h-3.5 text-purple-500 shrink-0" title="Suporta Extended Reasoning" />
+                                  )}
+                                  {hasWebSearch && (
+                                    <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" title="Web Search Nativo" />
+                                  )}
+                                </div>
+                                <p className={`text-xs truncate ${selectedModel3?.id === model.id ? 'text-indigo-500' : 'text-slate-400'}`}>
+                                  {model.id}
+                                </p>
+                              </div>
+                              {selectedModel3?.id === model.id && (
+                                <Check className="w-4 h-4 text-indigo-600 shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-slate-500 mt-1">
+                Se preenchido, gerará uma terceira versão do roteiro com este modelo
+              </p>
+            </div>
+          )}
 
           {/* Extended Reasoning */}
           <div className="space-y-3 p-4 bg-purple-50/50 rounded-lg border border-purple-100">
