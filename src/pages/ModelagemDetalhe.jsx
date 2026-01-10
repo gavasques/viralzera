@@ -337,6 +337,7 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
 
   // Scrape link (puxar dados)
   const handleScrapeLink = async (linkId) => {
+    console.log('handleScrapeLink chamado para:', linkId);
     setScrapingLinkId(linkId);
     
     const link = links.find(l => l.id === linkId);
@@ -347,11 +348,14 @@ Retorne APENAS o texto da transcrição, limpo e normalizado.`;
     }
 
     try {
-      await base44.functions.invoke('modelingScraper', { link_id: linkId });
+      console.log('Chamando modelingScraper...');
+      const response = await base44.functions.invoke('modelingScraper', { link_id: linkId });
+      console.log('Resposta do scraper:', response);
       queryClient.invalidateQueries({ queryKey: ['modelingLinks', modelingId] });
       queryClient.invalidateQueries({ queryKey: ['modelings'] });
       toast.success('Dados extraídos com sucesso!');
     } catch (error) {
+      console.error('Erro no scraping:', error);
       toast.error('Erro ao extrair dados: ' + error.message);
     } finally {
       setScrapingLinkId(null);

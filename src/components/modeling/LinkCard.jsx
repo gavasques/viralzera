@@ -232,7 +232,10 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
                   size="sm" 
                   variant="outline"
                   className="h-7 text-xs border-red-200 text-red-600 hover:bg-red-50"
-                  onClick={onScrape}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onScrape();
+                  }}
                   disabled={processing}
                 >
                   {processing ? (
@@ -254,7 +257,10 @@ export default function LinkCard({ link, onClick, onEdit, onScrape, onAnalyze, o
                   size="sm" 
                   variant="outline"
                   className="h-7 text-xs border-red-200 text-red-600 hover:bg-red-50"
-                  onClick={onAnalyze}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAnalyze();
+                  }}
                   disabled={analyzing}
                 >
                   {analyzing ? (
