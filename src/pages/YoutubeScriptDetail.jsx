@@ -454,25 +454,25 @@ export default function YoutubeScriptDetail() {
               return (
                 <YoutubeScriptSectionEditor
                   sectionKey="corpo"
-                title="Roteiro Completo"
-                description="Edite o conteúdo completo do roteiro"
-                content={content}
-                onChange={(_, val) => setContent(val)}
-                onOpenRefiner={handleOpenRefiner}
-                scriptTitle={title}
-                // Toolbar props
-                videoType={script?.video_type}
-                status={script?.status}
-                onSave={handleSave}
-                isSaving={saveMutation.isPending}
-                hasChanges={hasChanges}
-                onChatToggle={() => setChatOpen(true)}
-                // Notes & Actions props
-                notesVisible={notesVisible}
-                onToggleNotes={() => setNotesVisible(!notesVisible)}
+                  title="Roteiro Completo"
+                  description="Edite o conteúdo completo do roteiro"
+                  content={content}
+                  onChange={(_, val) => setContent(val)}
+                  onOpenRefiner={handleOpenRefiner}
+                  scriptTitle={title}
+                  // Toolbar props
+                  videoType={script?.video_type}
+                  status={script?.status}
+                  onSave={handleSave}
+                  isSaving={saveMutation.isPending}
+                  hasChanges={hasChanges}
+                  onChatToggle={() => setChatOpen(true)}
+                  // Notes & Actions props
+                  notesVisible={notesVisible}
+                  onToggleNotes={() => setNotesVisible(!notesVisible)}
                 />
-                );
-                })()}
+              );
+            })()}
                 </div>
         </div>
         
