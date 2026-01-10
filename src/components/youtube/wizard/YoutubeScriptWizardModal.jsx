@@ -84,8 +84,14 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
       const refinerConfig = refinerConfigs[0];
       const agentConfig = generatorConfigs[0];
 
-      if (!agentConfig?.model) {
-        throw new Error('Modelo de IA não configurado. Peça ao administrador para configurar em Configurações de Agentes.');
+      // Coletar todos os modelos configurados
+      const models = [];
+      if (agentConfig?.model1) models.push({ model: agentConfig.model1, name: agentConfig.model1_name || 'Modelo 1' });
+      if (agentConfig?.model2) models.push({ model: agentConfig.model2, name: agentConfig.model2_name || 'Modelo 2' });
+      if (agentConfig?.model3) models.push({ model: agentConfig.model3, name: agentConfig.model3_name || 'Modelo 3' });
+
+      if (models.length === 0) {
+        throw new Error('Nenhum modelo de IA configurado. Peça ao administrador para configurar em Configurações de Agentes.');
       }
 
       // 2. Buscar o tipo de roteiro selecionado para pegar o prompt_template
@@ -157,38 +163,57 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         console.log('Prompt refinado com sucesso!');
       }
 
-      // 7. Chamar OpenRouter para gerar o roteiro final
-      setGenerationStep('Gerando o roteiro completo...');
-      const aiResponse = await sendMessage({
-        model: agentConfig.model,
-        messages: [
-          { role: 'system', content: agentConfig.prompt || 'Você é um especialista em criar roteiros para YouTube.' },
-          { role: 'user', content: finalPrompt }
-        ],
-        options: {
-          enableReasoning: agentConfig.enable_reasoning || false,
-          reasoningEffort: agentConfig.reasoning_effort || 'medium',
-          enableWebSearch: agentConfig.enable_web_search || false,
-          feature: 'YoutubeScriptGenerator'
-        }
-      });
+      // 7. Chamar os modelos em paralelo para gerar múltiplas versões
+      setGenerationStep(`Gerando roteiro com ${models.length} modelo${models.length > 1 ? 's' : ''}...`);
+      
+      const generationPromises = models.map(({ model, name }) => 
+        sendMessage({
+          model,
+          messages: [
+            { role: 'system', content: agentConfig.prompt || 'Você é um especialista em criar roteiros para YouTube.' },
+            { role: 'user', content: finalPrompt }
+          ],
+          options: {
+            enableReasoning: agentConfig.enable_reasoning || false,
+            reasoningEffort: agentConfig.reasoning_effort || 'medium',
+            enableWebSearch: agentConfig.enable_web_search || false,
+            feature: 'YoutubeScriptGenerator'
+          }
+        }).then(response => ({ ...response, modelName: name, model }))
+      );
 
-      const generatedContent = aiResponse.content;
+      const aiResponses = await Promise.all(generationPromises);
 
-      setGenerationStep('Salvando roteiro...');
+      setGenerationStep('Salvando roteiros...');
 
-      // 8. Criar registro do YoutubeScript
+      // 8. Criar registro do YoutubeScript com o conteúdo do primeiro modelo (será a versão principal)
+      const primaryResponse = aiResponses[0];
       const newScript = await base44.entities.YoutubeScript.create({
         title: formData.tema.substring(0, 100),
         video_type: scriptType.title,
-        corpo: generatedContent,
+        corpo: primaryResponse.content,
         duracao_estimada: formData.duracaoEstimada || null,
         status: 'Rascunho',
         focus_id: selectedFocusId,
         modeling_ids: formData.selectedModelings || []
       });
 
-      // 9. Salvar histórico inicial no chat para continuação (em sequência para garantir ordem)
+      // 9. Criar versões para cada modelo gerado
+      for (let i = 0; i < aiResponses.length; i++) {
+        const response = aiResponses[i];
+        await base44.entities.YoutubeScriptVersion.create({
+          script_id: newScript.id,
+          title: formData.tema.substring(0, 100),
+          corpo: response.content,
+          video_type: scriptType.title,
+          change_type: 'generation',
+          change_description: `Versão gerada por ${response.modelName}`,
+          model_name: response.modelName,
+          is_primary: i === 0 // Primeira versão é a principal
+        });
+      }
+
+      // 10. Salvar histórico inicial no chat para continuação (em sequência para garantir ordem)
       try {
         await base44.entities.YoutubeScriptChat.create({
           script_id: newScript.id,
@@ -198,8 +223,8 @@ export default function YoutubeScriptWizardModal({ open, onOpenChange }) {
         await base44.entities.YoutubeScriptChat.create({
           script_id: newScript.id,
           role: 'assistant',
-          content: generatedContent,
-          usage: aiResponse.usage
+          content: primaryResponse.content,
+          usage: primaryResponse.usage
         });
       } catch (chatError) {
         console.error("Erro ao salvar histórico do chat:", chatError);
