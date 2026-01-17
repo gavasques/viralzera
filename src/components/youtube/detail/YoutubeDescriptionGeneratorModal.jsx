@@ -163,6 +163,7 @@ export default function YoutubeDescriptionGeneratorModal({
       // Parsear resposta JSON
       let descricao = '';
       let capitulos = '';
+      let tags = '';
 
       try {
         const jsonMatch = response.content.match(/\{[\s\S]*\}/);
@@ -170,7 +171,9 @@ export default function YoutubeDescriptionGeneratorModal({
           const parsed = JSON.parse(jsonMatch[0]);
           descricao = parsed.descricao || '';
           capitulos = parsed.capitulos || '';
+          tags = parsed.tags || '';
         } else {
+          // Fallback se não vier JSON
           descricao = response.content.trim();
         }
       } catch {
