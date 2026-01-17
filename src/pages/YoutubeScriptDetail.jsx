@@ -22,7 +22,7 @@ import YoutubeScriptSectionEditor from "@/components/youtube/detail/YoutubeScrip
 import RefinerDrawer from "@/components/youtube/refiner/RefinerDrawer";
 import TitleSuggestionsModal from "@/components/youtube/detail/TitleSuggestionsModal";
 import YoutubeScriptChatDrawer from "@/components/youtube/detail/YoutubeScriptChatDrawer";
-import YoutubeKitModal from "@/components/youtube/detail/YoutubeKitModal";
+import YoutubeDescriptionGeneratorModal from "@/components/youtube/detail/YoutubeDescriptionGeneratorModal";
 import ScriptHistoryDrawer from "@/components/youtube/history/ScriptHistoryDrawer";
 import ScriptNotesPanel from "@/components/youtube/detail/ScriptNotesPanel";
 import InitialVersionsPanel from "@/components/youtube/detail/InitialVersionsPanel";
@@ -48,7 +48,7 @@ export default function YoutubeScriptDetail() {
   const [refinerOpen, setRefinerOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
-  const [showKitModal, setShowKitModal] = useState(false);
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   
@@ -82,21 +82,24 @@ export default function YoutubeScriptDetail() {
     setInitialData(null);
   }, [scriptId]);
 
+  const [transcription, setTranscription] = useState('');
+
   // Load script when data loads (only if not initialized)
-  useEffect(() => {
-    if (script && !initialData) {
-      setTitle(script.title || '');
-      setContent(script.corpo || '');
-      setStatus(script.status || 'Rascunho');
-      setCategoria(script.categoria || 'Genérico');
-      setInitialData({
-        title: script.title || '',
-        corpo: script.corpo || '',
-        status: script.status || 'Rascunho',
-        categoria: script.categoria || 'Genérico'
-      });
-    }
-  }, [script, initialData]);
+        useEffect(() => {
+          if (script && !initialData) {
+            setTitle(script.title || '');
+            setContent(script.corpo || '');
+            setTranscription(script.transcricao || '');
+            setStatus(script.status || 'Rascunho');
+            setCategoria(script.categoria || 'Genérico');
+            setInitialData({
+              title: script.title || '',
+              corpo: script.corpo || '',
+              status: script.status || 'Rascunho',
+              categoria: script.categoria || 'Genérico'
+            });
+          }
+        }, [script, initialData]);
 
   // Check if there are unsaved changes
   const hasChanges = useMemo(() => {
@@ -177,6 +180,7 @@ export default function YoutubeScriptDetail() {
       await base44.entities.YoutubeScript.update(scriptId, {
         title,
         corpo: content,
+        transcricao: transcription,
         status,
         categoria
       });
@@ -379,7 +383,7 @@ export default function YoutubeScriptDetail() {
         hasChanges={hasChanges}
         onSuggestTitles={() => setShowTitleModal(true)}
         onChatOpen={() => setChatOpen(true)}
-        onGenerateKit={() => setShowKitModal(true)}
+        onGenerateDescription={() => setShowDescriptionModal(true)}
         onNavigateBack={handleNavigateBack}
         onHistoryOpen={() => setHistoryOpen(true)}
         onSendToKanban={handleSendToKanban}
@@ -435,16 +439,16 @@ export default function YoutubeScriptDetail() {
                 onChange={(_, val) => setContent(val)}
                 onOpenRefiner={handleOpenRefiner}
                 scriptTitle={title}
-                // Toolbar props
                 videoType={script?.video_type}
                 status={script?.status}
                 onSave={handleSave}
                 isSaving={saveMutation.isPending}
                 hasChanges={hasChanges}
                 onChatToggle={() => setChatOpen(true)}
-                // Notes & Actions props
                 notesVisible={notesVisible}
                 onToggleNotes={() => setNotesVisible(!notesVisible)}
+                transcription={transcription}
+                onTranscriptionChange={setTranscription}
               />
             )}
                 </div>
@@ -498,12 +502,16 @@ export default function YoutubeScriptDetail() {
         }}
       />
 
-      <YoutubeKitModal
-        open={showKitModal}
-        onOpenChange={setShowKitModal}
-        scriptContent={content}
+      <YoutubeDescriptionGeneratorModal
+        open={showDescriptionModal}
+        onOpenChange={setShowDescriptionModal}
         scriptTitle={title}
         scriptId={scriptId}
+        transcription={transcription}
+        onDescriptionGenerated={(desc) => {
+          toast.success('Descrição gerada! Copie e use onde necessário.');
+          setShowDescriptionModal(false);
+        }}
       />
 
       <ScriptHistoryDrawer
