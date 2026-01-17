@@ -100,6 +100,15 @@ export default function YoutubeDescriptionGeneratorModal({
         contentForAnalysis += `\n\nTÍTULO: ${scriptTitle}`;
       }
 
+      // Buscar template selecionado se houver
+      let templateContent = '';
+      if (selectedTemplateId) {
+        const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+        if (selectedTemplate?.template_content) {
+          templateContent = selectedTemplate.template_content;
+        }
+      }
+
       // Preparar system prompt
       let systemPrompt = config.prompt || 'Você é um especialista em otimização de conteúdo YouTube.';
       
@@ -108,10 +117,16 @@ export default function YoutubeDescriptionGeneratorModal({
         .replace(/## ROTEIRO PARA ANÁLISE[\s\S]*?(?=##|$)/gi, '')
         .replace(/## TEMPLATE DE DESCRIÇÃO[\s\S]*?(?=##|$)/gi, '')
         .replace(/\{\{roteiro_final\}\}/gi, '')
-        .replace(/\{\{template_descricao\}\}/gi, '');
+        .replace(/\{\{template_descricao\}\}/gi, templateContent);
 
       // Construir mensagem do usuário
-      let userMessage = `Gere APENAS uma descrição otimizada para YouTube com base no seguinte conteúdo:\n\n${contentForAnalysis}\n\nA descrição deve ser:
+      let userMessage = `Gere APENAS uma descrição otimizada para YouTube com base no seguinte conteúdo:\n\n${contentForAnalysis}`;
+      
+      if (templateContent) {
+        userMessage += `\n\nSiga este template de descrição:\n${templateContent}`;
+      }
+      
+      userMessage += `\n\nA descrição deve ser:
 - Otimizada para SEO
 - Engajante e clara
 - Com entre 200-500 caracteres
