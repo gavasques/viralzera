@@ -149,15 +149,28 @@ Retorne APENAS a descrição, sem explicações adicionais.`;
         }
       });
 
-      const generatedDescription = response.content.trim();
-      setDescription(generatedDescription);
+      let finalDescription = response.content.trim();
+
+      // Aplicar template se selecionado
+      if (selectedTemplateId && templates.length > 0) {
+        const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+        if (selectedTemplate?.template_content) {
+          // Substituir placeholders no template pela descrição gerada
+          finalDescription = selectedTemplate.template_content
+            .replace(/\{\{descricao\}\}/gi, finalDescription)
+            .replace(/\{\{descricao_final\}\}/gi, finalDescription)
+            .replace(/\{\{description\}\}/gi, finalDescription);
+        }
+      }
+
+      setDescription(finalDescription);
 
       // Salvar versão no banco
       if (scriptId) {
         try {
           const savedVersion = await base44.entities.YoutubeKitVersion.create({
             script_id: scriptId,
-            descricao_completa: generatedDescription,
+            descricao_completa: finalDescription,
             template_id: selectedTemplateId || null
           });
           setSelectedVersionId(savedVersion.id);
