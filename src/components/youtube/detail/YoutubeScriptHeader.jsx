@@ -12,7 +12,7 @@ export default function YoutubeScriptHeader({
   onStatusChange,
   onCategoriaChange,
   onSuggestTitles,
-  onGenerateKit,
+  onGenerateDescription,
   onHistoryOpen,
   onNavigateBack,
   onSendToKanban,
