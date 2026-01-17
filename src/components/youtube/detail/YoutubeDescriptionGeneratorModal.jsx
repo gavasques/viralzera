@@ -121,18 +121,14 @@ export default function YoutubeDescriptionGeneratorModal({
 
       // Construir mensagem do usuário
       let userMessage = `Gere APENAS uma descrição otimizada para YouTube com base no seguinte conteúdo:\n\n${contentForAnalysis}`;
-      
-      if (templateContent) {
-        userMessage += `\n\nSiga este template de descrição:\n${templateContent}`;
-      }
-      
-      userMessage += `\n\nA descrição deve ser:
-- Otimizada para SEO
-- Engajante e clara
-- Com entre 200-500 caracteres
-- Pronta para usar
 
-Retorne APENAS a descrição, sem explicações adicionais.`;
+      userMessage += `\n\nA descrição deve ser:
+      - Otimizada para SEO
+      - Engajante e clara
+      - Com entre 200-500 caracteres
+      - Pronta para usar
+
+      Retorne APENAS a descrição pura, sem explicações ou formatações adicionais.`;
 
       const response = await sendMessage({
         model: config.model,
