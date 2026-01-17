@@ -197,7 +197,8 @@ export default function YoutubeDescriptionGeneratorModal({
             .replace(/\{\{description\}\}/g, descricao)
             .replace(/\{\{timestamps\}\}/g, capitulos)
             .replace(/\{\{capitulos\}\}/g, capitulos)
-            .replace(/\{\{chapters\}\}/g, capitulos);
+            .replace(/\{\{chapters\}\}/g, capitulos)
+            .replace(/\{\{tags\}\}/g, tags);
             
           // Substituir blocos de descrição (ex: {{bloco:me_conte_como_posso_lhe_ajudar}})
           if (blocks && blocks.length > 0) {
