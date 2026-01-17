@@ -200,16 +200,33 @@ export default function YoutubeDescriptionGeneratorModal({
             .replace(/\{\{chapters\}\}/g, capitulos)
             .replace(/\{\{tags\}\}/g, tags);
             
-          // Substituir blocos de descrição (ex: {{bloco:me_conte_como_posso_lhe_ajudar}})
-          if (blocks && blocks.length > 0) {
-             blocks.forEach(block => {
-                 if (block.slug && block.content) {
-                     // Regex para encontrar {{bloco:slug}} insensível a maiúsculas/minúsculas
-                     const blockPlaceholder = new RegExp(`\\{\\{bloco:${block.slug}\\}\\}`, 'gi');
-                     finalDescription = finalDescription.replace(blockPlaceholder, block.content);
-                 }
-             });
-          }
+          // Substituição robusta de blocos
+          // Estratégia: Encontrar todas as ocorrências de {{bloco:nome}} e tentar casar com os blocos disponíveis
+          finalDescription = finalDescription.replace(/\{\{bloco:([^}]+)\}\}/gi, (match, capturedSlug) => {
+              const slugToFind = capturedSlug.trim();
+              
+              if (!blocks || blocks.length === 0) return match;
+
+              // 1. Tenta encontrar pelo slug exato (case insensitive)
+              let foundBlock = blocks.find(b => b.slug?.toLowerCase() === slugToFind.toLowerCase());
+
+              // 2. Se não achar, tenta normalizar _ e - (ex: redes_sociais vs redes-sociais)
+              if (!foundBlock) {
+                  const normalizedSlug = slugToFind.replace(/-/g, '_').toLowerCase();
+                  foundBlock = blocks.find(b => b.slug?.replace(/-/g, '_').toLowerCase() === normalizedSlug);
+              }
+
+              // 3. Se ainda não achar, tenta encontrar pelo título (slugify básico)
+              if (!foundBlock) {
+                   foundBlock = blocks.find(b => {
+                       const titleSlug = b.title?.toLowerCase().replace(/\s+/g, '_').replace(/[^\w_]/g, '');
+                       const searchSlug = slugToFind.toLowerCase().replace(/-/g, '_');
+                       return titleSlug === searchSlug;
+                   });
+              }
+
+              return foundBlock ? foundBlock.content : match;
+          });
           
           // Opcional: Remover placeholders de bloco que não foram encontrados para não ficar "sujo"
           // finalDescription = finalDescription.replace(/\{\{bloco:[^}]+\}\}/gi, '');
