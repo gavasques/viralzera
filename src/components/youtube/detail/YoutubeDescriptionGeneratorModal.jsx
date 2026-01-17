@@ -1,0 +1,352 @@
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { sendMessage } from "@/components/services/OpenRouterDirectService";
+import { toast } from "sonner";
+import { Loader2, Sparkles, Copy, Check, RefreshCw, History, ChevronDown } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { format } from 'date-fns';
+
+export default function YoutubeDescriptionGeneratorModal({ 
+  open, 
+  onOpenChange, 
+  scriptTitle, 
+  scriptId,
+  transcription,
+  onDescriptionGenerated 
+}) {
+  const queryClient = useQueryClient();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [description, setDescription] = useState(null);
+  const [copiedItem, setCopiedItem] = useState(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [selectedVersionId, setSelectedVersionId] = useState(null);
+
+  // Buscar versões salvas da descrição
+  const { data: descriptionVersions = [], isLoading: isLoadingVersions } = useQuery({
+    queryKey: ['youtube-description-versions', scriptId],
+    queryFn: () => base44.entities.YoutubeKitVersion.filter(
+      { script_id: scriptId },
+      '-created_date'
+    ),
+    enabled: open && !!scriptId
+  });
+
+  // Buscar templates de descrição
+  const { data: templates = [] } = useQuery({
+    queryKey: ['description-templates'],
+    queryFn: () => base44.entities.DescriptionTemplate.list('-created_date', 50),
+    enabled: open
+  });
+
+  // Auto-selecionar template padrão
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplateId) {
+      const defaultTemplate = templates.find(t => t.is_default);
+      if (defaultTemplate) {
+        setSelectedTemplateId(defaultTemplate.id);
+      } else {
+        setSelectedTemplateId(templates[0].id);
+      }
+    }
+  }, [templates, selectedTemplateId]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setDescription(null);
+      setSelectedVersionId(null);
+    }
+  }, [open]);
+
+  const generateDescription = async () => {
+    if (!transcription && !scriptTitle) {
+      toast.error('Adicione uma transcrição ou roteiro para gerar a descrição');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Buscar configuração do agente
+      const configs = await base44.entities.YoutubeKitGeneratorConfig.filter({});
+      const config = configs[0];
+
+      if (!config?.model) {
+        throw new Error('Configure o agente "YouTube - Gerador de Kit" em Configurações de Agentes');
+      }
+
+      // Preparar conteúdo para enviar
+      let contentForAnalysis = '';
+      if (transcription) {
+        contentForAnalysis = `TRANSCRIÇÃO DO VÍDEO:\n\n${transcription}`;
+      }
+      if (scriptTitle) {
+        contentForAnalysis += `\n\nTÍTULO: ${scriptTitle}`;
+      }
+
+      // Preparar system prompt
+      let systemPrompt = config.prompt || 'Você é um especialista em otimização de conteúdo YouTube.';
+      
+      // Remover seções não relevantes do prompt
+      systemPrompt = systemPrompt
+        .replace(/## ROTEIRO PARA ANÁLISE[\s\S]*?(?=##|$)/gi, '')
+        .replace(/## TEMPLATE DE DESCRIÇÃO[\s\S]*?(?=##|$)/gi, '')
+        .replace(/\{\{roteiro_final\}\}/gi, '')
+        .replace(/\{\{template_descricao\}\}/gi, '');
+
+      // Construir mensagem do usuário
+      let userMessage = `Gere APENAS uma descrição otimizada para YouTube com base no seguinte conteúdo:\n\n${contentForAnalysis}\n\nA descrição deve ser:
+- Otimizada para SEO
+- Engajante e clara
+- Com entre 200-500 caracteres
+- Pronta para usar
+
+Retorne APENAS a descrição, sem explicações adicionais.`;
+
+      const response = await sendMessage({
+        model: config.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        options: {
+          enableReasoning: config.enable_reasoning || false,
+          reasoningEffort: config.reasoning_effort || 'medium',
+          enableWebSearch: config.enable_web_search || false,
+          maxTokens: config.max_tokens || 2000,
+          feature: 'YoutubeDescriptionGenerator'
+        }
+      });
+
+      const generatedDescription = response.content.trim();
+      setDescription(generatedDescription);
+
+      // Salvar versão no banco
+      if (scriptId) {
+        try {
+          const savedVersion = await base44.entities.YoutubeKitVersion.create({
+            script_id: scriptId,
+            descricao_completa: generatedDescription,
+            template_id: selectedTemplateId || null
+          });
+          setSelectedVersionId(savedVersion.id);
+          queryClient.invalidateQueries({ queryKey: ['youtube-description-versions', scriptId] });
+        } catch (saveError) {
+          // Silently fail - description was still generated successfully
+        }
+      }
+
+      toast.success('Descrição gerada com sucesso!');
+    } catch (err) {
+      toast.error('Erro ao gerar descrição: ' + err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedItem('description');
+    toast.success('Copiado!');
+    setTimeout(() => setCopiedItem(null), 2000);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-red-500" />
+            Gerar Descrição YouTube
+          </DialogTitle>
+        </DialogHeader>
+
+        {!description && !isGenerating && (
+          <div className="flex flex-col items-center justify-center py-8 gap-6">
+            <div className="bg-red-50 p-4 rounded-full">
+              <Sparkles className="w-10 h-10 text-red-500" />
+            </div>
+
+            <div className="text-center">
+              <h3 className="font-semibold text-lg text-slate-900 mb-1">Gerar Descrição Otimizada</h3>
+              <p className="text-sm text-slate-500 max-w-md">
+                A IA irá analisar {transcription ? 'sua transcrição' : 'seu roteiro'} e gerar uma descrição otimizada para SEO do YouTube.
+              </p>
+            </div>
+
+            {/* Mostrar descrições anteriores se existirem */}
+            {descriptionVersions.length > 0 && (
+              <div className="w-full max-w-md p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <History className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">
+                      {descriptionVersions.length} descrição(ões) gerada(s) anteriormente
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const latestVersion = descriptionVersions[0];
+                      setDescription(latestVersion.descricao_completa || '');
+                      setSelectedVersionId(latestVersion.id);
+                    }}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                  >
+                    Ver Última
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Template Selection */}
+            <div className="w-full max-w-md space-y-2">
+              <Label className="flex items-center gap-2">
+                <span className="text-sm font-medium">Template de Descrição (Opcional)</span>
+              </Label>
+              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Nenhum (IA gera livremente)</SelectItem>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.title}
+                      {template.is_default && ' ⭐'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={generateDescription}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={!transcription}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Gerar Descrição
+            </Button>
+          </div>
+        )}
+
+        {isGenerating && (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="w-10 h-10 text-red-500 animate-spin" />
+            <p className="text-slate-600">Gerando descrição...</p>
+            <p className="text-xs text-slate-400">Isso pode levar alguns segundos</p>
+          </div>
+        )}
+
+        {description && !isGenerating && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              {/* Seletor de Versões */}
+              {descriptionVersions.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <History className="w-4 h-4" />
+                      Versão {descriptionVersions.findIndex(v => v.id === selectedVersionId) + 1 || 1} de {descriptionVersions.length}
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto">
+                    {descriptionVersions.map((version, idx) => (
+                      <DropdownMenuItem
+                        key={version.id}
+                        onClick={() => {
+                          setDescription(version.descricao_completa || '');
+                          setSelectedVersionId(version.id);
+                        }}
+                        className={selectedVersionId === version.id ? 'bg-red-50' : ''}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">Versão {idx + 1}</span>
+                          <span className="text-xs text-slate-500">
+                            {format(new Date(version.created_date), 'dd/MM/yyyy HH:mm')}
+                          </span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setDescription(null);
+                  setSelectedVersionId(null);
+                }}
+                className="gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Gerar Novo
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto flex flex-col gap-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-slate-700">Descrição Gerada</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(description)}
+                    className="gap-2"
+                  >
+                    {copiedItem === 'description' ? (
+                      <>
+                        <Check className="w-4 h-4 text-green-500" />
+                        Copiado
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copiar
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {description}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-3 pt-3 border-t">
+                    {description.length} caracteres
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => onDescriptionGenerated && onDescriptionGenerated(description)}
+                className="bg-green-600 hover:bg-green-700 w-full"
+              >
+                Usar esta Descrição
+              </Button>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
