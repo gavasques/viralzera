@@ -148,7 +148,7 @@ export default function YoutubeDescriptionGeneratorModal({
       // Parsear resposta JSON
       let descricao = '';
       let capitulos = '';
-      
+
       try {
         const jsonMatch = response.content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -163,36 +163,24 @@ export default function YoutubeDescriptionGeneratorModal({
       }
 
       // Aplicar template se selecionado
-      let finalDescription = '';
+      let finalDescription = descricao;
 
       if (selectedTemplateId && templates.length > 0) {
         const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
         if (selectedTemplate?.template_content) {
-          // Formatar capítulos com quebra de linha entre cada um
-          const capitulosFormatado = capitulos
-            .split('\n')
-            .map(cap => cap.trim())
-            .filter(cap => cap.length > 0)
-            .join('\n');
-
-          // Substituir placeholders no template
+          // Substituir placeholders no template com conteúdo da IA
           finalDescription = selectedTemplate.template_content
-            .replace(/\{\{resumo_video\}\}/gi, descricao)
-            .replace(/\{\{descricao\}\}/gi, descricao)
-            .replace(/\{\{descricao_final\}\}/gi, descricao)
-            .replace(/\{\{description\}\}/gi, descricao)
-            .replace(/\{\{timestamps\}\}/gi, capitulosFormatado)
-            .replace(/\{\{capitulos\}\}/gi, capitulosFormatado)
-            .replace(/\{\{chapters\}\}/gi, capitulosFormatado);
+            .replace(/\{\{resumo_video\}\}/g, descricao)
+            .replace(/\{\{descricao\}\}/g, descricao)
+            .replace(/\{\{descricao_final\}\}/g, descricao)
+            .replace(/\{\{description\}\}/g, descricao)
+            .replace(/\{\{timestamps\}\}/g, capitulos)
+            .replace(/\{\{capitulos\}\}/g, capitulos)
+            .replace(/\{\{chapters\}\}/g, capitulos);
         }
-      }
-
-      // Se template não gerou nada ou não tem template, montar formato padrão
-      if (!finalDescription) {
-        finalDescription = descricao;
-        if (capitulos) {
-          finalDescription += `\n\n⏱️ CAPÍTULOS:\n${capitulos}`;
-        }
+      } else if (capitulos) {
+        // Se não tem template, incluir capítulos
+        finalDescription += `\n\n⏱️ CAPÍTULOS:\n${capitulos}`;
       }
 
       setDescription(finalDescription);
