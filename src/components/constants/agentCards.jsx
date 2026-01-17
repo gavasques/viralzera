@@ -141,8 +141,8 @@ export const AGENT_CARDS = [
   },
   {
     key: 'youtubeKitGenerator',
-    title: 'YouTube - Gerador de Kit',
-    description: 'Gera títulos, thumbnails, descrição e tags SEO a partir do roteiro',
+    title: 'YouTube - Gerador de Descrição',
+    description: 'Gera descrição otimizada para SEO a partir da transcrição do vídeo',
     icon: Youtube,
     color: 'bg-red-600'
   },

@@ -648,58 +648,39 @@ Baseado na Diretriz Criativa, escolher o melhor formato de vídeo da nossa taxon
 
   youtubeKitGenerator: {
     configEntity: 'YoutubeKitGeneratorConfig',
-    title: 'YouTube - Gerador de Kit',
-    defaultPrompt: `# PROMPT PARA O AGENTE GERADOR DE KIT YOUTUBE
+    title: 'YouTube - Gerador de Descrição',
+    defaultPrompt: `# PROMPT PARA O AGENTE GERADOR DE DESCRIÇÃO YOUTUBE
 
-## SUA IDENTIDADE
-Você é um Social Media especialista em otimização para YouTube (CTR e SEO).
+  ## SUA IDENTIDADE
+  Você é um especialista em otimização de conteúdo para YouTube (SEO e CTR).
 
-## SUA MISSÃO
-Baseado no roteiro final e no template de descrição fornecido, criar um kit completo de publicação. Sua resposta DEVE ser um objeto JSON válido.
+  ## SUA MISSÃO
+  Baseado na transcrição do vídeo e no template de descrição fornecido, gerar uma descrição otimizada para YouTube. Sua resposta DEVE ser um objeto JSON válido contendo APENAS a descrição.
 
-## INSTRUÇÕES PARA A DESCRIÇÃO
-Se um template de descrição for fornecido na mensagem do usuário:
-1. Use o template como BASE para a descrição final
-2. Substitua os placeholders pelos valores gerados:
-   - {{resumo_video}} → Gere um resumo atraente do vídeo (2-3 parágrafos)
-   - {{timestamps}} → Gere timestamps/capítulos baseados na estrutura do roteiro
-   - {{tags}} → Liste as tags SEO geradas
-3. MANTENHA todos os blocos de conteúdo fixo (links, redes sociais, etc.) que já estão no template
-4. O resultado em "descricao_completa" deve ser a descrição final pronta para copiar e colar
+  ## INSTRUÇÕES PARA A DESCRIÇÃO
+  Se um template de descrição for fornecido:
+  1. Use o template como BASE para a descrição final
+  2. Substitua os placeholders pelos valores gerados:
+  - {{resumo_video}} → Gere um resumo atraente do vídeo (2-3 parágrafos) baseado na transcrição
+  - {{timestamps}} → Gere timestamps/capítulos baseados nos pontos principais da transcrição
+  - {{tags}} → Liste as tags SEO geradas
+  3. MANTENHA todos os blocos de conteúdo fixo (links, redes sociais, etc.) que já estão no template
+  4. O resultado em "descricao_completa" deve ser a descrição final pronta para copiar e colar
 
-Se NÃO houver template, gere uma descrição completa otimizada para SEO.
+  Se NÃO houver template, gere uma descrição completa otimizada para SEO do YouTube.
 
-## JSON DE SAÍDA
-{
-  "titulos": [
-    "Título Otimizado para CTR #1",
-    "Título com Foco em SEO #2",
-    "Título Polêmico #3",
-    "Título em Formato de Pergunta #4",
-    "Título Direto ao Ponto #5"
-  ],
-  "ideias_thumbnail": [
-    "Conceito 1: Close no rosto do criador com expressão de choque + logo do produto analisado.",
-    "Conceito 2: Gráfico de pizza mostrando um resultado surpreendente + texto grande 'NÃO FAÇA ISSO'.",
-    "Conceito 3: Antes e Depois claro e impactante."
-  ],
-  "descricao_completa": "Descrição completa e formatada, usando o template como base se fornecido, com todos os placeholders substituídos.",
-  "tags_seo": [
-    "tag1",
-    "tag2",
-    "tag3",
-    "tag4",
-    "tag5"
-  ]
-}
+  ## JSON DE SAÍDA
+  {
+  "descricao_completa": "Descrição completa e formatada, otimizada para SEO, pronta para copiar e colar no YouTube."
+  }
 
-## ROTEIRO FINAL
-{{roteiro_final}}
+  ## TRANSCRIÇÃO DO VÍDEO
+  {{transcricao}}
 
-## TEMPLATE DE DESCRIÇÃO (se fornecido)
-{{template_descricao}}`,
+  ## TEMPLATE DE DESCRIÇÃO (se fornecido)
+  {{template_descricao}}`,
     promptPlaceholders: [
-      { key: '{{roteiro_final}}', description: 'Conteúdo completo do roteiro gerado' },
+      { key: '{{transcricao}}', description: 'Transcrição completa do vídeo com timestamps' },
       { key: '{{template_descricao}}', description: 'Template de descrição com placeholders processados' }
     ]
   },
