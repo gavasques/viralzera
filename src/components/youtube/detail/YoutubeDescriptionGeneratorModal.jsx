@@ -182,26 +182,41 @@ Retorne APENAS a descrição, sem explicações adicionais.`;
         </DialogHeader>
 
         {!description && !isGenerating && (
-          <div className="flex flex-col items-center justify-center py-8 gap-6">
-            <div className="bg-red-50 p-4 rounded-full">
-              <Sparkles className="w-10 h-10 text-red-500" />
+          <div className="flex-1 overflow-y-auto flex flex-col gap-6 p-6">
+            <div className="flex flex-col items-center gap-4">
+              <div className="bg-red-50 p-4 rounded-full">
+                <Sparkles className="w-10 h-10 text-red-500" />
+              </div>
+              <div className="text-center">
+                <h3 className="font-semibold text-lg text-slate-900 mb-1">Gerar Descrição Otimizada</h3>
+                <p className="text-sm text-slate-500">
+                  Cole sua transcrição do vídeo para gerar uma descrição otimizada para SEO do YouTube.
+                </p>
+              </div>
             </div>
 
-            <div className="text-center">
-              <h3 className="font-semibold text-lg text-slate-900 mb-1">Gerar Descrição Otimizada</h3>
-              <p className="text-sm text-slate-500 max-w-md">
-                A IA irá analisar {transcription ? 'sua transcrição' : 'seu roteiro'} e gerar uma descrição otimizada para SEO do YouTube.
-              </p>
+            {/* Transcrição Input */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <span className="text-sm font-medium">📝 Transcrição com Timestamps</span>
+              </Label>
+              <textarea
+                value={transcription}
+                onChange={(e) => handleTranscriptionChange(e.target.value)}
+                placeholder="Cole aqui a transcrição do vídeo com timestamps (ex: [00:00] Introdução... [00:30] Conteúdo principal...)"
+                className="w-full h-32 p-3 text-sm border border-slate-200 rounded-lg bg-white font-mono resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+              <p className="text-xs text-slate-500">Isso ajuda a gerar uma descrição mais relevante e com timestamps.</p>
             </div>
 
             {/* Mostrar descrições anteriores se existirem */}
             {descriptionVersions.length > 0 && (
-              <div className="w-full max-w-md p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <History className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-medium text-blue-900">
-                      {descriptionVersions.length} descrição(ões) gerada(s) anteriormente
+                      {descriptionVersions.length} descrição(ões) gerada(s)
                     </span>
                   </div>
                   <Button
@@ -221,7 +236,7 @@ Retorne APENAS a descrição, sem explicações adicionais.`;
             )}
 
             {/* Template Selection */}
-            <div className="w-full max-w-md space-y-2">
+            <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <span className="text-sm font-medium">Template de Descrição (Opcional)</span>
               </Label>
@@ -243,7 +258,7 @@ Retorne APENAS a descrição, sem explicações adicionais.`;
 
             <Button
               onClick={generateDescription}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 w-full"
               disabled={!transcription}
             >
               <Sparkles className="w-4 h-4 mr-2" />
