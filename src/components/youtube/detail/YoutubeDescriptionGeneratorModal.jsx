@@ -37,7 +37,6 @@ export default function YoutubeDescriptionGeneratorModal({
   const [copiedItem, setCopiedItem] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [selectedVersionId, setSelectedVersionId] = useState(null);
-  const [transcriptionStatus, setTranscriptionStatus] = useState('saved'); // 'saved', 'editing', 'saving'
 
   // Buscar versões salvas da descrição
   const { data: descriptionVersions = [], isLoading: isLoadingVersions } = useQuery({
@@ -169,16 +168,7 @@ Retorne APENAS a descrição, sem explicações adicionais.`;
   };
 
   const handleTranscriptionChange = (newTranscription) => {
-    setTranscriptionStatus('editing');
     onTranscriptionChange?.(newTranscription);
-    
-    // Auto-update status to saving after a brief delay
-    setTimeout(() => {
-      setTranscriptionStatus('saving');
-      setTimeout(() => {
-        setTranscriptionStatus('saved');
-      }, 800);
-    }, 300);
   };
 
   return (
@@ -207,31 +197,9 @@ Retorne APENAS a descrição, sem explicações adicionais.`;
 
             {/* Transcrição Input */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <span className="text-sm font-medium">📝 Transcrição com Timestamps</span>
-                </Label>
-                <div className="flex items-center gap-2">
-                  {transcriptionStatus === 'editing' && (
-                    <span className="text-xs text-amber-600 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                      Editando...
-                    </span>
-                  )}
-                  {transcriptionStatus === 'saving' && (
-                    <span className="text-xs text-blue-600 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      Salvando...
-                    </span>
-                  )}
-                  {transcriptionStatus === 'saved' && (
-                    <span className="text-xs text-green-600 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-green-500" />
-                      Salvo
-                    </span>
-                  )}
-                </div>
-              </div>
+              <Label className="flex items-center gap-2">
+                <span className="text-sm font-medium">📝 Transcrição com Timestamps</span>
+              </Label>
               <textarea
                 value={transcription}
                 onChange={(e) => handleTranscriptionChange(e.target.value)}
