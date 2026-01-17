@@ -145,18 +145,41 @@ export default function YoutubeDescriptionGeneratorModal({
         }
       });
 
-      let finalDescription = response.content.trim();
+      // Parsear resposta JSON
+      let descricao = '';
+      let capitulos = '';
+      
+      try {
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          descricao = parsed.descricao || '';
+          capitulos = parsed.capitulos || '';
+        } else {
+          descricao = response.content.trim();
+        }
+      } catch {
+        descricao = response.content.trim();
+      }
+
+      let finalDescription = descricao;
 
       // Aplicar template se selecionado
       if (selectedTemplateId && templates.length > 0) {
         const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
         if (selectedTemplate?.template_content) {
-          // Substituir placeholders no template pela descrição gerada
+          // Substituir placeholders no template
           finalDescription = selectedTemplate.template_content
-            .replace(/\{\{descricao\}\}/gi, finalDescription)
-            .replace(/\{\{descricao_final\}\}/gi, finalDescription)
-            .replace(/\{\{description\}\}/gi, finalDescription);
+            .replace(/\{\{descricao\}\}/gi, descricao)
+            .replace(/\{\{descricao_final\}\}/gi, descricao)
+            .replace(/\{\{description\}\}/gi, descricao)
+            .replace(/\{\{capitulos\}\}/gi, capitulos)
+            .replace(/\{\{chapters\}\}/gi, capitulos)
+            .replace(/\{\{timestamps\}\}/gi, capitulos);
         }
+      } else if (capitulos) {
+        // Se não houver template mas houver capítulos, incluir ao final
+        finalDescription = `${descricao}\n\n📌 Capítulos:\n${capitulos}`;
       }
 
       setDescription(finalDescription);
