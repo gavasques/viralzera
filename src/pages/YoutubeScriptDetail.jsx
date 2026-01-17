@@ -382,7 +382,6 @@ export default function YoutubeScriptDetail() {
         isSaving={saveMutation.isPending}
         hasChanges={hasChanges}
         onSuggestTitles={() => setShowTitleModal(true)}
-        onChatOpen={() => setChatOpen(true)}
         onGenerateDescription={() => setShowDescriptionModal(true)}
         onNavigateBack={handleNavigateBack}
         onHistoryOpen={() => setHistoryOpen(true)}
