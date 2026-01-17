@@ -164,22 +164,29 @@ export default function YoutubeDescriptionGeneratorModal({
 
       // Aplicar template se selecionado
       let finalDescription = '';
-      
+
       if (selectedTemplateId && templates.length > 0) {
         const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
         if (selectedTemplate?.template_content) {
+          // Formatar capítulos com quebra de linha entre cada um
+          const capitulosFormatado = capitulos
+            .split('\n')
+            .map(cap => cap.trim())
+            .filter(cap => cap.length > 0)
+            .join('\n');
+
           // Substituir placeholders no template
           finalDescription = selectedTemplate.template_content
             .replace(/\{\{resumo_video\}\}/gi, descricao)
             .replace(/\{\{descricao\}\}/gi, descricao)
             .replace(/\{\{descricao_final\}\}/gi, descricao)
             .replace(/\{\{description\}\}/gi, descricao)
-            .replace(/\{\{timestamps\}\}/gi, capitulos)
-            .replace(/\{\{capitulos\}\}/gi, capitulos)
-            .replace(/\{\{chapters\}\}/gi, capitulos);
+            .replace(/\{\{timestamps\}\}/gi, capitulosFormatado)
+            .replace(/\{\{capitulos\}\}/gi, capitulosFormatado)
+            .replace(/\{\{chapters\}\}/gi, capitulosFormatado);
         }
       }
-      
+
       // Se template não gerou nada ou não tem template, montar formato padrão
       if (!finalDescription) {
         finalDescription = descricao;
