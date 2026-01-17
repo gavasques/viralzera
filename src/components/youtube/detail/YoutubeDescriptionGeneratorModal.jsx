@@ -162,24 +162,30 @@ export default function YoutubeDescriptionGeneratorModal({
         descricao = response.content.trim();
       }
 
-      let finalDescription = descricao;
-
       // Aplicar template se selecionado
+      let finalDescription = '';
+      
       if (selectedTemplateId && templates.length > 0) {
         const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
         if (selectedTemplate?.template_content) {
           // Substituir placeholders no template
           finalDescription = selectedTemplate.template_content
+            .replace(/\{\{resumo_video\}\}/gi, descricao)
             .replace(/\{\{descricao\}\}/gi, descricao)
             .replace(/\{\{descricao_final\}\}/gi, descricao)
             .replace(/\{\{description\}\}/gi, descricao)
+            .replace(/\{\{timestamps\}\}/gi, capitulos)
             .replace(/\{\{capitulos\}\}/gi, capitulos)
-            .replace(/\{\{chapters\}\}/gi, capitulos)
-            .replace(/\{\{timestamps\}\}/gi, capitulos);
+            .replace(/\{\{chapters\}\}/gi, capitulos);
         }
-      } else if (capitulos) {
-        // Se não houver template mas houver capítulos, incluir ao final
-        finalDescription = `${descricao}\n\n📌 Capítulos:\n${capitulos}`;
+      }
+      
+      // Se template não gerou nada ou não tem template, montar formato padrão
+      if (!finalDescription) {
+        finalDescription = descricao;
+        if (capitulos) {
+          finalDescription += `\n\n⏱️ CAPÍTULOS:\n${capitulos}`;
+        }
       }
 
       setDescription(finalDescription);
