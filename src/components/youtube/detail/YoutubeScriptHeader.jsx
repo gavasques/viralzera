@@ -113,11 +113,11 @@ export default function YoutubeScriptHeader({
           <Button
             variant="outline"
             size="sm"
-            onClick={onGenerateKit}
+            onClick={onGenerateDescription}
             className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-9 gap-2 shadow-sm rounded-lg"
           >
-            <Package className="w-4 h-4" />
-            <span className="font-semibold text-xs">Gerar Kit YouTube</span>
+            <Sparkles className="w-4 h-4" />
+            <span className="font-semibold text-xs">Gerar Descrição</span>
           </Button>
 
           <Button
