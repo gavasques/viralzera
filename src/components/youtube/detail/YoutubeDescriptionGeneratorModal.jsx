@@ -111,8 +111,10 @@ export default function YoutubeDescriptionGeneratorModal({
       let templateContent = '';
       if (selectedTemplateId) {
         const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-        if (selectedTemplate?.template_content) {
-          templateContent = selectedTemplate.template_content;
+        // Suporta 'content' ou 'template_content'
+        const rawContent = selectedTemplate?.content || selectedTemplate?.template_content;
+        if (rawContent) {
+          templateContent = rawContent;
         }
       }
 
