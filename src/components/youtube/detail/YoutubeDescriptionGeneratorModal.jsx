@@ -129,15 +129,21 @@ export default function YoutubeDescriptionGeneratorModal({
         .replace(/\{\{template_descricao\}\}/gi, templateContent);
 
       // Construir mensagem do usuário
-      let userMessage = `Gere APENAS uma descrição otimizada para YouTube com base no seguinte conteúdo:\n\n${contentForAnalysis}`;
+      let userMessage = `Gere uma descrição otimizada para YouTube e extraia os capítulos (timestamps) com base no seguinte conteúdo:\n\n${contentForAnalysis}`;
 
       userMessage += `\n\nA descrição deve ser:
       - Otimizada para SEO
       - Engajante e clara
       - Com entre 200-500 caracteres
-      - Pronta para usar
 
-      Retorne APENAS a descrição pura, sem explicações ou formatações adicionais.`;
+      FORMATO DE RESPOSTA OBRIGATÓRIO (JSON):
+      {
+        "descricao": "Texto da descrição aqui...",
+        "capitulos": "00:00 Introdução\n01:30 Tópico 1...",
+        "tags": "#tag1 #tag2 #tag3"
+      }
+
+      Retorne APENAS o JSON válido, sem markdown ou explicações.`;
 
       const response = await sendMessage({
         model: config.model,
