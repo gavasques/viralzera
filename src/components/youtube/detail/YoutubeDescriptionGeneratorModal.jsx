@@ -55,6 +55,13 @@ export default function YoutubeDescriptionGeneratorModal({
     enabled: open
   });
 
+  // Buscar blocos de descrição para substituição no template
+  const { data: blocks = [] } = useQuery({
+    queryKey: ['description-blocks'],
+    queryFn: () => base44.entities.DescriptionBlock.list('-created_date', 100),
+    enabled: open
+  });
+
   // Auto-selecionar template padrão
   useEffect(() => {
     if (templates.length > 0 && !selectedTemplateId) {
@@ -167,9 +174,12 @@ export default function YoutubeDescriptionGeneratorModal({
 
       if (selectedTemplateId && templates.length > 0) {
         const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-        if (selectedTemplate?.template_content) {
+        // Suporta tanto 'content' (novo schema) quanto 'template_content' (antigo)
+        const rawTemplateContent = selectedTemplate?.content || selectedTemplate?.template_content;
+        
+        if (rawTemplateContent) {
           // Substituir placeholders no template com conteúdo da IA
-          finalDescription = selectedTemplate.template_content
+          finalDescription = rawTemplateContent
             .replace(/\{\{resumo_video\}\}/g, descricao)
             .replace(/\{\{descricao\}\}/g, descricao)
             .replace(/\{\{descricao_final\}\}/g, descricao)
@@ -177,6 +187,20 @@ export default function YoutubeDescriptionGeneratorModal({
             .replace(/\{\{timestamps\}\}/g, capitulos)
             .replace(/\{\{capitulos\}\}/g, capitulos)
             .replace(/\{\{chapters\}\}/g, capitulos);
+            
+          // Substituir blocos de descrição (ex: {{bloco:me_conte_como_posso_lhe_ajudar}})
+          if (blocks && blocks.length > 0) {
+             blocks.forEach(block => {
+                 if (block.slug && block.content) {
+                     // Regex para encontrar {{bloco:slug}} insensível a maiúsculas/minúsculas
+                     const blockPlaceholder = new RegExp(`\\{\\{bloco:${block.slug}\\}\\}`, 'gi');
+                     finalDescription = finalDescription.replace(blockPlaceholder, block.content);
+                 }
+             });
+          }
+          
+          // Opcional: Remover placeholders de bloco que não foram encontrados para não ficar "sujo"
+          // finalDescription = finalDescription.replace(/\{\{bloco:[^}]+\}\}/gi, '');
         }
       } else if (capitulos) {
         // Se não tem template, incluir capítulos
