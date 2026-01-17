@@ -218,6 +218,29 @@ export default function YoutubeScriptDetail() {
     }
   });
 
+  // Auto-save transcription changes with debounce
+  const transcriptionTimeoutRef = useRef(null);
+  useEffect(() => {
+    if (!scriptId) return;
+    
+    if (transcriptionTimeoutRef.current) {
+      clearTimeout(transcriptionTimeoutRef.current);
+    }
+    
+    transcriptionTimeoutRef.current = setTimeout(() => {
+      if (transcription !== script?.transcricao) {
+        base44.entities.YoutubeScript.update(scriptId, { transcricao: transcription })
+          .catch(err => console.error('Error auto-saving transcription:', err));
+      }
+    }, 1500); // Auto-save after 1.5 seconds of inactivity
+    
+    return () => {
+      if (transcriptionTimeoutRef.current) {
+        clearTimeout(transcriptionTimeoutRef.current);
+      }
+    };
+  }, [transcription, scriptId, script?.transcricao]);
+
   // Auto-save every 2 minutes when there are changes
   useEffect(() => {
     if (!hasChanges || !scriptId) return;
