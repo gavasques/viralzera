@@ -122,22 +122,24 @@ const htmlToMarkdown = (htmlContent) => {
 };
 
 export default function YoutubeScriptSectionEditor({ 
-  sectionKey,
-  title, 
-  description,
-  content, 
-  onChange,
-  onOpenRefiner,
-  scriptTitle = "",
-  videoType,
-  status,
-  onSave,
-  isSaving,
-  hasChanges,
-  onChatToggle,
-  notesVisible,
-  onToggleNotes
-}) {
+    sectionKey,
+    title, 
+    description,
+    content, 
+    onChange,
+    onOpenRefiner,
+    scriptTitle = "",
+    videoType,
+    status,
+    onSave,
+    isSaving,
+    hasChanges,
+    onChatToggle,
+    notesVisible,
+    onToggleNotes,
+    transcription = "",
+    onTranscriptionChange
+  }) {
   const quillRef = useRef(null);
   const [selection, setSelection] = useState(null);
 
@@ -249,9 +251,29 @@ export default function YoutubeScriptSectionEditor({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Modern Editor Header - Sticky */}
-        <div className="flex flex-col gap-4 px-6 pt-5 pb-2 bg-white sticky top-0 z-10 border-b border-slate-100">
+          <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              {/* Transcrição (se houver) */}
+              {sectionKey === "corpo" && (
+                <div className="bg-blue-50 border-b border-blue-100 px-6 py-3">
+                  <details className="text-sm">
+                    <summary className="font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                      <span>📝 Transcrição com Timestamps</span>
+                    </summary>
+                    <div className="mt-3 space-y-2">
+                      <textarea
+                        value={transcription}
+                        onChange={(e) => onTranscriptionChange?.(e.target.value)}
+                        placeholder="Cole aqui a transcrição do vídeo com timestamps (ex: [00:00] Introdução...)"
+                        className="w-full h-20 p-2 text-xs border border-blue-200 rounded bg-white font-mono resize-none"
+                      />
+                      <p className="text-xs text-blue-700">Esta transcrição será usada para gerar descrições e outros elementos.</p>
+                    </div>
+                  </details>
+                </div>
+              )}
+
+              {/* Modern Editor Header - Sticky */}
+              <div className="flex flex-col gap-4 px-6 pt-5 pb-2 bg-white sticky top-0 z-10 border-b border-slate-100">
           <div className="flex items-center justify-between">
             {/* Left: Info & Metadata */}
             <div className="flex items-center gap-3">
