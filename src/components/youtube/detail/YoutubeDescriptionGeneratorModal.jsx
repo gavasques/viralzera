@@ -166,6 +166,11 @@ Retorne APENAS a descrição, sem explicações adicionais.`;
     setTimeout(() => setCopiedItem(null), 2000);
   };
 
+  const handleTranscriptionChange = (newTranscription) => {
+    // Recebe mudanças da transcrição do modal e atualiza via callback
+    onTranscriptionChange?.(newTranscription);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
