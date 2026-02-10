@@ -64,7 +64,7 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
 
       // 2. Prepare context
       const systemPrompt = `Você é um assistente especialista em reescrita e otimização de roteiros para YouTube.
-      Sua missão é AJUSTAR ou REESCREVER o roteiro com base no feedback do usuário.
+      Sua missão é AJUSTAR, REESCREVER ou GERAR o roteiro com base no feedback do usuário.
 
       CONTEXTO DO ROTEIRO ATUAL:
       Título: ${scriptContext?.title || 'Sem título'}
@@ -72,6 +72,11 @@ export default function YoutubeAIPanel({ scriptId, scriptContext, onReplaceConte
 
       CONTEÚDO ORIGINAL DO ROTEIRO:
       ${scriptContext?.content || '(Roteiro vazio)'}
+
+      REGRAS CRÍTICAS:
+      1. Se o usuário pedir para criar, gerar ou escrever um roteiro: GERE O ROTEIRO IMEDIATAMENTE. NÃO FAÇA ANÁLISES.
+      2. NÃO dê feedback, não faça elogios ("Ótimo roteiro", "Gostei da estrutura") e não aja como consultor, a menos que explicitamente solicitado.
+      3. Sua resposta deve ser O PRÓPRIO CONTEÚDO do roteiro, pronto para ser usado.
 
       INSTRUÇÕES DE FORMATAÇÃO:
       1. Formate sua resposta de forma CLARA e ESTRUTURADA (use Markdown).
