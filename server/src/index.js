@@ -51,7 +51,7 @@ app.use('/api/functions', functionRoutes);
 if (process.env.NODE_ENV === 'production') {
   // O Dockerfile copia o build do frontend para /app/dist (raiz do container)
   // O server roda em /app/src/index.js → dist fica em /app/dist
-  const distPath = path.resolve(__dirname, '..', '..', 'dist');
+  const distPath = path.resolve(__dirname, '..', 'dist');
 
   // Assets com hash → cache longo (1 ano)
   app.use('/assets', express.static(path.join(distPath, 'assets'), {
