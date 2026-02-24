@@ -1,0 +1,1096 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  name                String?
+  password            String
+  role                String    @default("user")
+  selected_focus_id   String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  configs               UserConfig[]
+  audiences             Audience[]
+  personas              Persona[]
+  posts                 Post[]
+  canvas                Canvas[]
+  modeling              Modeling[]
+  titanosConversations  TitanosConversation[]
+  usageLogs             UsageLog[]
+  focuses               Focus[]
+}
+
+model Focus {
+  id          String   @id @default(uuid())
+  title       String
+  platform    String   @default("Instagram")
+  description String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  user_id     String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id])
+}
+
+model PostType {
+  id          String   @id @default(uuid())
+  name        String?
+  title       String?
+  description String?
+  channel     String?
+  format      String?
+  examples    Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  posts    Post[]
+  configs  PostTypeConfig[]
+}
+
+model Theme {
+  id          String   @id @default(uuid())
+  name        String?
+  title       String?
+  description String?
+  level       Int?
+  parent_id   String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  posts    Post[]
+}
+
+model Material {
+  id          String   @id @default(uuid())
+  title       String
+  content     String?  @db.Text
+  type        String?
+  url         String?
+  thumbnail   String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model UserConfig {
+  id                  String   @id @default(uuid())
+  user_id             String
+  openrouter_api_key  String?
+  twitter_api_key     String?
+  twitter_api_secret  String?
+  twitter_access_token String?
+  twitter_access_secret String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  user                User     @relation(fields: [user_id], references: [id])
+}
+
+model Trend {
+  id          String   @id @default(uuid())
+  topic       String
+  volume      Int?
+  sentiment   String?
+  source      String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model TrendConfig {
+  id              String   @id @default(uuid())
+  name            String
+  config          Json?
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model Audience {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  content       String?  @db.Text
+  funnel_stage  String?
+  group_id      String?
+  is_active     Boolean  @default(true)
+  created_by    String?
+  focus_id      String?
+  user_id       String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user              User              @relation(fields: [user_id], references: [id])
+  groups            AudienceGroup[]
+  chats             AudienceChat[]
+  productChats      ProductChat[]
+}
+
+model Persona {
+  id          String   @id @default(uuid())
+  name        String
+  description String?  @db.Text
+  content     String?  @db.Text
+  who_am_i   String?  @db.Text
+  avatar_url  String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id])
+  configs     PersonaConfig[]
+  chats       PersonaChat[]
+}
+
+model TwitterConfig {
+  id              String   @id @default(uuid())
+  name            String
+  config          Json?
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model MaterialBankConfig {
+  id              String   @id @default(uuid())
+  name            String
+  config          Json?
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model AudienceConfig {
+  id              String   @id @default(uuid())
+  name            String
+  config          Json?
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model AudienceChat {
+  id          String   @id @default(uuid())
+  audience_id String?
+  title       String?
+  focus_id    String?
+  persona_id  String?
+  is_favorite Boolean  @default(false)
+  role        String   @default("system")
+  content     String?  @db.Text
+  messages    Json?
+  status      String?
+  product_ids Json?
+  created_at  DateTime @default(now())
+
+  audience    Audience? @relation(fields: [audience_id], references: [id])
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?  @db.Text
+  url         String?
+  image_url   String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  chats       ProductChat[]
+  configs     ProductConfig[]
+}
+
+model ProductConfig {
+  id          String   @id @default(uuid())
+  product_id  String?
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  product     Product? @relation(fields: [product_id], references: [id])
+}
+
+model ProductChat {
+  id          String   @id @default(uuid())
+  product_id  String?
+  audience_id String?
+  title       String?
+  focus_id    String?
+  is_favorite Boolean  @default(false)
+  role        String   @default("system")
+  content     String?  @db.Text
+  created_at  DateTime @default(now())
+
+  product     Product?  @relation(fields: [product_id], references: [id])
+  audience    Audience? @relation(fields: [audience_id], references: [id])
+}
+
+model PersonaConfig {
+  id          String   @id @default(uuid())
+  persona_id  String?
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  persona     Persona? @relation(fields: [persona_id], references: [id])
+}
+
+model PersonaChat {
+  id          String   @id @default(uuid())
+  persona_id  String?
+  title       String?
+  focus_id    String?
+  is_favorite Boolean  @default(false)
+  role        String   @default("system")
+  content     String?  @db.Text
+  created_at  DateTime @default(now())
+
+  persona     Persona? @relation(fields: [persona_id], references: [id])
+}
+
+model PostTypeConfig {
+  id          String     @id @default(uuid())
+  post_type_id String
+  name        String
+  config      Json?
+  is_active   Boolean    @default(true)
+  created_by  String?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  postType    PostType   @relation(fields: [post_type_id], references: [id])
+}
+
+model ScriptChat {
+  id          String   @id @default(uuid())
+  role        String
+  content     String   @db.Text
+  created_at  DateTime @default(now())
+}
+
+model ScriptConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model AudienceGroup {
+  id          String   @id @default(uuid())
+  audience_id String
+  name        String
+  description String?
+  focus_id    String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  audience    Audience @relation(fields: [audience_id], references: [id])
+}
+
+model DNAContent {
+  id          String   @id @default(uuid())
+  name        String
+  content     String?  @db.Text
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model DNAProfile {
+  id          String   @id @default(uuid())
+  name        String?
+  title       String?
+  content     String?  @db.Text
+  content_ids Json?
+  status      String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  focus_id    String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  configs     DNAConfig[]
+}
+
+model Post {
+  id              String    @id @default(uuid())
+  title           String?
+  content         String?   @db.Text
+  status          String    @default("draft")
+  post_type_id    String?
+  theme_id        String?
+  focus_id        String?
+  platform        String?
+  priority        String?
+  notes           String?   @db.Text
+  scheduled_date  DateTime?
+  is_completed    Boolean   @default(false)
+  user_id         String
+  scheduled_at    DateTime?
+  published_at    DateTime?
+  created_by      String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  postType    PostType? @relation(fields: [post_type_id], references: [id])
+  theme       Theme?   @relation(fields: [theme_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id])
+}
+
+model TwitterProject {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  user_id     String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model Canvas {
+  id          String   @id @default(uuid())
+  title       String?
+  name        String?
+  content     String?  @db.Text
+  focus_id    String?
+  folder_id   String?
+  is_pinned   Boolean  @default(false)
+  is_archived Boolean  @default(false)
+  user_id     String
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id])
+  notes       CanvasNote[]
+  histories   CanvasHistory[]
+  chatSessions CanvasChatSession[]
+}
+
+model DNAConfig {
+  id              String   @id @default(uuid())
+  dna_profile_id  String?
+  name            String
+  config          Json?
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  dnaProfile      DNAProfile? @relation(fields: [dna_profile_id], references: [id])
+}
+
+model DNAContentConfig {
+  id              String   @id @default(uuid())
+  name            String
+  config          Json?
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model TitanosConversation {
+  id                String   @id @default(uuid())
+  user_id           String
+  title             String?
+  focus_id          String?
+  model             String?
+  system_prompt     String?  @db.Text
+  group_id          String?
+  selected_models   Json?
+  metrics           Json?
+  source            String?
+  post_type_id      String?
+  persona_id        String?
+  audience_id       String?
+  prompt_log        Json?
+  post_channel      String?
+  post_format       String?
+  enable_reasoning  Boolean? @default(false)
+  reasoning_effort  String?
+  enable_web_search Boolean? @default(false)
+  is_favorite       Boolean? @default(false)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id])
+  messages    TitanosMessage[]
+}
+
+model TitanosMessage {
+  id              String              @id @default(uuid())
+  conversation_id String
+  role            String
+  content         String              @db.Text
+  model_id        String?
+  metrics         Json?
+  created_at      DateTime            @default(now())
+
+  conversation    TitanosConversation @relation(fields: [conversation_id], references: [id])
+}
+
+model TitanosRefinerPrompt {
+  id          String   @id @default(uuid())
+  name        String
+  content     String   @db.Text
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model TitanosChatGroup {
+  id          String   @id @default(uuid())
+  name        String
+  focus_id    String?
+  user_id     String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model Prompt {
+  id          String   @id @default(uuid())
+  name        String
+  content     String   @db.Text
+  folder_id   String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  folder      PromptFolder? @relation(fields: [folder_id], references: [id])
+}
+
+model UsageLog {
+  id          String   @id @default(uuid())
+  user_id     String
+  action      String
+  details     Json?
+  created_at  DateTime @default(now())
+
+  user        User     @relation(fields: [user_id], references: [id])
+}
+
+model ApprovedModel {
+  id                  String   @id @default(uuid())
+  model_id            String
+  name                String
+  alias               String?
+  description         String?
+  supports_reasoning  Boolean  @default(false)
+  reasoning_effort    String?
+  supports_web_search Boolean  @default(false)
+  supports_tools      Boolean  @default(false)
+  is_active           Boolean  @default(true)
+  category            String?
+  order               Int      @default(0)
+  parameters          Json?
+  model_capabilities  Json?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+}
+
+model PromptFolder {
+  id          String   @id @default(uuid())
+  name        String
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  prompts     Prompt[]
+}
+
+model RefinerConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ModelVote {
+  id              String   @id @default(uuid())
+  model_id        String
+  model_alias     String?
+  conversation_id String?
+  vote            String?
+  vote_type       String?
+  vote_int        Int?
+  context         String?
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model CanvasFolder {
+  id          String   @id @default(uuid())
+  name        String
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model Modeling {
+  id                    String   @id @default(uuid())
+  title                 String
+  description           String?  @db.Text
+  target_platform       String?
+  content_type          String?
+  tags                  Json?
+  focus_id              String?
+  creator_idea          String?  @db.Text
+  content               String?  @db.Text
+  total_characters      Int?
+  total_tokens_estimate Int?
+  user_id               String
+  status                String   @default("pending")
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id])
+  videos      ModelingVideo[]
+  texts       ModelingText[]
+  analyses    ModelingAnalysis[]
+  links       ModelingLink[]
+}
+
+model ModelingVideo {
+  id              String   @id @default(uuid())
+  modeling_id     String
+  title           String
+  url             String?
+  video_id        String?
+  thumbnail_url   String?
+  channel_name    String?
+  duration        String?
+  notes           String?  @db.Text
+  purpose         String?
+  content         String?  @db.Text
+  character_count Int?
+  token_estimate  Int?
+  error_message   String?
+  status          String   @default("pending")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  modeling    Modeling  @relation(fields: [modeling_id], references: [id])
+}
+
+model ModelingText {
+  id              String   @id @default(uuid())
+  modeling_id     String
+  title           String
+  description     String?
+  content         String?  @db.Text
+  text_type       String?
+  purpose         String?  @db.Text
+  character_count Int?
+  token_estimate  Int?
+  status          String   @default("pending")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  modeling    Modeling  @relation(fields: [modeling_id], references: [id])
+}
+
+model ModelingAnalysis {
+  id                String        @id @default(uuid())
+  modeling_id       String
+  material_id       String
+  material_type     String
+  material_title    String?
+  analysis_summary  String?       @db.Text
+  character_count   Int?
+  token_estimate    Int?
+  status            String        @default("pending")
+  created_by        String?
+  created_at        DateTime      @default(now())
+
+  modeling          Modeling      @relation(fields: [modeling_id], references: [id])
+}
+
+model ModelingConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ModelingTextAnalyzerConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  prompt      String?  @db.Text
+  model       String?
+  max_tokens  Int?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model CanvasConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model CanvasHistory {
+  id          String   @id @default(uuid())
+  canvas_id   String
+  content     String?  @db.Text
+  version     Int?     @default(1)
+  created_at  DateTime @default(now())
+
+  canvas      Canvas   @relation(fields: [canvas_id], references: [id])
+}
+
+model CanvasNote {
+  id          String   @id @default(uuid())
+  canvas_id   String
+  content     String   @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  canvas      Canvas   @relation(fields: [canvas_id], references: [id])
+}
+
+model CanvasChatSession {
+  id          String   @id @default(uuid())
+  canvas_id   String
+  title       String?
+  role        String
+  content     String   @db.Text
+  messages    Json?
+  created_at  DateTime @default(now())
+
+  canvas      Canvas   @relation(fields: [canvas_id], references: [id])
+}
+
+model Phrase {
+  id          String   @id @default(uuid())
+  content     String   @db.Text
+  category_id String?
+  focus_id    String?
+  user_id     String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  category    PhraseCategory? @relation(fields: [category_id], references: [id])
+}
+
+model PhraseCategory {
+  id          String   @id @default(uuid())
+  name        String
+  user_id     String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  phrases     Phrase[]
+}
+
+model KanbanColumn {
+  id          String   @id @default(uuid())
+  name        String?
+  title       String?
+  slug        String?
+  icon_name   String?
+  order       Int      @default(0)
+  focus_id    String?
+  user_id     String?
+  color       String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model UserIntroduction {
+  id          String   @id @default(uuid())
+  title       String?
+  content     String   @db.Text
+  focus_id    String?
+  user_id     String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model UserCTA {
+  id          String   @id @default(uuid())
+  title       String?
+  content     String   @db.Text
+  focus_id    String?
+  user_id     String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model DescriptionBlock {
+  id          String   @id @default(uuid())
+  title       String?
+  content     String   @db.Text
+  label       String?
+  slug        String?
+  type        String?
+  focus_id    String?
+  user_id     String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model DescriptionTemplate {
+  id          String   @id @default(uuid())
+  title       String?
+  name        String
+  content     String   @db.Text
+  is_default  Boolean  @default(false)
+  focus_id    String?
+  user_id     String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ContentDossier {
+  id              String   @id @default(uuid())
+  title           String
+  content         String?  @db.Text
+  full_content    String?  @db.Text
+  raw_materials   Json?
+  system_prompt   String?  @db.Text
+  character_count Int?
+  token_estimate  Int?
+  subject         String?
+  type            String?
+  focus_id        String?
+  modeling_id     String?
+  user_id         String?
+  status          String   @default("draft")
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
+model DossierGeneratorConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeGeneratorConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeRefinerConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeScriptEditorConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeTitleConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeKitGeneratorConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeCreativeDirectiveConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeFormatSelectorConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubePromptRefinerConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ModelingAnalyzerConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ModelingScraperConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ModelingLinkAnalyzerConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeScript {
+  id                String   @id @default(uuid())
+  title             String
+  content           String?  @db.Text
+  corpo             String?  @db.Text
+  transcricao       String?  @db.Text
+  categoria         String?
+  video_type        String?
+  duracao_estimada  String?
+  modeling_ids      Json?
+  status            String   @default("draft")
+  script_type_id    String?
+  focus_id          String?
+  user_id           String?
+  is_active         Boolean  @default(true)
+  created_by        String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  scriptType      YoutubeScriptType? @relation(fields: [script_type_id], references: [id])
+  versions        YoutubeScriptVersion[]
+}
+
+model YoutubeScriptVersion {
+  id                 String   @id @default(uuid())
+  script_id          String
+  title              String?
+  content            String?  @db.Text
+  corpo              String?  @db.Text
+  video_type         String?
+  change_type        String?
+  change_description String?
+  model_name         String?
+  is_primary         Boolean?
+  version            Int      @default(1)
+  version_number     Int?
+  created_by         String?
+  created_at         DateTime @default(now())
+
+  script      YoutubeScript @relation(fields: [script_id], references: [id])
+}
+
+model YoutubeScriptChat {
+  id          String   @id @default(uuid())
+  script_id   String?
+  role        String
+  content     String   @db.Text
+  usage       Json?
+  created_at  DateTime @default(now())
+}
+
+model YoutubeKitVersion {
+  id          String   @id @default(uuid())
+  script_id   String?
+  content     String?  @db.Text
+  type        String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model YoutubeScriptType {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  scripts     YoutubeScript[]
+}
+
+model ScriptNote {
+  id          String   @id @default(uuid())
+  script_id   String?
+  content     String   @db.Text
+  user_id     String?
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model DeepResearchConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ModelingAssistantConfig {
+  id          String   @id @default(uuid())
+  name        String
+  config      Json?
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ModelingChat {
+  id          String   @id @default(uuid())
+  modeling_id String?
+  role        String
+  content     String   @db.Text
+  created_at  DateTime @default(now())
+}
+
+model ModelingLink {
+  id                     String   @id @default(uuid())
+  modeling_id             String
+  url                    String
+  title                  String?
+  notes                  String?  @db.Text
+  purpose                String?
+  content                String?  @db.Text
+  character_count        Int?
+  token_estimate         Int?
+  status                 String   @default("pending")
+  scrape_status          String?  @default("pending")
+  scrape_error_message   String?  @db.Text
+  analysis_status        String?  @default("pending")
+  analysis_error_message String?  @db.Text
+  created_by             String?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  modeling    Modeling @relation(fields: [modeling_id], references: [id])
+}

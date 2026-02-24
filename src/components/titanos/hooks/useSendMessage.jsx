@@ -1,0 +1,362 @@
+/**
+ * Hook para envio de mensagens no Multi Chat
+ * Chamada direta à OpenRouter do frontend (sem backend)
+ */
+
+import { useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { neon, callFunction } from '@/api/neonClient';
+import { toast } from 'sonner';
+import { validateOpenRouterResponse } from '../utils/sanitize';
+
+/** @deprecated API key agora é gerenciada pelo backend */
+export function invalidateApiKeyCache() {}
+
+/**
+ * Chama OpenRouter via backend
+ */
+async function callOpenRouter(model, messages, options = {}) {
+  if (!model) throw new Error('Modelo não especificado');
+
+  const startTime = Date.now();
+
+  const body = {
+    model,
+    messages: messages.map(m => ({
+      role: m.role,
+      content: typeof m.content === 'string' ? m.content : String(m.content),
+    })),
+  };
+
+  if (options.enableReasoning && model.includes('claude')) {
+    body.reasoning = { effort: options.reasoningEffort || 'high' };
+  }
+  if (options.enableWebSearch) {
+    body.plugins = [{ id: 'web' }];
+  }
+
+  const data = await callFunction('openrouter', body);
+  const duration = Date.now() - startTime;
+  const validated = validateOpenRouterResponse(data);
+
+  return {
+    content: validated.content,
+    usage: validated.usage,
+    duration,
+    rawResponse: data,
+  };
+}
+
+
+
+/**
+ * Helper: Obtém o model_id (ID do OpenRouter) a partir do ID único do registro
+ */
+function getOpenRouterId(recordId, approvedModels = []) {
+  const approved = approvedModels.find(m => m.id === recordId);
+  return approved?.model_id || recordId;
+}
+
+/**
+ * Hook principal para envio de mensagens
+ */
+export function useSendMessage(conversationId, activeConversation, messages, groups) {
+  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const abortRef = useRef(false);
+
+  // selectedModels agora são recordIds (IDs únicos do registro ApprovedModel)
+  // approvedModels é a lista completa de modelos aprovados para fazer a conversão
+  const sendMessage = useCallback(async (input, selectedModels, approvedModels = []) => {
+    // Validações iniciais
+    if (!input?.trim()) {
+      return { success: false, error: 'Mensagem vazia' };
+    }
+    
+    if (!conversationId) {
+      return { success: false, error: 'Nenhuma conversa selecionada' };
+    }
+    
+    if (!selectedModels || selectedModels.length === 0) {
+      toast.warning('Selecione pelo menos um modelo');
+      return { success: false, error: 'Nenhum modelo selecionado' };
+    }
+
+    // Previne múltiplos envios simultâneos
+    if (isLoading) {
+      return { success: false, error: 'Envio em andamento' };
+    }
+
+    setIsLoading(true);
+    abortRef.current = false;
+
+    try {
+      // Prepara histórico efetivo - filtra por recordId (não por openRouterId)
+      let effectiveHistory = messages.filter(
+        m => m.model_id === null || selectedModels.includes(m.model_id)
+      );
+
+      // Verifica system prompt do grupo
+      if (activeConversation?.group_id && groups) {
+        const group = groups.find(g => g.id === activeConversation.group_id);
+        if (group?.default_system_prompt) {
+          const hasOwnSystemPrompt = messages.some(m => m.role === 'system');
+          if (!hasOwnSystemPrompt) {
+            effectiveHistory = [
+              { role: 'system', content: group.default_system_prompt },
+              ...effectiveHistory.filter(m => m.role !== 'system'),
+            ];
+          }
+        }
+      }
+
+      const trimmedInput = input.trim();
+
+      // Salva mensagem do usuário no banco
+      await neon.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'user',
+        content: trimmedInput,
+        model_id: null,
+      });
+
+      // Prepara mensagens para envio
+      const historyMessages = [
+        ...effectiveHistory.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: trimmedInput },
+      ];
+
+      // Configurações da conversa
+      const options = {
+        enableReasoning: activeConversation?.enable_reasoning || false,
+        reasoningEffort: activeConversation?.reasoning_effort || 'high',
+        enableWebSearch: activeConversation?.enable_web_search || false,
+      };
+
+      // Chama cada modelo em paralelo
+      // selectedModels são recordIds - precisamos converter para openRouterId para chamar a API
+      // mas salvar com recordId no banco para manter a associação correta
+      const results = await Promise.allSettled(
+        selectedModels.map(async (recordId) => {
+          if (abortRef.current) {
+            return { modelId: recordId, success: false, error: 'Abortado' };
+          }
+          
+          // Converte recordId para openRouterId para a chamada à API
+          const openRouterId = getOpenRouterId(recordId, approvedModels);
+          
+          try {
+            const result = await callOpenRouter(openRouterId, historyMessages, options);
+            
+            // Salva resposta no banco usando o recordId (ID único do ApprovedModel)
+            // Isso permite diferenciar "Dominion" de "Dominion Pro" mesmo que tenham o mesmo model_id
+            await neon.entities.TitanosMessage.create({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: result.content,
+              model_id: recordId, // Salva com recordId, não openRouterId!
+              metrics: {
+                prompt_tokens: result.usage?.prompt_tokens || 0,
+                completion_tokens: result.usage?.completion_tokens || 0,
+                total_tokens: result.usage?.total_tokens || 0,
+                duration_ms: result.duration,
+                cost: result.usage?.cost || 0,
+              },
+            });
+            
+            return { modelId: recordId, success: true };
+          } catch (err) {
+            console.error(`[useSendMessage] Error for ${recordId} (${openRouterId}):`, err.message);
+            return { modelId: recordId, success: false, error: err.message };
+          }
+        })
+      );
+
+      // Conta falhas
+      const failures = results.filter(r => r.status === 'rejected' || !r.value?.success);
+      const successes = results.length - failures.length;
+      
+      if (successes === 0) {
+        toast.error('Falha em todos os modelos');
+        return { success: false, error: 'Todos os modelos falharam' };
+      }
+      
+      if (failures.length > 0) {
+        toast.warning(`${failures.length} modelo(s) falharam`);
+      }
+
+      // Invalida queries para forçar refetch
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] }),
+        queryClient.invalidateQueries({ queryKey: ['titanos-conversations'] }),
+        queryClient.invalidateQueries({ queryKey: ['titanos-conversation', conversationId] }),
+      ]);
+
+      return { success: true, successCount: successes, failureCount: failures.length };
+    } catch (err) {
+      console.error('[useSendMessage] Error:', err);
+      toast.error('Falha ao enviar mensagem');
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [conversationId, activeConversation, messages, groups, queryClient, isLoading]);
+
+  // Função para abortar envio em andamento
+  const abort = useCallback(() => {
+    abortRef.current = true;
+  }, []);
+
+  return { sendMessage, isLoading, abort };
+}
+
+/**
+ * Hook para regenerar resposta de um modelo específico
+ */
+export function useRegenerateResponse(conversationId) {
+  const queryClient = useQueryClient();
+  const [regeneratingModel, setRegeneratingModel] = useState(null);
+
+  // recordId é o ID único do ApprovedModel, approvedModels é necessário para obter o openRouterId
+  const regenerate = useCallback(async (recordId, messages, approvedModels = []) => {
+    if (!conversationId || !recordId) {
+      toast.error('Dados inválidos para regeneração');
+      return { success: false };
+    }
+
+    const userMessages = messages.filter(m => m.role === 'user' && !m.model_id);
+    if (userMessages.length === 0) {
+      toast.error('Nenhuma mensagem do usuário encontrada');
+      return { success: false };
+    }
+
+    // Já está regenerando este modelo
+    if (regeneratingModel === recordId) {
+      return { success: false };
+    }
+
+    const firstUserMessage = userMessages[0];
+    const systemMessages = messages
+      .filter(m => m.role === 'system')
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+
+    setRegeneratingModel(recordId);
+
+    try {
+      // Converte recordId para openRouterId para chamar a API
+      const openRouterId = getOpenRouterId(recordId, approvedModels);
+
+      const historyMessages = [
+        ...systemMessages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: firstUserMessage.content },
+      ];
+
+      const result = await callOpenRouter(openRouterId, historyMessages, {});
+
+      // Salva nova resposta no banco com recordId (não openRouterId)
+      await neon.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'assistant',
+        content: result.content,
+        model_id: recordId, // Salva com recordId!
+        metrics: {
+          prompt_tokens: result.usage?.prompt_tokens || 0,
+          completion_tokens: result.usage?.completion_tokens || 0,
+          total_tokens: result.usage?.total_tokens || 0,
+          duration_ms: result.duration,
+        },
+      });
+
+      toast.success('Resposta regenerada!');
+      await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      
+      return { success: true };
+    } catch (err) {
+      console.error('[useRegenerateResponse] Error:', err.message);
+      toast.error('Falha ao regenerar: ' + err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setRegeneratingModel(null);
+    }
+  }, [conversationId, queryClient, regeneratingModel]);
+
+  return { regenerate, regeneratingModel };
+}
+
+/**
+ * Hook para chat expandido com modelo único
+ */
+export function useSingleModelChat(conversationId, modelId, allMessages) {
+  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const getHistoryForModel = useCallback(() => {
+    if (!allMessages || !Array.isArray(allMessages)) return [];
+    
+    return allMessages
+      .filter(m => m.role === 'system' || m.role === 'user' || m.model_id === modelId)
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+  }, [allMessages, modelId]);
+
+  const sendMessage = useCallback(async (message) => {
+    // Validações
+    if (!message?.trim()) {
+      return { success: false, error: 'Mensagem vazia' };
+    }
+    
+    if (!conversationId || !modelId) {
+      toast.error('Dados inválidos');
+      return { success: false, error: 'Dados inválidos' };
+    }
+    
+    if (isLoading) {
+      return { success: false, error: 'Envio em andamento' };
+    }
+
+    setIsLoading(true);
+
+    try {
+      const trimmedMessage = message.trim();
+
+      // Salva mensagem do usuário
+      await neon.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'user',
+        content: trimmedMessage,
+        model_id: null,
+      });
+
+      const historyMessages = [
+        ...getHistoryForModel().map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: trimmedMessage },
+      ];
+
+      const result = await callOpenRouter(modelId, historyMessages, {});
+
+      // Salva resposta
+      await neon.entities.TitanosMessage.create({
+        conversation_id: conversationId,
+        role: 'assistant',
+        content: result.content,
+        model_id: modelId,
+        metrics: {
+          prompt_tokens: result.usage?.prompt_tokens || 0,
+          completion_tokens: result.usage?.completion_tokens || 0,
+          total_tokens: result.usage?.total_tokens || 0,
+          duration_ms: result.duration,
+        },
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ['titanos-messages', conversationId] });
+      return { success: true };
+    } catch (err) {
+      console.error('[useSingleModelChat] Error:', err.message);
+      toast.error('Erro ao enviar: ' + err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [conversationId, modelId, isLoading, getHistoryForModel, queryClient]);
+
+  return { sendMessage, isLoading };
+}

@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  app:
+    image: viralzera:latest
+    networks:
+      - GuiNet
+    env_file:
+      - .env
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      labels:
+        # === Ativar Traefik ===
+        - traefik.enable=true
+
+        # === HTTP (porta 80) → Redirect para HTTPS ===
+        - traefik.http.routers.viralzera-http.rule=Host(`www.viralzera.com.br`) || Host(`viralzera.com.br`)
+        - traefik.http.routers.viralzera-http.entrypoints=web
+        - traefik.http.routers.viralzera-http.middlewares=viralzera-redirect-https
+        - traefik.http.middlewares.viralzera-redirect-https.redirectscheme.scheme=https
+        - traefik.http.middlewares.viralzera-redirect-https.redirectscheme.permanent=true
+
+        # === HTTPS (porta 443) ===
+        - traefik.http.routers.viralzera.rule=Host(`www.viralzera.com.br`) || Host(`viralzera.com.br`)
+        - traefik.http.routers.viralzera.entrypoints=websecure
+        - traefik.http.routers.viralzera.tls=true
+        - traefik.http.routers.viralzera.tls.certresolver=letsencryptresolver
+
+        # === Load Balancer ===
+        - traefik.http.services.viralzera.loadbalancer.server.port=5000
+        - traefik.http.services.viralzera.loadbalancer.sticky.cookie=true
+        - traefik.http.services.viralzera.loadbalancer.sticky.cookie.name=viralzera_sticky
+
+networks:
+  GuiNet:
+    external: true

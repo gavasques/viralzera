@@ -1,0 +1,25 @@
+# Ignorar node_modules e dist locais (não enviar ao build context)
+node_modules
+dist
+dist-ssr
+server/node_modules
+
+# Git e IDE
+.git
+.gitignore
+.DS_Store
+*.local
+.vscode
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+
+# Secrets (nunca enviar ao build context)
+.env
+.env.*
+deploy/.env
+
+# Não enviar a pasta deploy em si (o build context é a raiz do projeto)
+deploy/.env
